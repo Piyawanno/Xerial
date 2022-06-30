@@ -1,0 +1,11 @@
+#!/usr/bin/python3
+
+from xerial.DataDumper import DataDumper
+
+import json
+
+with open('/etc/xerial/Xerial.json', 'rt') as fd :
+	config = json.load(fd)
+
+dumper = DataDumper(config)
+dumper.dump()

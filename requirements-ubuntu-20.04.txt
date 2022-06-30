@@ -1,0 +1,9 @@
+python3
+python3-pip
+mariadb-client
+libmariadb-dev
+tmux
+postgresql
+postgresql-contrib
+libpq-dev
+unixodbc-dev

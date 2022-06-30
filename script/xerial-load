@@ -1,0 +1,12 @@
+#!/usr/bin/python3
+
+from marshal import load
+from xerial.DataLoader import DataLoader
+
+import json
+
+with open('/etc/xerial/Xerial.json', 'rt') as fd :
+	config = json.load(fd)
+
+loader = DataLoader(config)
+loader.load()

@@ -1,0 +1,297 @@
+from xerial.DBSessionBase import DBSessionBase
+from xerial.IntegerColumn import IntegerColumn
+
+import logging
+
+try :
+	import cx_Oracle
+except :
+	logging.warning("Module cx_Oracle cannot be imported.")
+
+"""
+Client Installation
+
+https://gist.github.com/bmaupin/1d376476a2b6548889b4dd95663ede58
+
+Docker Test Environment
+
+$ sudo docker pull gvenzl/oracle-xe
+$ sudo docker run -e ORACLE_PASSWORD='SECRET_PASSWORD' \
+	-e ORACLE_DATABASE='DB_NAME' \
+	-e APP_USER='APP_USER' \
+	-e APP_USER_PASSWORD='SECRET_PASSWORD' \
+	-p 1521:1521 \
+	--name oracledb -d gvenzl/oracle-xe
+
+domain : XEPDB1
+
+Docker Full Document
+
+https://hub.docker.com/r/gvenzl/oracle-xe
+
+"""
+
+class OracleDBSession (DBSessionBase) :
+	def createConnection(self):
+		self.connection = cx_Oracle.connect('%s/%s@%s:%d/%s'%(
+			self.config['user'],
+			self.config["password"],
+			self.config["host"],
+			self.config["port"],
+			self.config["domain"],
+		))
+		self.connection.autocommit = True
+		self.cursor = self.connection.cursor()
+
+	def closeConnection(self) :
+		self.connection.close()
+	
+	def prepareStatement(self, modelClass) :
+		if hasattr(modelClass, 'primaryMeta') :
+			primary = modelClass.primaryMeta
+			if not hasattr(modelClass, '__is_increment__') :
+				modelClass.__is_increment__ = isinstance(primary, IntegerColumn)
+		else :
+			modelClass.__is_increment__ = False
+		if modelClass.__is_increment__ :
+			meta = [i for i in modelClass.meta if i[1] != primary]
+		else :
+			meta = modelClass.meta
+		modelClass.__select_column__ = ", ".join([i[0] for i in modelClass.meta])
+		modelClass.__insert_column__ = ", ".join([i[0] for i in meta ])
+		modelClass.__insert_parameter__ = ", ".join([":%d"%(i+1) for i, m in enumerate(meta)])
+		modelClass.__all_column__ = ", ".join([i[0] for i in modelClass.meta])
+		modelClass.__all_parameter__ = ", ".join([":%d"%(i+1) for i, m in enumerate(modelClass.meta)])
+		modelClass.__update_set_parameter__  = ", ".join(["%s=:%d"%(m[0], i) for i, m in enumerate(meta) ])
+		if modelClass.__is_increment__ :
+			modelClass.insertMeta = [i for i in modelClass.meta if i[1] != primary]
+		else :
+			modelClass.insertMeta = modelClass.meta
+
+	def executeRoundRobinRead(self, query, parameter=None) :
+		self.queryCount += 1
+		cursor = self.connection.getNextReadCursor()
+		try :
+			if parameter is None :
+				cursor.execute(query)
+			else :
+				cursor.execute(query, parameter)
+			return cursor
+		except Exception as error :
+			logging.debug(query)
+			logging.debug(parameter)
+			self.closeConnection()
+			self.connect()
+			raise error
+	
+	def executeRoundRobinWrite(self, query, parameter=None) :
+		self.queryCount += 1
+		cursor = self.connection.writerCursor
+		try :
+			if parameter is None :
+				cursor.execute(query)
+			else :
+				cursor.execute(query, parameter)
+			return cursor
+		except Exception as error :
+			logging.debug(query)
+			logging.debug(parameter)
+			self.closeConnection()
+			self.connect()
+			raise error
+
+	def executeRegularRead(self, query, parameter=None) :
+		self.queryCount += 1
+		try :
+			if parameter is None :
+				self.cursor.execute(query)
+			else :
+				self.cursor.execute(query, parameter)
+			return self.cursor
+		except Exception as error :
+			logging.debug(query)
+			self.closeConnection()
+			self.connect()
+			raise error
+	
+	def executeRegularWrite(self, query, parameter=None):
+		return self.executeRead(query, parameter)
+
+	def generateCountQuery(self, modelClass, clause) :
+		return 'SELECT COUNT(%s) "COUNTED" FROM %s %s'%(modelClass.primary, modelClass.__fulltablename__, clause)
+		
+	def generateSelectQuery(self, modelClass, clause, limit=None, offset=None) :
+		if limit is not None :
+			if offset is None : offset = 0
+			limitClause = "OFFSET %d ROWS FETCH NEXT %d ROWS ONLY"%(offset, limit)
+		else :
+			limitClause = ""
+		return "SELECT %s FROM %s %s %s"%(
+			modelClass.__select_column__,
+			modelClass.__fulltablename__,
+			clause, limitClause
+		)
+	
+	def insert(self, record, isAutoID=True):
+		modelClass = record.__class__
+		isIncrement = modelClass.__is_increment__
+		DEPRECATED = False
+		if DEPRECATED :
+			if isIncrement :
+				value = self.getValue(record)
+				query = "INSERT INTO %s(%s) VALUES(%s) RETURNING %s INTO :1"%(
+					modelClass.__fulltablename__,
+					modelClass.__insert_column__,
+					", ".join(value),
+					modelClass.primaryMeta.name
+				)
+				insertedID = self.cursor.var(cx_Oracle.NUMBER)
+				parameter = [insertedID]
+		query = self.generateInsert(modelClass, isAutoID)
+		parameter = self.getRawValue(record, isAutoID)
+		self.executeWrite(query, parameter)
+		if DEPRECATED :
+			if isIncrement :
+				setattr(record, modelClass.primaryMeta.name, int(insertedID.values[0][0]))
+				return insertedID
+			else :
+				return None
+		return None
+	
+	def insertMultiple(self, recordList, isAutoID=True) :
+		if len(recordList) == 0 : return
+		valueList = []
+		modelClass = None
+		for record in recordList :
+			valueList.append(self.getRawValue(record, isAutoID))
+			modelClass = record.__class__
+			query = self.generateInsert(modelClass)
+		try :
+			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
+			cursor.executemany(query, valueList)
+		except Exception as error :
+			logging.debug(query)
+			self.closeConnection()
+			self.connect()
+			raise error
+	
+	def generateInsert(self, modelClass, isAutoID=True) :
+		if isAutoID :
+			return "INSERT INTO %s(%s) VALUES(%s)"%(
+				modelClass.__fulltablename__,
+				modelClass.__insert_column__,
+				modelClass.__insert_parameter__
+			)
+		else :
+			return "INSERT INTO %s(%s) VALUES(%s)"%(
+				modelClass.__fulltablename__,
+				modelClass.__all_column__,
+				modelClass.__all_parameter__
+			)
+
+	def update(self, record) :
+		value = self.getRawValue(record)
+		self.executeWrite(self.generateUpdate(record), value)
+	
+	def generateUpdate(self, record) :
+		modelClass = record.__class__
+		return "UPDATE %s SET %s WHERE %s"%(
+			modelClass.__fulltablename__,
+			modelClass.__update_set_parameter__,
+			self.getPrimaryClause(record)
+		)
+	
+	def drop(self, record) :
+		table = record.__fulltablename__
+		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
+		self.executeWrite(query)
+	
+	def dropByID(self, modelClass, ID) :
+		if not hasattr(modelClass, 'primaryMeta') :
+			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			return
+		table = modelClass.__fulltablename__
+		meta = modelClass.primaryMeta
+		ID = meta.setValueToDB(ID)
+		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
+		self.executeWrite(query)
+	
+	def dropByCondition(self, modelClass, clause) :
+		table = modelClass.__fulltablename__
+		query = "DELETE FROM %s WHERE %s"%(table, clause)
+		self.executeWrite(query)
+	
+	def createTable(self) :
+		self.getExistingTable()
+		for model in self.model.values() :
+			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
+			if model.__tablename__.upper() in self.existingTable : continue
+			query = self.generateCreatTable(model)
+			logging.info(f"Creating Table {model.__tablename__}")
+			self.executeWrite(query)
+		self.getExistingTable()
+
+		for model in self.model.values() :
+			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
+			if model.__tablename__.upper() in self.existingTable :
+				self.createIndex(model)
+	
+	def generateCreatTable(self, model) :
+		columnList = []
+		primaryList = []
+		isIncremental = model.__is_increment__
+		for name, column in model.meta :
+			if not (isIncremental and column.isPrimary) :
+				notNull = "NOT NULL" if column.isNotNull else ""
+				isDefault = hasattr(column, 'default') and column.default is not None
+				default = "DEFAULT %s"%(column.setValueToDB(column.default)) if isDefault else ""
+				columnList.append(f"{name} {column.getDBDataType()} {default} {notNull}")
+			if column.isPrimary :
+				primaryList.append(name)
+		if len(primaryList) :
+			joined = ",".join(primaryList)
+			columnList.append(f"CONSTRAINT {model.__tablename__}_PK PRIMARY KEY ({joined})")
+		query = [f"CREATE TABLE {model.__tablename__} ( "]
+		if isIncremental :
+			columnList.insert(0, "%s INTEGER GENERATED BY DEFAULT AS IDENTITY (START WITH 1 INCREMENT BY 1)"%(model.primary))
+		query.append(",\n".join(columnList))
+		query.append(")")
+		return "".join(query)
+	
+	def createIndex(self, model) :
+		self.executeRead(self.generateIndexQuery(model))
+		existingIndex =  {i[0].upper() for i in self.cursor}
+		for name, column in model.meta :
+			name = name.upper()
+			if column.isIndex and name not in existingIndex:
+				self.executeWrite(self.generateCreateIndex(model, name))
+	
+	def generateIndexQuery(self, model) :
+		return """SELECT ind_col.column_name, ind.table_name
+		FROM sys.all_indexes ind
+		INNER JOIN 
+			sys.all_ind_columns ind_col ON ind.owner = ind_col.index_owner 
+			AND ind.index_name = ind_col.index_name
+		WHERE ind.owner in ('%s') AND ind.table_name='%s'
+		"""%("', '".join(self.config['owner']), model.__tablename__.upper())
+	
+	def generateCreateIndex(self, model, columnName) :
+		tableName = model.__tablename__.upper()
+		return "CREATE INDEX %s_%s ON %s(%s)"%(tableName, columnName, tableName, columnName)
+
+	def getExistingTable(self) :
+		self.executeRead(self.generateCheckTable())
+		self.owner = {row[0]:row[1] for row in self.cursor}
+		self.existingTable = list(self.owner.keys())
+		for model in self.model.values() :
+			tableName = model.__tablename__.upper()
+			owner = self.owner.get(tableName)
+			if owner is not None :
+				model.__fulltablename__ = f"{owner}.{tableName}"
+			else :
+				model.__fulltablename__ = tableName
+		return self.existingTable
+	
+	def generateCheckTable(self) :
+		joined = "', '".join(self.config['owner'])
+		return f"SELECT table_name, owner  from all_tables WHERE owner IN ('{joined}')"

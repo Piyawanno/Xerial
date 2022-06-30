@@ -1,0 +1,9 @@
+mariadb
+aiomysql
+cx_Oracle
+cx_Oracle_async
+psycopg2
+asyncpg
+aiosqlite
+pyodbc
+aioodbc
