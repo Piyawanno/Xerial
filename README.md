@@ -14,7 +14,7 @@ A Simple Object Rational Mapping (ORM) library.
 With wheel :
 
 ```bash
-./setup bdist_build
+./setup.py bdist_wheel
 sudo pip3 install dist/xerial-0.9-py3-none-any.whl
 ```
 
