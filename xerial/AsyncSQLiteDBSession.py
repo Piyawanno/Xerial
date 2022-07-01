@@ -91,17 +91,28 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		value = self.getRawValue(record, isAutoID)
 		cursor = await self.executeWrite(query, value)
 		if modelClass.__is_increment__ :
-			setattr(record, modelClass.primary, self.cursor.lastrowid)
+			setattr(record, modelClass.primary, cursor.lastrowid)
+			if len(modelClass.children) : await self.insertChildren(record, modelClass)
 			return cursor.lastrowid
 	
 	async def insertMultiple(self, recordList, isAutoID=True) :
 		if len(recordList) == 0 : return
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
 			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
+				if len(modelClass.children) :
+					hasChildren = True
+					break
+
+		if hasChildren :
+			for record in recordList :
+				await self.insert(record)
+			return
+
 		query = self.generateInsertQuery(record, isAutoID)
 		try :
 			connection = self.connection.writer if self.isRoundRobin else self.connection
@@ -114,11 +125,14 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 			raise error
 	
 	async def update(self, record) :
+		modelClass = record.__class__
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		await self.executeWrite(query, value)
+		if len(modelClass.children) : await self.updateChildren(record, modelClass)
 	
 	async def drop(self, record) :
+		await self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		await self.executeWrite(query)
@@ -127,6 +141,7 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		if not hasattr(modelClass, 'primaryMeta') :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
+		await self.dropChildrenByID(ID, modelClass)
 		table = modelClass.__fulltablename__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
@@ -135,6 +150,11 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 	
 	async def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
+			await self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
 		await self.executeWrite(query)
 	
@@ -155,7 +175,7 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		exisitingIndex = {i[0] for i in cursor}
 		for name, column in model.meta :
 			if column.isIndex and name not in exisitingIndex :
-				self.executeWrite(self.generateIndexQuery(model, name))
+				await self.executeWrite(self.generateIndexQuery(model, name))
 	
 	async def getExistingTable(self) :
 		result = await self.executeRead(self.generateTableQuery())

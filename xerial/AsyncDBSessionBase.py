@@ -45,7 +45,9 @@ class AsyncDBSessionBase (DBSessionBase) :
 				setattr(record, columnName, column.processValue(row[i]))
 				i += 1
 			result.append(record)
-		if isRelated : await self.selectRelated(modelClass, result)
+		if isRelated :
+			await self.selectRelated(modelClass, result)
+			await self.selectChildren(modelClass, result)
 		return result
 	
 	async def selectTranspose(self, modelClass, clause, isRelated=False, limit=None, offset=None, isDebug=False) :
@@ -70,6 +72,63 @@ class AsyncDBSessionBase (DBSessionBase) :
 				value = getattr(record, attribute)
 				setattr(record, attribute, relatedMap.get(value, value))
 	
+	async def selectChildren(self, modelClass, recordList) :
+		if len(recordList) == 0 : return
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = modelClass.primary
+		keyList = [str(getattr(i, primary)) for i in recordList]
+		joined = ','.join(keyList)
+		childrenMap = {}
+		for child in modelClass.children :
+			clause = f"WHERE {child.column} IN ({joined})"
+			childRecord = await self.select(child.model, clause, False)
+			columnMap = {}
+			childrenMap[child.name] = columnMap
+			for record in childRecord :
+				parent = getattr(record, child.column)
+				childrenList = columnMap.get(parent, [])
+				if len(childrenList) == 0 : columnMap[parent] = childrenList
+				childrenList.append(record)
+		
+		for child in modelClass.children :
+			for record in recordList :
+				primary = getattr(record, modelClass.primary)
+				setattr(record, child.name, childrenMap[child.name].get(primary, []))
+
+	async def insertChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = getattr(record, modelClass.primary)
+		for child in modelClass.children :
+			childRecordList = getattr(record, child.name)
+			if len(childRecordList) == 0 : continue
+			for childRecord in childRecordList :
+				setattr(childRecord, child.column, primary)
+			await self.insertMultiple(childRecordList)
+	
+	async def updateChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		for child in modelClass.children :
+			childRecordList = getattr(record, child.name)
+			if len(childRecordList) == 0 : continue
+			for childRecord in childRecordList :
+				await self.update(childRecord)
+	
+	async def dropChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = getattr(record, modelClass.primary)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM {table} WHERE {child.column}={primary}"
+			await self.executeWrite(query)
+
+	async def dropChildrenByID(self, recordID, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM {table} WHERE {child.column}={recordID}"
+			await self.executeWrite(query)
+
+
 	async def createConnection(self) :
 		pass
 	

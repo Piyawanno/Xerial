@@ -144,6 +144,7 @@ class SQLiteDBSession (DBSessionBase) :
 				modelClass = record.__class__
 				if len(modelClass.children) :
 					hasChildren = True
+					break
 		if hasChildren :
 			for record in recordList :
 				self.insert(record)
@@ -175,10 +176,10 @@ class SQLiteDBSession (DBSessionBase) :
 		)
 
 	def drop(self, record) :
+		self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
-		self.dropChildren(record, record.__class__)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :

@@ -15,12 +15,14 @@ class Poll (Record) :
 	description = StringColumn(length=-1)
 	startDate = DateColumn()
 	endDate = DateColumn()
+	# Reference to Choice.poll
 	choices = Children("Choice.poll")
 
 	def __repr__(self) -> str:
 		return f"{self.topic} {self.description} {self.startDate} {self.endDate} {self.choices}"
 
 class Choice (Record) :
+	# Reference to Poll.id
 	poll = IntegerColumn(foreignKey="Poll.id", isIndex=True)
 	choice = StringColumn(length=128)
 	count = IntegerColumn(default=0)
