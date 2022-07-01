@@ -142,7 +142,9 @@ class DBSessionBase :
 				setattr(record, columnName, column.processValue(row[i]))
 				i += 1
 			result.append(record)
-		if isRelated : self.selectRelated(modelClass, result)
+		if isRelated :
+			self.selectRelated(modelClass, result)
+			self.selectChildren(modelClass, result)
 		return result
 	
 	def selectTranspose(self, modelClass, clause, isRelated=False, limit=None, offset=None, isDebug=False) :
@@ -195,6 +197,71 @@ class DBSessionBase :
 			for record in recordList :
 				value = getattr(record, attribute)
 				setattr(record, attribute, relatedMap.get(value, value))
+	
+	def selectChildren(self, modelClass, recordList) :
+		if len(recordList) == 0 : return
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = modelClass.primary
+		keyList = [str(getattr(i, primary)) for i in recordList]
+		joined = ','.join(keyList)
+		childrenMap = {}
+		for child in modelClass.children :
+			clause = f"WHERE {child.column} IN ({joined})"
+			childRecord = self.select(child.model, clause, False)
+			columnMap = {}
+			childrenMap[child.name] = columnMap
+			for record in childRecord :
+				parent = getattr(record, child.column)
+				childrenList = columnMap.get(parent, [])
+				if len(childrenList) == 0 : columnMap[parent] = childrenList
+				childrenList.append(record)
+		
+		for child in modelClass.children :
+			for record in recordList :
+				primary = getattr(record, modelClass.primary)
+				setattr(record, child.name, childrenMap[child.name].get(primary, []))
+	
+	def insertChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = getattr(record, modelClass.primary)
+		for child in modelClass.children :
+			childRecordList = getattr(record, child.name)
+			if len(childRecordList) == 0 : continue
+			for childRecord in childRecordList :
+				setattr(childRecord, child.column, primary)
+			self.insertMultiple(childRecordList)
+	
+	def updateChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		for child in modelClass.children :
+			childRecordList = getattr(record, child.name)
+			if len(childRecordList) == 0 : continue
+			for childRecord in childRecordList :
+				self.update(childRecord)
+	
+	def dropChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = getattr(record, modelClass.primary)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM {table} WHERE {child.column}={primary}"
+			self.executeWrite(query)
+
+	def dropChildrenByID(self, recordID, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM {table} WHERE {child.column}={recordID}"
+			self.executeWrite(query)
+
+	def checkChildren(self, modelClass) :
+		for child in modelClass.children :
+			if child.model is None :
+				childModelClass = self.model.get(child.modelName, None)
+				if childModelClass is None :
+					raise ValueError(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
+				child.model = childModelClass
+		modelClass.isChildrenChecked = True
 	
 	def getPrimaryClause(self, record) :
 		modelClass = record.__class__

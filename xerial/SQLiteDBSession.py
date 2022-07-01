@@ -113,7 +113,10 @@ class SQLiteDBSession (DBSessionBase) :
 		cursor = self.executeWrite(query, value)
 		if modelClass.__is_increment__ :
 			setattr(record, modelClass.primary, self.cursor.lastrowid)
+			if len(modelClass.children) : self.insertChildren(record, modelClass)
 			return cursor.lastrowid
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 
 	def generateInsertQuery(self, record, isAutoID=True) :
 		modelClass = record.__class__
@@ -134,10 +137,17 @@ class SQLiteDBSession (DBSessionBase) :
 		if len(recordList) == 0 : return
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
 			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
+				if len(modelClass.children) :
+					hasChildren = True
+		if hasChildren :
+			for record in recordList :
+				self.insert(record)
+			return
 		query = self.generateInsertQuery(record, isAutoID)
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
@@ -150,10 +160,12 @@ class SQLiteDBSession (DBSessionBase) :
 			raise error
 	
 	def update(self, record) :
+		modelClass = record.__class__
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
-	
+		if len(modelClass.children) : self.updateChildren(record, modelClass)
+
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
 		return "UPDATE %s SET %s WHERE %s"%(
@@ -166,11 +178,13 @@ class SQLiteDBSession (DBSessionBase) :
 		table = record.__fulltablename__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
+		self.dropChildren(record, record.__class__)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
+		self.dropChildrenByID(ID, modelClass)
 		table = modelClass.__fulltablename__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
@@ -179,6 +193,11 @@ class SQLiteDBSession (DBSessionBase) :
 	
 	def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
+			self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
 		self.executeWrite(query)
 	

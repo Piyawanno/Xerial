@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from xerial.Column import Column
+from xerial.Children import Children
 from xerial.Input import Input
 from xerial.Modification import Modification
 from packaging import version
@@ -83,6 +84,7 @@ class Record :
 			modelClass.__version__ = '1.0'
 		primaryMeta = Record.checkPrimary(modelClass)
 		Record.extractAttribute(modelClass, primaryMeta)
+		Record.extractChildren(modelClass)
 
 	@staticmethod
 	def checkPrimary(modelClass) :
@@ -129,6 +131,16 @@ class Record :
 		if primaryMeta is not None :
 			modelClass.primaryMeta = primaryMeta
 	
+	@staticmethod
+	def extractChildren(modelClass) :
+		modelClass.children = []
+		modelClass.isChildrenChecked = False
+		for i in dir(modelClass) :
+			attribute = getattr(modelClass, i)
+			if isinstance(attribute, Children) :
+				attribute.name = i
+				modelClass.children.append(attribute)
+
 	@staticmethod
 	def parseTime(delta):
 		hours, remainder = divmod(delta.seconds, 3600)
