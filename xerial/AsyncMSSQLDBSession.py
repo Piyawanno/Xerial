@@ -95,17 +95,35 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 		query = self.generateInsert(modelClass)
 		if not isAutoID and modelClass.__is_increment__ :
 			await self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} ON;")
-		await self.executeWrite(query, value)
+		cursor = await self.executeWrite(query, value)
 		if not isAutoID and modelClass.__is_increment__ :
 			await self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
+		elif not isAutoID :
+			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
+			insertedID = await cursor.fetchone()
+			setattr(record, modelClass.primary, insertedID[0])
+			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+			return insertedID[0]
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 		
 	async def insertMultiple(self, recordList, isAutoID=True) :
 		if len(recordList) == 0 : return
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
 			valueList.append(tuple(self.getRawValue(record, isAutoID)))
 			modelClass = record.__class__
+			if len(modelClass.children) :
+				hasChildren = True
+				break
+
+		if hasChildren :
+			for record in recordList :
+				await self.insert(record)
+			return
 		
 		query = self.generateInsert(modelClass, isAutoID)
 		try :
@@ -126,10 +144,12 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 	async def update(self, record) :
 		value = self.getRawValue(record)
 		modelClass = record.__class__
-		query = self.generateUpdate(modelClass)
+		query = self.generateUpdateQuery(record)
 		await self.executeWrite(query, value)
+		if len(modelClass.children) : await self.updateChildren(record, modelClass)
 	
 	async def drop(self, record) :
+		await self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		await self.executeWrite(query)
@@ -138,6 +158,7 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 		if not hasattr(modelClass, 'primaryMeta') :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
+		await self.dropChildrenByID(ID, modelClass)
 		table = modelClass.__fulltablename__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
@@ -146,6 +167,11 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 	
 	async def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
+			await self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
 		await self.executeWrite(query)
 	

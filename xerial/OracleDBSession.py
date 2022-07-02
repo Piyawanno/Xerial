@@ -134,38 +134,40 @@ class OracleDBSession (DBSessionBase) :
 	
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
-		isIncrement = modelClass.__is_increment__
-		DEPRECATED = False
-		if DEPRECATED :
-			if isIncrement :
-				value = self.getValue(record)
-				query = "INSERT INTO %s(%s) VALUES(%s) RETURNING %s INTO :1"%(
-					modelClass.__fulltablename__,
-					modelClass.__insert_column__,
-					", ".join(value),
-					modelClass.primaryMeta.name
-				)
-				insertedID = self.cursor.var(cx_Oracle.NUMBER)
-				parameter = [insertedID]
 		query = self.generateInsert(modelClass, isAutoID)
 		parameter = self.getRawValue(record, isAutoID)
+		if modelClass.__insert_parameter__ :
+			insertedID = self.cursor.var(cx_Oracle.NUMBER)
+			parameter.append(insertedID)
 		self.executeWrite(query, parameter)
-		if DEPRECATED :
-			if isIncrement :
-				setattr(record, modelClass.primaryMeta.name, int(insertedID.values[0][0]))
-				return insertedID
-			else :
-				return None
-		return None
-	
+		if not isAutoID :
+			if len(modelClass.children) : self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
+			lastRow = insertedID.values[0][0]
+			setattr(record, modelClass.primary, lastRow)
+			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			return lastRow
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+		
 	def insertMultiple(self, recordList, isAutoID=True) :
 		if len(recordList) == 0 : return
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
+			if modelClass is None :
+				modelClass = record.__class__
+				query = self.generateInsert(modelClass, isAutoID, isMultiple=True)
+				if len(modelClass.children) :
+					hasChildren = True
+					break
 			valueList.append(self.getRawValue(record, isAutoID))
-			modelClass = record.__class__
-			query = self.generateInsert(modelClass)
+
+		if hasChildren :
+			for record in recordList :
+				self.insert(record)
+			return
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
@@ -175,13 +177,22 @@ class OracleDBSession (DBSessionBase) :
 			self.connect()
 			raise error
 	
-	def generateInsert(self, modelClass, isAutoID=True) :
+	def generateInsert(self, modelClass, isAutoID=True, isMultiple=False) :
 		if isAutoID :
-			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
-				modelClass.__insert_column__,
-				modelClass.__insert_parameter__
-			)
+			if modelClass.__is_increment__ and not isMultiple:
+				return "INSERT INTO %s(%s) VALUES(%s) RETURNING %s INTO :%d"%(
+					modelClass.__fulltablename__,
+					modelClass.__insert_column__,
+					modelClass.__insert_parameter__,
+					modelClass.primaryMeta.name,
+					len(modelClass.meta)
+				)
+			else :
+				return "INSERT INTO %s(%s) VALUES(%s)"%(
+					modelClass.__fulltablename__,
+					modelClass.__insert_column__,
+					modelClass.__insert_parameter__
+				)
 		else :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
 				modelClass.__fulltablename__,
@@ -192,6 +203,8 @@ class OracleDBSession (DBSessionBase) :
 	def update(self, record) :
 		value = self.getRawValue(record)
 		self.executeWrite(self.generateUpdate(record), value)
+		modelClass = record.__class__
+		if len(modelClass.children) : self.updateChildren(record, modelClass)
 	
 	def generateUpdate(self, record) :
 		modelClass = record.__class__
@@ -202,6 +215,7 @@ class OracleDBSession (DBSessionBase) :
 		)
 	
 	def drop(self, record) :
+		self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
@@ -210,6 +224,7 @@ class OracleDBSession (DBSessionBase) :
 		if not hasattr(modelClass, 'primaryMeta') :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
+		self.dropChildrenByID(ID, modelClass)
 		table = modelClass.__fulltablename__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
@@ -218,6 +233,11 @@ class OracleDBSession (DBSessionBase) :
 	
 	def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
+			self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
 		self.executeWrite(query)
 	

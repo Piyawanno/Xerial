@@ -111,7 +111,9 @@ class SQLiteDBSession (DBSessionBase) :
 		query = self.generateInsertQuery(record, isAutoID)
 		value = self.getRawValue(record, isAutoID)
 		cursor = self.executeWrite(query, value)
-		if modelClass.__is_increment__ :
+		if not isAutoID :
+			if len(modelClass.children) : self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
 			setattr(record, modelClass.primary, self.cursor.lastrowid)
 			if len(modelClass.children) : self.insertChildren(record, modelClass)
 			return cursor.lastrowid

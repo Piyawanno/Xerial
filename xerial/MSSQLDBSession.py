@@ -149,18 +149,35 @@ class MSSQLDBSession (DBSessionBase) :
 		query = self.generateInsert(modelClass)
 		if not isAutoID and modelClass.__is_increment__:
 			self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} ON;")
-		self.executeWrite(query, value)	
+		cursor = self.executeWrite(query, value)	
 		if not isAutoID and modelClass.__is_increment__ :
 			self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
-		
+		elif not isAutoID :
+			if len(modelClass.children) : self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
+			insertedID = cursor.fetchone()[0]
+			setattr(record, modelClass.primary, insertedID)
+			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			return insertedID
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 	
 	def insertMultiple(self, recordList, isAutoID=True) :
 		if len(recordList) == 0 : return
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
 			valueList.append(tuple(self.getRawValue(record, isAutoID)))
 			modelClass = record.__class__
+			if len(modelClass.children) :
+				hasChildren = True
+				break
+
+		if hasChildren :
+			for record in recordList :
+				self.insert(record)
+			return
 		
 		query = self.generateInsert(modelClass, isAutoID)
 		try :
@@ -179,11 +196,18 @@ class MSSQLDBSession (DBSessionBase) :
 
 	def generateInsert(self, modelClass, isAutoID=True) :
 		if isAutoID :
-			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
-				modelClass.__insert_column__,
-				modelClass.__insert_parameter__
-			)
+			if  modelClass.__is_increment__ :
+				return "SET NOCOUNT ON; DECLARE @NEWID TABLE(ID INT); INSERT INTO %s(%s) OUTPUT inserted.id INTO @NEWID(ID) VALUES(%s); SELECT ID FROM @NEWID;"%(
+					modelClass.__fulltablename__,
+					modelClass.__insert_column__,
+					modelClass.__insert_parameter__
+				)
+			else :
+				return "INSERT INTO %s(%s) VALUES(%s)"%(
+					modelClass.__fulltablename__,
+					modelClass.__insert_column__,
+					modelClass.__insert_parameter__
+				)
 		else :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
 				modelClass.__fulltablename__,
@@ -192,9 +216,11 @@ class MSSQLDBSession (DBSessionBase) :
 			)
 	
 	def update(self, record) :
+		modelClass = record.__class__
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
+		if len(modelClass.children) : self.updateChildren(record, modelClass)
 	
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
@@ -205,6 +231,7 @@ class MSSQLDBSession (DBSessionBase) :
 		)
 
 	def drop(self, record) :
+		self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
@@ -213,6 +240,7 @@ class MSSQLDBSession (DBSessionBase) :
 		if not hasattr(modelClass, 'primaryMeta') :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
+		self.dropChildrenByID(ID, modelClass)
 		table = modelClass.__fulltablename__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
@@ -221,6 +249,11 @@ class MSSQLDBSession (DBSessionBase) :
 	
 	def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
+			self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
 		self.executeWrite(query)
 	

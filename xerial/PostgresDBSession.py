@@ -161,12 +161,17 @@ class PostgresDBSession (DBSessionBase) :
 		query = self.generateInsertQuery(record, isAutoID)
 		value = self.getRawValue(record, isAutoID)
 		self.executeWrite(query, value)
-		if isAutoID and modelClass.__is_increment__ :
+		if not isAutoID :
+			if len(modelClass.children) : self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
 			result = self.cursor.fetchall()
 			if len(result) :
 				key = result[0][0]
 				setattr(record, modelClass.primary, key)
+				if len(modelClass.children) : self.insertChildren(record, modelClass)
 				return key
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 	
 	def generateInsertQuery(self, record, isAutoID=True) :
 		modelClass = record.__class__
@@ -220,9 +225,11 @@ class PostgresDBSession (DBSessionBase) :
 			return f"INSERT INTO {self.schema}{modelClass.__fulltablename__}({modelClass.__all_column__}) VALUES %s"
 
 	def update(self, record) :
+		modelClass = record.__class__
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
+		if len(modelClass.children) : self.updateChildren(record, modelClass)
 	
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
@@ -234,6 +241,7 @@ class PostgresDBSession (DBSessionBase) :
 		)
 
 	def drop(self, record) :
+		self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, self.getPrimaryClause(record))
 		self.executeWrite(query)
@@ -243,6 +251,7 @@ class PostgresDBSession (DBSessionBase) :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
 		table = modelClass.__fulltablename__
+		self.dropChildrenByID(ID, modelClass)
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
 		query = "DELETE FROM %s%s WHERE %s=%s"%(self.schema, table, modelClass.primary, ID)
@@ -250,8 +259,28 @@ class PostgresDBSession (DBSessionBase) :
 	
 	def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {self.schema}{modelClass.primary} FROM {table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {self.schema}{childTable} WHERE {child.column} IN ({parentQuery})"
+			self.executeWrite(query)
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, clause)
 		self.executeWrite(query)
+	
+	def dropChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = getattr(record, modelClass.primary)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM {self.schema}{table} WHERE {child.column}={primary}"
+			self.executeWrite(query)
+
+	def dropChildrenByID(self, recordID, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM{self.schema}{table} WHERE {child.column}={recordID}"
+			self.executeWrite(query)
 	
 	def createTable(self) :
 		self.getExistingTable()

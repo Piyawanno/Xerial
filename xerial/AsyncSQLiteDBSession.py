@@ -90,10 +90,14 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		query = self.generateInsertQuery(record, isAutoID)
 		value = self.getRawValue(record, isAutoID)
 		cursor = await self.executeWrite(query, value)
-		if modelClass.__is_increment__ :
+		if not isAutoID :
+			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
 			setattr(record, modelClass.primary, cursor.lastrowid)
 			if len(modelClass.children) : await self.insertChildren(record, modelClass)
 			return cursor.lastrowid
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 	
 	async def insertMultiple(self, recordList, isAutoID=True) :
 		if len(recordList) == 0 : return

@@ -1,4 +1,4 @@
-from xerial.MSSQLDBSession import MSSQLDBSession
+from xerial.MariaDBSession import MariaDBSession
 from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.IntegerColumn import IntegerColumn
@@ -10,7 +10,7 @@ try :
 except :
 	logging.warning("Module aiomysql cannot be imported.")
 
-class AsyncMariaDBSession (MSSQLDBSession, AsyncDBSessionBase) :
+class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 	async def createConnection(self):
 		self.connection = await aiomysql.connect(
 			host=self.config['host'],
@@ -24,6 +24,28 @@ class AsyncMariaDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 	async def closeConnection(self) :
 		await self.cursor.close()
 		self.connection.close()
+	
+	def prepareStatement(self, modelClass) :
+		if hasattr(modelClass, 'primaryMeta') :
+			primary = modelClass.primaryMeta
+			if not hasattr(modelClass, '__is_increment__') :
+				modelClass.__is_increment__ = isinstance(primary, IntegerColumn)
+		else :
+			modelClass.__is_increment__ = False
+		if modelClass.__is_increment__ :
+			meta = [i for i in modelClass.meta if i[1] != primary]
+		else :
+			meta = modelClass.meta
+		modelClass.__select_column__ = ", ".join([i[0] for i in modelClass.meta])
+		modelClass.__insert_column__ = ", ".join([i[0] for i in meta])
+		modelClass.__insert_parameter__ = ", ".join(['%s']*len(meta))
+		modelClass.__all_column__ = ", ".join([i[0] for i in modelClass.meta])
+		modelClass.__all_parameter__ = ", ".join(['%s']*len(modelClass.meta))
+		modelClass.__update_set_parameter__  = ", ".join(["%s=%%s"%(m[0]) for i, m in enumerate(meta)])
+		if modelClass.__is_increment__ :
+			modelClass.insertMeta = [i for i in modelClass.meta if i[1] != primary]
+		else :
+			modelClass.insertMeta = modelClass.meta
 	
 	async def executeRoundRobinRead(self, query, parameter=None) :
 		self.queryCount += 1
@@ -73,24 +95,50 @@ class AsyncMariaDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 			raise error
 	
 	async def executeRegularWrite(self, query, parameter=None):
-		return await self.executeRead(query, parameter)
+		self.queryCount += 1
+		try :
+			if parameter is None :
+				await self.cursor.execute(query)
+			else :
+				await self.cursor.execute(query, parameter)
+			return self.cursor
+		except Exception as error :
+			logging.error(query)
+			logging.error(parameter)
+			await self.closeConnection()
+			await self.connect()
+			raise error
 
 	async def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
 		value = self.getRawValue(record, isAutoID)
 		query = self.generateInsert(modelClass)
 		cursor = await self.executeWrite(query, value)
-		if modelClass.__is_increment__ :
+		if not isAutoID :
+			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
 			setattr(record, modelClass.primary, self.cursor.lastrowid)
+			if len(modelClass.children) : await self.insertChildren(record, modelClass)
 			return cursor.lastrowid
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 	
 	async def insertMultiple(self, recordList, isAutoID=True) :
 		if len(recordList) == 0 : return
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
 			valueList.append(tuple(self.getRawValue(record, isAutoID)))
 			modelClass = record.__class__
+			if len(modelClass.children) :
+				hasChildren = True
+				break
+
+		if hasChildren :
+			for record in recordList :
+				await self.insert(record)
+			return
 		
 		query = self.generateInsert(modelClass, isAutoID)
 		try :
@@ -107,10 +155,12 @@ class AsyncMariaDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 	async def update(self, record) :
 		value = self.getRawValue(record)
 		modelClass = record.__class__
-		query = self.generateUpdate(modelClass)
+		query = self.generateUpdate(record)
 		await self.executeWrite(query, value)
+		if len(modelClass.children) : await self.updateChildren(record, modelClass)
 	
 	async def drop(self, record) :
+		await self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		await self.executeWrite(query)
@@ -119,6 +169,7 @@ class AsyncMariaDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 		if not hasattr(modelClass, 'primaryMeta') :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
+		await self.dropChildrenByID(ID, modelClass)
 		table = modelClass.__fulltablename__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
@@ -127,6 +178,11 @@ class AsyncMariaDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 	
 	async def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
+			await self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
 		await self.executeWrite(query)
 	

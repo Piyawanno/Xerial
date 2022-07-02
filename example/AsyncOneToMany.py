@@ -32,13 +32,29 @@ class Choice (Record) :
 		return f"{self.id} {self.choice} {self.count}"
 
 async def runTest() :
-	config = {
-		"vendor" : Vendor.SQLITE,
-		"database" : "./example.sqlite.bin"
-	}
+	# config = {
+	# 	"vendor" : Vendor.SQLITE,
+	# 	"database" : "./example.sqlite.bin"
+	# }
+
+	# session = AsyncSQLiteDBSession(config)
 	
-	session = AsyncSQLiteDBSession(config)
+	from xerial.AsyncOracleDBSession import AsyncOracleDBSession
+	config = {
+		"vendor" : Vendor.ORACLE,
+		"host" : "localhost",
+		"port" : 1521,
+		"database" : "RedShip",
+		"user" : "admin",
+		"password" : "NotSecret#2475",
+		"domain" : "XEPDB1",
+		"owner" : ["ADMIN"],
+	}
+
+
+	session = AsyncOracleDBSession(config)
 	await session.connect()
+
 	session.appendModel(Poll)
 	session.appendModel(Choice)
 	await session.createTable()

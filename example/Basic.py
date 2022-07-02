@@ -63,7 +63,7 @@ config = {
 	"database" : "DB_NAME",
 	"user" : "DB_USER_NAME",
 	"password" : "DB_PASSWORD",
-	"domain" : "DB_DOMAIN",
+	"domain" : "XEPDB1",
 	"owner" : ["DB_OWNER"],
 }
 
@@ -89,11 +89,11 @@ from xerial.MSSQLDBSession import MSSQLDBSession
 config = {
 	"vendor" : Vendor.ORACLE,
 	"host" : "localhost",
-	"port" : 1521,
+	"port" : 1433,
 	"database" : "DB_NAME",
-	"user" : "DB_USER_NAME",
+	"user" : "SA",
 	"password" : "DB_PASSWORD",
-	"driver" : "ODBC Driver 17 for SQL Server",
+	"driver" : "ODBC Driver 18 for SQL Server",
 }
 
 session = MSSQLDBSession(config)

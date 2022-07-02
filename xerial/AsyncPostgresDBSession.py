@@ -123,20 +123,35 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		query = self.generateInsertQuery(record, isAutoID)
 		value = self.getRawValue(record, isAutoID)
 		result = await self.executeWrite(query, value)
-		if isAutoID and modelClass.__is_increment__ :
+		if not isAutoID :
+			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+		elif modelClass.__is_increment__ :
 			if len(result) :
 				key = result[0][0]
 				setattr(record, modelClass.primary, key)
+				if len(modelClass.children) : await self.insertChildren(record, modelClass)
 				return key
+		elif len(modelClass) > 0 :
+			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 
 	async def insertMultiple(self, recordList, isAutoID=True) :
 		if len(recordList) == 0 : return
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
 			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
+				if len(modelClass.children) :
+					hasChildren = True
+					break
+
+		if hasChildren :
+			for record in recordList :
+				await self.insert(record)
+			return
+		
 		try :
 			connection = self.connection.writer if self.isRoundRobin else self.connection
 			await connection.copy_records_to_table(
@@ -152,11 +167,14 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			raise error
 	
 	async def update(self, record) :
+		modelClass = record.__class__
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		await self.executeWrite(query, value)
+		if len(modelClass.children) : await self.updateChildren(record, modelClass)
 	
 	async def drop(self, record) :
+		await self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, self.getPrimaryClause(record))
 		await self.executeWrite(query)
@@ -166,6 +184,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
 			return
 		table = modelClass.__fulltablename__
+		await self.dropChildrenByID(ID, modelClass)
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(id)
 		query = "DELETE FROM %s%s WHERE %s=%s"%(self.schema, table, modelClass.primary, ID)
@@ -173,8 +192,28 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 	
 	async def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__fulltablename__
+		parentQuery = f"SELECT {modelClass.primary} FROM {self.schema}{table} {clause}"
+		for child in modelClass.children :
+			childTable = child.model.__fulltablename__
+			query = f"DELETE FROM {self.schema}{childTable} WHERE {child.column} IN ({parentQuery})"
+			await self.executeWrite(query)
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, clause)
 		await self.executeWrite(query)
+	
+	async def dropChildren(self, record, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		primary = getattr(record, modelClass.primary)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM {self.schema}{table} WHERE {child.column}={primary}"
+			await self.executeWrite(query)
+
+	async def dropChildrenByID(self, recordID, modelClass) :
+		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		for child in modelClass.children :
+			table = child.model.__fulltablename__
+			query = f"DELETE FROM{self.schema}{table} WHERE {child.column}={recordID}"
+			await self.executeWrite(query)
 	
 	async def createTable(self) :
 		await self.getExistingTable()
