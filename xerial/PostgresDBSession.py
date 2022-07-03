@@ -58,6 +58,9 @@ class PostgresDBSession (DBSessionBase) :
 	def closeConnection(self) :
 		self.connection.close()
 	
+	def processClause(self, clause: str, parameter: list) -> str:
+		return clause.replace("?", "%s")
+
 	def prepareStatement(self, modelClass) :
 		if hasattr(modelClass, 'primaryMeta') :
 			primary = modelClass.primaryMeta

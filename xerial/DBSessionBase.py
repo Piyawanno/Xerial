@@ -1,3 +1,4 @@
+from pyrsistent import s
 from xerial.Column import Column
 from xerial.Record import Record
 from xerial.IntegerColumn import IntegerColumn
@@ -125,15 +126,19 @@ class DBSessionBase :
 			else :
 				self.createConnection()
 	
-	def count(self, modelClass, clause) :
+	def count(self, modelClass:type, clause:str, parameter:list=None) -> int :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
 		query = self.generateCountQuery(modelClass, clause)
-		cursor = self.executeRead(query)
+		cursor = self.executeRead(query, parameter)
 		for i in cursor :
 			return i[0]
 
-	def select(self, modelClass, clause, isRelated=False, limit=None, offset=None, isDebug=False) :
+	def select(self, modelClass:type, clause:str, isRelated:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
-		cursor = self.executeRead(query)
+		cursor = self.executeRead(query, parameter)
 		result = []
 		for row in cursor :
 			record = modelClass()
@@ -147,8 +152,8 @@ class DBSessionBase :
 			self.selectChildren(modelClass, result)
 		return result
 	
-	def selectTranspose(self, modelClass, clause, isRelated=False, limit=None, offset=None, isDebug=False) :
-		recordList = self.select(modelClass, clause, isRelated, limit, offset)
+	def selectTranspose(self, modelClass:type, clause:str, isRelated:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> dict :
+		recordList = self.select(modelClass, clause, isRelated, limit, offset, parameter)
 		result = {}
 		for name, column in modelClass.meta :
 			result[name] = []
@@ -282,3 +287,6 @@ class DBSessionBase :
 	def generateDropCommand(self) :
 		for model in self.model.values() :
 			print("DROP TABLE IF EXISTS %s;"%(model.__fulltablename__))
+	
+	def processClause(self, clause:str, parameter:list) -> str:
+		return clause

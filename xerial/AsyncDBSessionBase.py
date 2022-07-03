@@ -28,15 +28,19 @@ class AsyncDBSessionBase (DBSessionBase) :
 			else :
 				await self.createConnection()
 	
-	async def count(self, modelClass, clause) :
+	async def count(self, modelClass:type, clause:str, parameter:list=None) -> int :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
 		query = self.generateCountQuery(modelClass, clause)
-		cursor = await self.executeRead(query)
+		cursor = await self.executeRead(query, parameter)
 		for i in cursor :
 			return i[0]
 
-	async def select(self, modelClass, clause, isRelated=False, limit=None, offset=None, isDebug=False) :
+	async def select(self, modelClass:type, clause:str, isRelated:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
-		cursor = await self.executeRead(query)
+		cursor = await self.executeRead(query, parameter)
 		result = []
 		for row in cursor :
 			record = modelClass()
@@ -50,8 +54,8 @@ class AsyncDBSessionBase (DBSessionBase) :
 			await self.selectChildren(modelClass, result)
 		return result
 	
-	async def selectTranspose(self, modelClass, clause, isRelated=False, limit=None, offset=None, isDebug=False) :
-		recordList = await self.select(modelClass, clause, isRelated, limit, offset)
+	async def selectTranspose(self, modelClass:type, clause:str, isRelated:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> dict :
+		recordList = await self.select(modelClass, clause, isRelated, limit, offset, parameter)
 		result = {}
 		for name, column in modelClass.meta :
 			result[name] = []

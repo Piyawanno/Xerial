@@ -30,27 +30,13 @@ class Choice (Record) :
 	def __repr__(self) -> str:
 		return f"{self.id} {self.choice} {self.count}"
 
-# config = {
-# 	"vendor" : Vendor.SQLITE,
-# 	"database" : "./example.sqlite.bin"
-# }
-
-# session = SQLiteDBSession(config)
-# session.connect()
-
-from xerial.OracleDBSession import OracleDBSession
 config = {
-	"vendor" : Vendor.ORACLE,
-	"host" : "localhost",
-	"port" : 1521,
-	"database" : "RedShip",
-	"user" : "admin",
-	"password" : "NotSecret#2475",
-	"domain" : "XEPDB1",
-	"owner" : ["ADMIN"],
+	"vendor" : Vendor.SQLITE,
+	"database" : "./example.sqlite.bin"
 }
 
-session = OracleDBSession(config)
+session = SQLiteDBSession(config)
+session.connect()
 session.connect()
 session.appendModel(Poll)
 session.appendModel(Choice)
@@ -83,5 +69,5 @@ pollID = poll.id
 print(poll)
 
 session.drop(poll)
-choiceList = session.select(Choice, f"WHERE poll={pollID}")
+choiceList = session.select(Choice, f"WHERE poll=?", parameter=[pollID])
 print(choiceList)

@@ -55,7 +55,6 @@ class MSSQLDBSession (DBSessionBase) :
 			modelClass.__fulltablename__,
 			clause, offsetClause, limitClause
 		)
-	
 
 	def prepareStatement(self, modelClass) :
 		if hasattr(modelClass, 'primaryMeta') :

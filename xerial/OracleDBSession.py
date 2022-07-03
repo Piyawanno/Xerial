@@ -46,6 +46,21 @@ class OracleDBSession (DBSessionBase) :
 	def closeConnection(self) :
 		self.connection.close()
 	
+	def processClause(self, clause: str, parameter:list) -> str:
+		n = 1
+		p = 0
+		processed = []
+		while True :
+			i = clause.find("?", p)
+			if i < 0 :
+				if p == 0 : return clause
+				else : break
+			processed.append(clause[p:i])
+			processed.append(f":{n}")
+			p = i+1
+			n = n+1
+		return "".join(processed)
+	
 	def prepareStatement(self, modelClass) :
 		if hasattr(modelClass, 'primaryMeta') :
 			primary = modelClass.primaryMeta

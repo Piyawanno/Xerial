@@ -32,27 +32,12 @@ class Choice (Record) :
 		return f"{self.id} {self.choice} {self.count}"
 
 async def runTest() :
-	# config = {
-	# 	"vendor" : Vendor.SQLITE,
-	# 	"database" : "./example.sqlite.bin"
-	# }
-
-	# session = AsyncSQLiteDBSession(config)
-	
-	from xerial.AsyncOracleDBSession import AsyncOracleDBSession
 	config = {
-		"vendor" : Vendor.ORACLE,
-		"host" : "localhost",
-		"port" : 1521,
-		"database" : "RedShip",
-		"user" : "admin",
-		"password" : "NotSecret#2475",
-		"domain" : "XEPDB1",
-		"owner" : ["ADMIN"],
+		"vendor" : Vendor.SQLITE,
+		"database" : "./example.sqlite.bin"
 	}
 
-
-	session = AsyncOracleDBSession(config)
+	session = AsyncSQLiteDBSession(config)
 	await session.connect()
 
 	session.appendModel(Poll)
@@ -86,7 +71,7 @@ async def runTest() :
 	print(poll)
 
 	await session.drop(poll)
-	choiceList = await session.select(Choice, f"WHERE poll={pollID}")
+	choiceList = await session.select(Choice, f"WHERE poll=?", parameter=[pollID])
 	print(choiceList)
 	await session.closeConnection()
 	return
