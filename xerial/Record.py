@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+
+from pyrsistent import s
 from xerial.Column import Column
 from xerial.Children import Children
 from xerial.Input import Input
@@ -8,11 +10,25 @@ from typing import List, Type
 
 class Record :
 	def __init__(self, **kw) :
-		for column, meta in self.meta :
+		modelClass = self.__class__
+		for child in modelClass.children :
+			setattr(self, child.name, [])
+		for column, meta in modelClass.meta :
 			setattr(self, column, kw.get(column, meta.default))
 
 	def toDict(self) -> dict:
 		result = {}
+		modelClass = self.__class__
+		for child in modelClass.children :
+			children = getattr(self, child.name)
+			if isinstance(children, list) :
+				result[child.name] = [i.toDict() for i in children]
+		
+		for foreignKey in modelClass.foreignKey :
+			linked = getattr(self, foreignKey.name)
+			if isinstance(linked, Record) :
+				result[foreignKey.name] = linked.toDict()
+
 		for column, meta in self.meta :
 			attribute = getattr(self, column)
 			if attribute is None :
@@ -22,13 +38,24 @@ class Record :
 		return result 
 
 	def fromDict(self, data:dict, isID:bool=False) :
-		for column, meta in self.meta :
+		modelClass = self.__class__
+		for child in modelClass.children :
+			raw = data.get(child.name, None)
+			if raw is not None and isinstance(raw, list) :
+				setattr(self, child.name, child.fromDict(raw))
+		
+		for foreignKey in modelClass.foreignKey :
+			raw = data.get(foreignKey.name, None)
+			if raw is not None and isinstance(raw, dict) :
+				setattr(self, foreignKey.name, foreignKey.fromDict(raw))
+
+		for column, meta in modelClass.meta :
 			if data is None :
 				setattr(self, column, None)
-			else :
+			elif meta.foreignKey is None :
 				setattr(self, column, meta.fromDict(data))
 		if isID :
-			self.id = data.get(column, 0)
+			self.id = data.get(modelClass.primary, 0)
 		return self
 	
 	def copy(self, other) :
@@ -82,6 +109,9 @@ class Record :
 	def extractMeta(modelClass) :
 		if not hasattr(modelClass, '__version__') :
 			modelClass.__version__ = '1.0'
+		if not hasattr(modelClass, '__is_mapper__') :
+			modelClass.__is_mapper__ = False
+		modelClass.isForeignChecked = False
 		primaryMeta = Record.checkPrimary(modelClass)
 		Record.extractAttribute(modelClass, primaryMeta)
 		Record.extractChildren(modelClass)
@@ -113,9 +143,8 @@ class Record :
 			if isinstance(attribute, Column) :
 				attribute.name = i
 				if attribute.foreignKey is not None :
-					if len(attribute.foreignKey) != 2 :
-						raise ValueError(f"Foreign key should be CLASSNAME.PrimaryKey. Check {modelClass}.{attribute.name}")
-					modelClass.foreignKey.append((i, attribute.foreignKey[0], attribute.foreignKey[1]))
+					attribute.foreignKey.name = i
+					modelClass.foreignKey.append(attribute.foreignKey)
 				if attribute.isPrimary :
 					if not hasattr(modelClass, 'primary') :
 						modelClass.primary = i

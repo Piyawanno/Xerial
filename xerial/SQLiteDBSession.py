@@ -74,6 +74,8 @@ class SQLiteDBSession (DBSessionBase) :
 				self.cursor.execute(query, parameter)
 			return self.cursor
 		except Exception as error :
+			print(query)
+			print(parameter)
 			logging.debug(query)
 			logging.debug(parameter)
 			self.closeConnection()
@@ -156,8 +158,10 @@ class SQLiteDBSession (DBSessionBase) :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
 		except Exception as error :
-			logging.debug(query)
-			logging.debug(valueList)
+			print(query)
+			print(valueList)
+			logging.error(query)
+			logging.error(valueList)
 			self.closeConnection()
 			self.connect()
 			raise error

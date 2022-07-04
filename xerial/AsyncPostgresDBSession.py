@@ -216,7 +216,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		await self.executeWrite(query)
 	
 	async def dropChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta()
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
@@ -224,7 +224,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			await self.executeWrite(query)
 
 	async def dropChildrenByID(self, recordID, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta()
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
 			query = f"DELETE FROM{self.schema}{table} WHERE {child.column}={recordID}"

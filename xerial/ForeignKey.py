@@ -1,4 +1,4 @@
-class Children :
+class ForeignKey :
 	def __init__(self, reference:str) :
 		self.reference = reference
 		splitted = reference.split(".")
@@ -6,6 +6,6 @@ class Children :
 		self.column = splitted[1]
 		self.name = None
 		self.model = None
-
-	def fromDict(self, data:list) :
-		return [self.model().fromDict(i) for i in data]
+	
+	def fromDict(self, data:dict) :
+		return self.model().fromDict(data)

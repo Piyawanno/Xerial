@@ -78,14 +78,16 @@ class AsyncDBSessionBase (DBSessionBase) :
 	
 	async def selectChildren(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		primary = modelClass.primary
 		keyList = [str(getattr(i, primary)) for i in recordList]
 		joined = ','.join(keyList)
 		childrenMap = {}
+		childrenFlattedMap = {}
 		for child in modelClass.children :
 			clause = f"WHERE {child.column} IN ({joined})"
 			childRecord = await self.select(child.model, clause, False)
+			childrenFlattedMap[child.name] = childRecord
 			columnMap = {}
 			childrenMap[child.name] = columnMap
 			for record in childRecord :
@@ -95,12 +97,26 @@ class AsyncDBSessionBase (DBSessionBase) :
 				childrenList.append(record)
 		
 		for child in modelClass.children :
+			if not child.model.__is_mapper__ : continue
+			childRecordList = childrenFlattedMap[child.name]
+
+			for foreignKey in child.model.foreignKey :
+				if foreignKey.model == modelClass : continue
+				keyList = {str(getattr(i, foreignKey.name)) for i in childRecordList}
+				joined = ",".join(list(keyList))
+				linkedList = await self.select(foreignKey.model, f"WHERE {foreignKey.column} IN ({joined})", False)
+				linkedMap = {getattr(i, foreignKey.model.primary):i for i in linkedList}
+				for childRecord in childRecordList :
+					key = getattr(childRecord, foreignKey.name)
+					setattr(childRecord, foreignKey.name, linkedMap.get(key, None))
+		
+		for child in modelClass.children :
 			for record in recordList :
 				primary = getattr(record, modelClass.primary)
 				setattr(record, child.name, childrenMap[child.name].get(primary, []))
 
 	async def insertChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			childRecordList = getattr(record, child.name)
@@ -110,7 +126,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 			await self.insertMultiple(childRecordList)
 	
 	async def updateChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
 			childRecordList = getattr(record, child.name)
 			if len(childRecordList) == 0 : continue
@@ -118,7 +134,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 				await self.update(childRecord)
 	
 	async def dropChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
@@ -126,12 +142,11 @@ class AsyncDBSessionBase (DBSessionBase) :
 			await self.executeWrite(query)
 
 	async def dropChildrenByID(self, recordID, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
 			query = f"DELETE FROM {table} WHERE {child.column}={recordID}"
 			await self.executeWrite(query)
-
 
 	async def createConnection(self) :
 		pass

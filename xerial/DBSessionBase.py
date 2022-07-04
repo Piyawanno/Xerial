@@ -74,6 +74,10 @@ class DBSessionBase :
 		Record.setVendor(modelClass, self.vendor)
 		self.prepareStatement(modelClass)
 	
+	def checkModelLinking(self) :
+		for modelClass in self.model.values() :
+			self.checkLinkingMeta(modelClass)
+	
 	def checkModification(self, modelClass, currentVersion) :
 		modificationList = self.generateModification(modelClass, currentVersion)
 		lastVersion = currentVersion
@@ -185,7 +189,7 @@ class DBSessionBase :
 				value.append(None)
 			elif isinstance(attribute, Record) :
 				value.append(column.getReference(attribute))
-			if isinstance(attribute, Enum) :
+			elif isinstance(attribute, Enum) :
 				value.append(attribute.value)
 			else :
 				value.append(attribute)
@@ -193,26 +197,28 @@ class DBSessionBase :
 	
 	def selectRelated(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
-		isMapper = hasattr(modelClass, '__is_mapper__') and modelClass.__is_mapper__
-		for attribute, table, primary in modelClass.foreignKey :
-			keyList = [str(getattr(i, attribute)) for i in recordList]
-			clause = "WHERE %s IN(%s)"%(primary, ",".join(keyList))
-			related = self.select(self.model[table], clause, isMapper)
-			relatedMap = {getattr(i, primary):i for i in related}
+		isMapper = modelClass.__is_mapper__
+		for foreignKey in modelClass.foreignKey :
+			keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
+			clause = "WHERE %s IN(%s)"%(foreignKey.column, ",".join(list(keyList)))
+			related = self.select(foreignKey.model, clause, isMapper)
+			relatedMap = {getattr(i, foreignKey.column):i for i in related}
 			for record in recordList :
-				value = getattr(record, attribute)
-				setattr(record, attribute, relatedMap.get(value, value))
+				value = getattr(record, foreignKey.name)
+				setattr(record, foreignKey.name, relatedMap.get(value, value))
 	
 	def selectChildren(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		primary = modelClass.primary
-		keyList = [str(getattr(i, primary)) for i in recordList]
-		joined = ','.join(keyList)
+		keyList = {str(getattr(i, primary)) for i in recordList}
+		joined = ','.join(list(keyList))
 		childrenMap = {}
+		childrenFlattedMap = {}
 		for child in modelClass.children :
 			clause = f"WHERE {child.column} IN ({joined})"
 			childRecord = self.select(child.model, clause, False)
+			childrenFlattedMap[child.name] = childRecord
 			columnMap = {}
 			childrenMap[child.name] = columnMap
 			for record in childRecord :
@@ -222,22 +228,37 @@ class DBSessionBase :
 				childrenList.append(record)
 		
 		for child in modelClass.children :
+			if not child.model.__is_mapper__ : continue
+			childRecordList = childrenFlattedMap[child.name]
+
+			for foreignKey in child.model.foreignKey :
+				if foreignKey.model == modelClass : continue
+				keyList = {str(getattr(i, foreignKey.name)) for i in childRecordList}
+				joined = ",".join(list(keyList))
+				linkedList = self.select(foreignKey.model, f"WHERE {foreignKey.column} IN ({joined})", False)
+				linkedMap = {getattr(i, foreignKey.model.primary):i for i in linkedList}
+				for childRecord in childRecordList :
+					key = getattr(childRecord, foreignKey.name)
+					setattr(childRecord, foreignKey.name, linkedMap.get(key, None))
+
+		for child in modelClass.children :
 			for record in recordList :
 				primary = getattr(record, modelClass.primary)
 				setattr(record, child.name, childrenMap[child.name].get(primary, []))
 	
 	def insertChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			childRecordList = getattr(record, child.name)
+			if not isinstance(childRecordList, list) : continue
 			if len(childRecordList) == 0 : continue
 			for childRecord in childRecordList :
 				setattr(childRecord, child.column, primary)
 			self.insertMultiple(childRecordList)
 	
 	def updateChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
 			childRecordList = getattr(record, child.name)
 			if len(childRecordList) == 0 : continue
@@ -245,7 +266,7 @@ class DBSessionBase :
 				self.update(childRecord)
 	
 	def dropChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
@@ -253,11 +274,17 @@ class DBSessionBase :
 			self.executeWrite(query)
 
 	def dropChildrenByID(self, recordID, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
 			query = f"DELETE FROM {table} WHERE {child.column}={recordID}"
 			self.executeWrite(query)
+		
+	def checkLinkingMeta(self, modelClass) :
+		if not modelClass.isChildrenChecked :
+			self.checkChildren(modelClass)
+		if not modelClass.isForeignChecked :
+			self.checkForeignKey(modelClass)
 
 	def checkChildren(self, modelClass) :
 		for child in modelClass.children :
@@ -267,6 +294,15 @@ class DBSessionBase :
 					raise ValueError(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
 				child.model = childModelClass
 		modelClass.isChildrenChecked = True
+	
+	def checkForeignKey(self, modelClass) :
+		for foreignKey in modelClass.foreignKey :
+			if foreignKey.model is None :
+				model = self.model.get(foreignKey.modelName, None)
+				if model is None :
+					raise ValueError(f"ForeignKey model {foreignKey.reference} for {modelClass.__name__} cannot be found.")
+				foreignKey.model = model
+		modelClass.isForeignChecked = True
 	
 	def getPrimaryClause(self, record) :
 		modelClass = record.__class__

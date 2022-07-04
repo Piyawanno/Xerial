@@ -271,7 +271,7 @@ class PostgresDBSession (DBSessionBase) :
 		self.executeWrite(query)
 	
 	def dropChildren(self, record, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
@@ -279,7 +279,7 @@ class PostgresDBSession (DBSessionBase) :
 			self.executeWrite(query)
 
 	def dropChildrenByID(self, recordID, modelClass) :
-		if not modelClass.isChildrenChecked : self.checkChildren(modelClass)
+		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__
 			query = f"DELETE FROM{self.schema}{table} WHERE {child.column}={recordID}"

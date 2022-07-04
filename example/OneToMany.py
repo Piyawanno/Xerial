@@ -1,4 +1,3 @@
-from pydoc import describe
 from xerial.SQLiteDBSession import SQLiteDBSession
 from xerial.Vendor import Vendor
 from xerial.Record import Record
@@ -36,7 +35,6 @@ config = {
 }
 
 session = SQLiteDBSession(config)
-session.connect()
 session.connect()
 session.appendModel(Poll)
 session.appendModel(Choice)
