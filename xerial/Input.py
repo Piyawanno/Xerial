@@ -1,13 +1,25 @@
-from packaging import version
+from packaging.version import Version
 
 class Input :
-	def __init__(self, label:str, order:str=None, isTable:bool=False, isSearch:bool=False, isRequired:bool=False):
+	def __init__(self,
+			label:str,
+			order:str=None,
+			group:int=None,
+			isTable:bool=False,
+			isSearch:bool=False,
+			isRequired:bool=False,
+			isEditable:bool=True,
+			help:str=None
+		):
 		self.label = label
 		self.order = order
+		self.group = group
 		self.isTable = isTable
 		self.isSearch = isSearch
 		self.isRequired = isRequired
-		self.parsedOrder = version.parse(order) if order is not None else None
+		self.isEditable = isEditable
+		self.help = help
+		self.parsedOrder = Version(order) if order is not None else None
 		self.typeName = ''
 		self.columnName = ''
 		self.columnType = ''
@@ -18,9 +30,12 @@ class Input :
 			'columnType' : self.columnType,
 			'label' : self.label,
 			'order' : self.order,
+			'group' : self.group,
 			'isTable' : self.isTable,
 			'isSearch' : self.isSearch,
 			'isRequired' : self.isRequired,
+			'isEditable' : self.isEditable,
+			'help' : self.help,
 			'typeName' : self.typeName
 		}
 	

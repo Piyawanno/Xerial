@@ -62,3 +62,13 @@ if __name__ == '__main__' :
 		}
 	]
 	Human = generator.append('Human', attributeList)
+	# RollPaper = {
+	# 	'name' : 'typeRecordID',
+	# 	'type' : ColumnType.INTEGER,
+	# 	'isIndex' : True
+	# },
+	# {
+	# 	'name' : 'isDrop',
+	# 	'type' : ColumnType.INTEGER,
+	# 	'isIndex' : True
+	# }

@@ -1,11 +1,10 @@
 from dataclasses import dataclass
 
-from pyrsistent import s
 from xerial.Column import Column
 from xerial.Children import Children
 from xerial.Input import Input
 from xerial.Modification import Modification
-from packaging import version
+from packaging.version import Version
 from typing import List, Type
 
 class Record :
@@ -43,20 +42,33 @@ class Record :
 			raw = data.get(child.name, None)
 			if raw is not None and isinstance(raw, list) :
 				setattr(self, child.name, child.fromDict(raw))
-		
+			
 		for foreignKey in modelClass.foreignKey :
 			raw = data.get(foreignKey.name, None)
-			if raw is not None and isinstance(raw, dict) :
-				setattr(self, foreignKey.name, foreignKey.fromDict(raw))
+			if raw is not None :
+				if isinstance(raw, dict) :
+					setattr(self, foreignKey.name, foreignKey.fromDict(raw))
+				else : setattr(self, foreignKey.name, int(raw))
 
 		for column, meta in modelClass.meta :
+			raw = data.get(column, None)
 			if data is None :
 				setattr(self, column, None)
-			elif meta.foreignKey is None :
+			elif meta.foreignKey is None and isinstance(raw, dict) :
+				setattr(self, column, meta.fromDict(raw))
+			elif meta.foreignKey is None:
 				setattr(self, column, meta.fromDict(data))
 		if isID :
 			self.id = data.get(modelClass.primary, 0)
 		return self
+	
+	def dereference(self) :
+		modelClass = self.__class__
+		for foreignKey in modelClass.foreignKey :
+			linked = getattr(self, foreignKey.name)
+			if linked is None : continue
+			if isinstance(linked, Record) :
+				setattr(self, foreignKey.name, getattr(linked, foreignKey.model.primary))
 	
 	def copy(self, other) :
 		for column, meta in self.meta :
@@ -96,7 +108,7 @@ class Record :
 			if input is None : continue
 			if input.order is None :
 				input.order = f'{order}.0'
-				input.parsedOrder = version.parse(input.order)
+				input.parsedOrder = Version(input.order)
 			input.columnType = attribute.__class__.__name__
 			input.columnName = i
 			inputList.append(input)
@@ -157,6 +169,7 @@ class Record :
 						primaryMeta = [primaryMeta]
 				modelClass.meta.append((i, attribute))
 				setattr(modelClass, i, attribute.default)
+		modelClass.metaMap = {k:v for k, v in modelClass.meta}
 		if primaryMeta is not None :
 			modelClass.primaryMeta = primaryMeta
 	

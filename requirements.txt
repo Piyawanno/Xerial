@@ -7,3 +7,6 @@ asyncpg
 aiosqlite
 pyodbc
 aioodbc
+shapely
+packaging
+tabulate

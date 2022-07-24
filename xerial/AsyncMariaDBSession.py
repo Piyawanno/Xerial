@@ -126,8 +126,13 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 	
-	async def insertMultiple(self, recordList, isAutoID=True) :
+	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
+		if isAutoID and isReturningID :
+			keyList = []
+			for record in recordList :
+				keyList.append(await self.insert(record))
+			return keyList
 		valueList = []
 		modelClass = None
 		hasChildren = False

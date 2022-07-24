@@ -1,10 +1,9 @@
-from pyrsistent import s
 from xerial.Column import Column
 from xerial.Record import Record
 from xerial.IntegerColumn import IntegerColumn
 from xerial.RoundRobinConnector import RoundRobinConnector
 from enum import Enum
-from packaging import version
+from packaging.version import Version
 
 import logging
 
@@ -44,10 +43,10 @@ class DBSessionBase :
 	def executeWrite(self, query, parameter=None) :
 		pass
 	
-	def insert(self, record) :
+	def insert(self, record, isAutoID=True) :
 		pass
 	
-	def insertMultiple(self, recordList) :
+	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		pass
 	
 	def update(self, record) :
@@ -88,7 +87,7 @@ class DBSessionBase :
 		return str(lastVersion)
 
 	def generateModification(self, modelClass, currentVersion) :
-		currentVersion = version.parse(currentVersion)
+		currentVersion = Version(currentVersion)
 		queryList = []
 		record = modelClass.__new__(modelClass)
 		record.modify()
@@ -197,6 +196,7 @@ class DBSessionBase :
 	
 	def selectRelated(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
+		self.checkLinkingMeta(modelClass)
 		isMapper = modelClass.__is_mapper__
 		for foreignKey in modelClass.foreignKey :
 			keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
@@ -291,7 +291,7 @@ class DBSessionBase :
 			if child.model is None :
 				childModelClass = self.model.get(child.modelName, None)
 				if childModelClass is None :
-					raise ValueError(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
+					logging.warning(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
 				child.model = childModelClass
 		modelClass.isChildrenChecked = True
 	
@@ -300,7 +300,7 @@ class DBSessionBase :
 			if foreignKey.model is None :
 				model = self.model.get(foreignKey.modelName, None)
 				if model is None :
-					raise ValueError(f"ForeignKey model {foreignKey.reference} for {modelClass.__name__} cannot be found.")
+					logging.warning(f"ForeignKey model {foreignKey.reference} for {modelClass.__name__} cannot be found.")
 				foreignKey.model = model
 		modelClass.isForeignChecked = True
 	

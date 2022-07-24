@@ -70,16 +70,31 @@ class AsyncDBSessionPool (DBSessionPool) :
 		path = list(module.__path__)[0]
 		baseName = module.__name__
 		for i in os.listdir(path) :
-			if i[-3:] != '.py' or i == "__init__.py" or os.path.isdir("%s/%s"%(path, i)) : continue
-			name = i[:-3]
-			try :
-				module = importlib.import_module('%s.%s'%(baseName, name))
-				modelClass = getattr(module, name)
-				if issubclass(modelClass, Record) :
-					session.appendModel(modelClass)
-			except Exception as error :
-				logging.error(traceback.format_exc())
-				raise error
+			if os.path.isdir("%s/%s"%(path, i)) and os.path.isfile(f"{path}/{i}/__init__.py") :
+				for j in os.listdir("%s/%s"%(path, i)) :
+					if j[-3:] != '.py' or j == "__init__.py" or os.path.isdir("%s/%s/%s"%(path, i,j)) : pass
+					else:
+						name = j[:-3]
+						try :
+							module = importlib.import_module('%s.%s.%s'%(baseName,i, name))
+							modelClass = getattr(module, name)
+							if issubclass(modelClass, Record) :
+								session.appendModel(modelClass)
+						except Exception as error :
+							logging.error(traceback.format_exc())
+							raise error
+
+			elif i[-3:] != '.py' or i == "__init__.py" or os.path.isdir("%s/%s"%(path, i)) : continue
+			else:
+				name = i[:-3]
+				try :
+					module = importlib.import_module('%s.%s'%(baseName, name))
+					modelClass = getattr(module, name)
+					if issubclass(modelClass, Record) :
+						session.appendModel(modelClass)
+				except Exception as error :
+					logging.error(traceback.format_exc())
+					raise error
 
 	@staticmethod
 	async def connect(config) :

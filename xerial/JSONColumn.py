@@ -4,11 +4,12 @@ from xerial.Vendor import Vendor
 import json
 
 class JSONColumn (Column) :
-	def __init__(self, isNotNull=False, default=None) :
+	def __init__(self, isNotNull=False, default=None, input=None) :
 		Column.__init__(self,
 			isPrimary=False,
 			isNotNull=isNotNull,
 			default=default,
+			input=input
 		)
 
 	def toDict(self, attribute):

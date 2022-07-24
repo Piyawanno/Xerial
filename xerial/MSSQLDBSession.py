@@ -161,8 +161,10 @@ class MSSQLDBSession (DBSessionBase) :
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 	
-	def insertMultiple(self, recordList, isAutoID=True) :
+	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
+		if isAutoID and isReturningID :
+			return [self.insert(record) for record in recordList]
 		valueList = []
 		modelClass = None
 		hasChildren = False

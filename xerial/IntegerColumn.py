@@ -27,9 +27,10 @@ class IntegerColumn (Column) :
 
 	def fromDict(self, data) :
 		raw = data.get(self.name, self.default)
+		if raw == "": raw = self.default
 		if raw is None :
 			return None
-		else :
+		else : 
 			result = int(raw)
 			if self.isBigInt :
 				if result > __BIG_INT_ULIMIT__ or result < __BIG_INT_LLIMIT__ :

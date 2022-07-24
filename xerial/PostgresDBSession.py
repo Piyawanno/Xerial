@@ -202,8 +202,10 @@ class PostgresDBSession (DBSessionBase) :
 				modelClass.__all_parameter__
 			)
 
-	def insertMultiple(self, recordList, isAutoID=True) :
+	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
+		if isAutoID and isReturningID :
+			return [self.insert(record) for record in recordList]
 		valueList = []
 		modelClass = None
 		for record in recordList :

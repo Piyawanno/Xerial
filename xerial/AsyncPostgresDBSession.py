@@ -46,6 +46,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			meta = modelClass.meta
 		modelClass.__select_column__ = ", ".join([i[0].lower() for i in modelClass.meta])
 		modelClass.__insert_column__ = ", ".join([i[0].lower() for i in meta ])
+		modelClass.__insert_record_column__ = ", ".join([f"r.{i[0].lower()}" for i in meta ])
 		modelClass.__insert_column_list__ = [i[0].lower() for i in meta ]
 		modelClass.__insert_parameter__ = ", ".join(["$%d"%(i+1) for i, m in enumerate(meta)])
 		modelClass.__all_column__ = ", ".join([i[0].lower() for i in modelClass.meta])
@@ -149,8 +150,13 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 
-	async def insertMultiple(self, recordList, isAutoID=True) :
+	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
+		if isAutoID and isReturningID :
+			keyList = []
+			for record in recordList :
+				keyList.append(await self.insert(record))
+			return keyList
 		valueList = []
 		modelClass = None
 		hasChildren = False
@@ -177,10 +183,23 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			)
 		except Exception as error :
 			logging.debug(valueList)
-			self.closeConnection()
-			self.connect()
+			await self.closeConnection()
+			await self.connect()
 			raise error
 	
+	def generateInsertMultipleQuery(self, modelClass, isAutoID=True) :
+		if isAutoID :
+			return ''.join([
+				f"INSERT INTO {self.schema}{modelClass.__fulltablename__}",
+				f"({modelClass.__insert_column__}) (",
+				f"SELECT {modelClass.__insert_record_column__} FROM ",
+				f"unnest($1::{self.schema}{modelClass.__fulltablename__}[]) as r",
+				f") RETURNING {modelClass.primary}"
+			])
+		else :
+			return f"INSERT INTO {self.schema}{modelClass.__fulltablename__}({modelClass.__all_column__}) VALUES %s"
+
+
 	async def update(self, record) :
 		modelClass = record.__class__
 		value = self.getRawValue(record)
@@ -216,7 +235,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		await self.executeWrite(query)
 	
 	async def dropChildren(self, record, modelClass) :
-		self.checkLinkingMeta()
+		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			table = child.model.__fulltablename__

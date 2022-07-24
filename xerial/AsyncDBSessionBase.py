@@ -67,14 +67,16 @@ class AsyncDBSessionBase (DBSessionBase) :
 	
 	async def selectRelated(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
-		for attribute, table, primary in modelClass.foreignKey :
-			keyList = [str(getattr(i, attribute)) for i in recordList]
-			clause = "WHERE %s IN(%s)"%(primary, ",".join(keyList))
-			related = await self.select(self.model[table], clause, False)
-			relatedMap = {getattr(i, primary):i for i in related}
+		self.checkLinkingMeta(modelClass)
+		isMapper = modelClass.__is_mapper__
+		for foreignKey in modelClass.foreignKey :
+			keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
+			clause = "WHERE %s IN(%s)"%(foreignKey.column, ",".join(list(keyList)))
+			related = await self.select(foreignKey.model, clause, isMapper)
+			relatedMap = {getattr(i, foreignKey.column):i for i in related}
 			for record in recordList :
-				value = getattr(record, attribute)
-				setattr(record, attribute, relatedMap.get(value, value))
+				value = getattr(record, foreignKey.name)
+				setattr(record, foreignKey.name, relatedMap.get(value, value))
 	
 	async def selectChildren(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
@@ -160,10 +162,10 @@ class AsyncDBSessionBase (DBSessionBase) :
 	async def executeWrite(self, query, parameter=None) :
 		pass
 	
-	async def insert(self, record) :
+	async def insert(self, record, isAutoID=True) :
 		pass
 	
-	async def insertMultiple(self, recordList) :
+	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		pass
 	
 	async def update(self, record) :

@@ -1,6 +1,6 @@
 from xerial.Input import Input
 
-class DateTimeInput (Input):
+class TimeSpanInput (Input):
 	def __init__(self,
 			label:str,
 			order:str=None,
@@ -12,4 +12,4 @@ class DateTimeInput (Input):
 			help:str=None,
 		) :
 		Input.__init__(self, label, order, group, isTable, isSearch, isRequired, isEditable, help)
-		self.typeName = 'DateTime'
+		self.typeName = 'TimeSpan'

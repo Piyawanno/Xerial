@@ -1,6 +1,6 @@
 from xerial.Input import Input
 
-class FileInput (Input):
+class FileMatrixInput (Input):
 	def __init__(self,
 			label:str,
 			order:str=None,
@@ -9,13 +9,11 @@ class FileInput (Input):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isPreview:bool=False,
-			isEditable:bool=True,
-			help:str=None,
 			path:str=None,
 			uploadURL:str=None,
 		) :
-		Input.__init__(self, label, order, group, isTable, isSearch, isRequired, isEditable, help)
-		self.typeName = 'File',
+		Input.__init__(self, label, order, group, isTable, isSearch, isRequired)
+		self.typeName = 'FileMatrix',
 		self.isPreview = isPreview
 		self.path = path
 		self.uploadURL = uploadURL

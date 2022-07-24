@@ -3,7 +3,7 @@ from xerial.ModificationType import ModificationType
 from xerial.StringColumn import StringColumn
 from xerial.Vendor import Vendor
 from typing import List
-from packaging import version as pversion
+from packaging.version import Version
 
 def generateColumn(column) :
 	notNull = "NOT NULL" if column.isNotNull else ""
@@ -72,7 +72,7 @@ __GENERATOR__ = {
 
 class Modification :
 	def __init__(self, version:str, table:str, meta:list, vendor:Vendor) :
-		self.version = pversion.parse(version)
+		self.version = Version(version)
 		self.table = table
 		self.meta = {k:v for k, v in meta}
 		self.vendor = vendor
