@@ -6,6 +6,7 @@ from xerial.DateColumn import DateColumn
 from xerial.DateTimeColumn import DateTimeColumn
 from xerial.TimeColumn import TimeColumn
 from xerial.DayIntervalColumn import DayIntervalColumn
+from xerial.JSONColumn import JSONColumn
 
 class ColumnType (IntEnum) :
 	INTEGER = 11
@@ -15,6 +16,7 @@ class ColumnType (IntEnum) :
 	DATE_TIME = 32
 	TIME = 33
 	DAY_INTERVAL = 34
+	JSON = 40
 
 ColumnType.mapped = {
 	ColumnType.INTEGER:IntegerColumn,
@@ -24,4 +26,5 @@ ColumnType.mapped = {
 	ColumnType.DATE_TIME:DateTimeColumn,
 	ColumnType.TIME:TimeColumn,
 	ColumnType.DAY_INTERVAL:DayIntervalColumn,
+	ColumnType.JSON:JSONColumn,
 }
