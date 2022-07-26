@@ -185,3 +185,5 @@ class Person (Record) :
 	def __repr__(self) -> str:
 		return f"{self.id} {self.name} {self.surname} {self.age}"
 ```
+
+## Inserting Data
