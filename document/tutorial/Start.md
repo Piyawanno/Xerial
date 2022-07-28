@@ -187,3 +187,84 @@ class Person (Record) :
 ```
 
 ## Inserting Data
+
+To insert data, you can create an instance of Record, assign its attributes
+and call method `session.insert()`.
+
+```python
+person = Person()
+person.name = "Kittipong"
+person.surname = "Piyawanno"
+person.address = "Earth"
+person.age = 10_000
+
+session.insert(person)
+```
+
+Note that Xerial applies auto-commit and the primary key `person.id`
+must not be assigned. After inserting data, it will be automatically
+generated from database. Hence, by printing out `person.id`,
+you will get the result :
+
+```python
+print(f"person.id : {person.id}")
+```
+
+```bash
+$ python3 Basic.py
+person.id : 1
+```
+
+If you want to manually assign primary key, you can set parameter
+`isAutoID=False` by calling `session.insert()` :
+
+```python
+person = Person()
+person.id = 2
+person.name = "David"
+person.surname = "Bowie"
+person.address = "Mars"
+person.age = 15_000
+
+session.insert(person, isAutoID=False)
+```
+
+For the modern Web-based Application, web-server will usually get
+data in form of JSON. You can assign attribute of instance of Record
+using JSON by calling `fromDict` method.
+
+```python
+person = Person().fromDict({
+	"name" : "Kurt",
+	"surname" : "Cobain",
+	"address" : "In Utero",
+	"age" : 20_000
+})
+
+session.insert(person)
+```
+
+Note that method `fromDict` will return the object itself. This can be useful
+for applying list comprehension, which can be used with method
+`session.insertMultiple()` to insert multiple objects at the same time.
+
+```python
+session.insertMultiple([Person().fromDict(i) for i in data])
+```
+
+By default, `session.insertMultiple()` will not assign primary key to each object.
+However, it has a significant better performance than `session.insert()`.
+In some case, we can get performance gain of 10-20 time. Our recommendation :
+Use `session.insertMultiple()` for massive data insertion without returning of
+primary key. If you have to use primary key, you can set parameter
+`isReturningID=True`. But note that, it is the same as calling `session.insert()`
+for multiple time and no performance gain can be retrieved.
+
+```python
+session.insertMultiple([Person().fromDict(i) for i in data], isReturningID=True)
+```
+
+More over, like `session.insert()`, parameter `isAutoID=False` can also
+set to `session.insertMultiple()`.
+
+# Query data
