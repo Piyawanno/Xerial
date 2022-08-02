@@ -94,11 +94,13 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 			parameter.append(insertedID)
 		await self.executeWrite(query, parameter)
 		if not isAutoID :
-			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				await self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
 			lastRow = insertedID.values[0][0]
 			setattr(record, modelClass.primary, lastRow)
-			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				await self.insertChildren(record, modelClass)
 			return lastRow
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
@@ -135,7 +137,8 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 		value = self.getRawValue(record)
 		await self.executeWrite(self.generateUpdate(record), value)
 		modelClass = record.__class__
-		if len(modelClass.children) : await self.updateChildren(record, modelClass)
+		if len(modelClass.children) :
+			await self.updateChildren(record, modelClass)
 	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)

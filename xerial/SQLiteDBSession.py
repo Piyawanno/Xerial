@@ -114,10 +114,12 @@ class SQLiteDBSession (DBSessionBase) :
 		value = self.getRawValue(record, isAutoID)
 		cursor = self.executeWrite(query, value)
 		if not isAutoID :
-			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
 			setattr(record, modelClass.primary, self.cursor.lastrowid)
-			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
 			return cursor.lastrowid
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
@@ -173,7 +175,8 @@ class SQLiteDBSession (DBSessionBase) :
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
-		if len(modelClass.children) : self.updateChildren(record, modelClass)
+		if len(modelClass.children) :
+			self.updateChildren(record, modelClass)
 
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__

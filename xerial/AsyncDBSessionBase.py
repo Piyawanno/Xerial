@@ -123,17 +123,27 @@ class AsyncDBSessionBase (DBSessionBase) :
 		for child in modelClass.children :
 			childRecordList = getattr(record, child.name)
 			if len(childRecordList) == 0 : continue
+			if not isinstance(childRecordList, list) : continue
 			for childRecord in childRecordList :
 				setattr(childRecord, child.column, primary)
 			await self.insertMultiple(childRecordList)
 	
 	async def updateChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)
+		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			childRecordList = getattr(record, child.name)
 			if len(childRecordList) == 0 : continue
+			if not isinstance(childRecordList, list) : continue
+			insertList = []
 			for childRecord in childRecordList :
-				await self.update(childRecord)
+				childID = getattr(childRecord, child.model.primary, None)
+				if childID is not None :
+					await self.update(childRecord)
+				else :
+					insertList.append(childRecord)
+					setattr(childRecord, child.column, primary)
+			await self.insertMultiple(insertList)
 	
 	async def dropChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)

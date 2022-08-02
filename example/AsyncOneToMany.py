@@ -64,6 +64,8 @@ async def runTest() :
 	print(poll)
 
 	poll.choices[-1].choice = "Sun is a star not a planet."
+	poll.choices.append(Choice().fromDict({"choice" : "Pluto"}),)
+	
 	await session.update(poll)
 	pollList:List[Poll] = await session.select(Poll, "ORDER BY id DESC", isRelated=True, limit=1)
 	poll = pollList[0]

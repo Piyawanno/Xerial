@@ -140,12 +140,14 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		value = self.getRawValue(record, isAutoID)
 		result = await self.executeWrite(query, value)
 		if not isAutoID :
-			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				await self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
 			if len(result) :
 				key = result[0][0]
 				setattr(record, modelClass.primary, key)
-				if len(modelClass.children) : await self.insertChildren(record, modelClass)
+				if len(modelClass.children) :
+					await self.insertChildren(record, modelClass)
 				return key
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
@@ -205,7 +207,8 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		await self.executeWrite(query, value)
-		if len(modelClass.children) : await self.updateChildren(record, modelClass)
+		if len(modelClass.children) :
+			await self.updateChildren(record, modelClass)
 	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)

@@ -152,11 +152,13 @@ class MSSQLDBSession (DBSessionBase) :
 		if not isAutoID and modelClass.__is_increment__ :
 			self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
 		elif not isAutoID :
-			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
 			insertedID = cursor.fetchone()[0]
 			setattr(record, modelClass.primary, insertedID)
-			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
 			return insertedID
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
@@ -221,7 +223,8 @@ class MSSQLDBSession (DBSessionBase) :
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
-		if len(modelClass.children) : self.updateChildren(record, modelClass)
+		if len(modelClass.children) :
+			self.updateChildren(record, modelClass)
 	
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__

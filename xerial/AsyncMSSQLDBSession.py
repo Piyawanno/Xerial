@@ -99,11 +99,13 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 		if not isAutoID and modelClass.__is_increment__ :
 			await self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
 		elif not isAutoID :
-			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				await self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
 			insertedID = await cursor.fetchone()
 			setattr(record, modelClass.primary, insertedID[0])
-			if len(modelClass.children) : await self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				await self.insertChildren(record, modelClass)
 			return insertedID[0]
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
@@ -152,7 +154,8 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 		modelClass = record.__class__
 		query = self.generateUpdateQuery(record)
 		await self.executeWrite(query, value)
-		if len(modelClass.children) : await self.updateChildren(record, modelClass)
+		if len(modelClass.children) :
+			await self.updateChildren(record, modelClass)
 	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)

@@ -156,11 +156,13 @@ class OracleDBSession (DBSessionBase) :
 			parameter.append(insertedID)
 		self.executeWrite(query, parameter)
 		if not isAutoID :
-			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
 			lastRow = insertedID.values[0][0]
 			setattr(record, modelClass.primary, lastRow)
-			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
 			return lastRow
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
@@ -221,7 +223,8 @@ class OracleDBSession (DBSessionBase) :
 		value = self.getRawValue(record)
 		self.executeWrite(self.generateUpdate(record), value)
 		modelClass = record.__class__
-		if len(modelClass.children) : self.updateChildren(record, modelClass)
+		if len(modelClass.children) :
+			self.updateChildren(record, modelClass)
 	
 	def generateUpdate(self, record) :
 		modelClass = record.__class__

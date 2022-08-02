@@ -10,12 +10,15 @@ from typing import List, Type
 class Record :
 	def __init__(self, **kw) :
 		modelClass = self.__class__
+		if not hasattr(modelClass, 'meta') :
+			Record.extractMeta(modelClass)
 		for child in modelClass.children :
 			setattr(self, child.name, [])
 		for column, meta in modelClass.meta :
 			setattr(self, column, kw.get(column, meta.default))
 
-	def toDict(self) -> dict:
+	def toDict(self) -> dict :
+		if hasattr(self, '__raw__') : return self.__raw__
 		result = {}
 		modelClass = self.__class__
 		for child in modelClass.children :
@@ -25,15 +28,18 @@ class Record :
 		
 		for foreignKey in modelClass.foreignKey :
 			linked = getattr(self, foreignKey.name)
-			if isinstance(linked, Record) :
-				result[foreignKey.name] = linked.toDict()
+			if isinstance(linked, Record) and linked != self:
+				if not hasattr(linked, '__raw__') :
+					linked.__raw__ = linked.toDict()
+				result[foreignKey.name] = linked.__raw__
 
 		for column, meta in self.meta :
 			attribute = getattr(self, column)
 			if attribute is None :
 				result[column] = None
-			else :
+			elif meta != self :
 				result[column] = meta.toDict(attribute)
+		self.__raw__ = result
 		return result 
 
 	def fromDict(self, data:dict, isID:bool=False) :

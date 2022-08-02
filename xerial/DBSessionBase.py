@@ -68,8 +68,9 @@ class DBSessionBase :
 		self.model[modelClass.__name__] = modelClass
 		if hasattr(modelClass, 'meta') : return
 		self.checkTableName(modelClass)
+		if not hasattr(modelClass, 'meta') :
+			Record.extractMeta(modelClass)
 		Record.extractInput(modelClass)
-		Record.extractMeta(modelClass)
 		Record.setVendor(modelClass, self.vendor)
 		self.prepareStatement(modelClass)
 	
@@ -259,11 +260,20 @@ class DBSessionBase :
 	
 	def updateChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)
+		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
 			childRecordList = getattr(record, child.name)
+			if not isinstance(childRecordList, list) : continue
 			if len(childRecordList) == 0 : continue
+			insertList = []
 			for childRecord in childRecordList :
-				self.update(childRecord)
+				childID = getattr(childRecord, child.model.primary, None)
+				if childID is not None :
+					self.update(childRecord)
+				else :
+					insertList.append(childRecord)
+					setattr(childRecord, child.column, primary)
+			self.insertMultiple(insertList)
 	
 	def dropChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)

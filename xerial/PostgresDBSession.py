@@ -165,13 +165,15 @@ class PostgresDBSession (DBSessionBase) :
 		value = self.getRawValue(record, isAutoID)
 		self.executeWrite(query, value)
 		if not isAutoID :
-			if len(modelClass.children) : self.insertChildren(record, modelClass)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
 			result = self.cursor.fetchall()
 			if len(result) :
 				key = result[0][0]
 				setattr(record, modelClass.primary, key)
-				if len(modelClass.children) : self.insertChildren(record, modelClass)
+				if len(modelClass.children) :
+					self.insertChildren(record, modelClass)
 				return key
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
@@ -208,10 +210,18 @@ class PostgresDBSession (DBSessionBase) :
 			return [self.insert(record) for record in recordList]
 		valueList = []
 		modelClass = None
+		hasChildren = False
 		for record in recordList :
 			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
+				if len(modelClass.children) :
+					hasChildren = True
+					break
+		if hasChildren :
+			for record in recordList :
+				self.insert(record)
+			return
 		query = self.generateInsertMultipleQuery(modelClass, isAutoID)
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
@@ -234,7 +244,8 @@ class PostgresDBSession (DBSessionBase) :
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
-		if len(modelClass.children) : self.updateChildren(record, modelClass)
+		if len(modelClass.children) :
+			self.updateChildren(record, modelClass)
 	
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
