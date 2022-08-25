@@ -11,6 +11,18 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isRequired:bool=False,
 			isEditable:bool=True,
 			help:str=None,
+			documentPath:str=None,
 		) :
-		ReferenceSelectInput.__init__(label, url, order, group, isTable, isSearch, isRequired, isEditable, help)
+		ReferenceSelectInput.__init__(
+			label,
+			url,
+			order,
+			group,
+			isTable,
+			isSearch,
+			isRequired,
+			isEditable,
+			help,
+			documentPath,
+		)
 		self.typeName = 'ReferenceCheckBox'

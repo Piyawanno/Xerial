@@ -266,9 +266,9 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 	async def createIndex(self, model) :
 		query = self.generateIndexCheckQuery(model)
 		result = await self.executeRead("".join(query))
-		exisitingIndex = {i[0] for i in result}
+		existingIndex = {i[0] for i in result}
 		for name, column in model.meta :
-			if column.isIndex and name.lower() not in exisitingIndex :
+			if column.isIndex and name.lower() not in existingIndex :
 				await self.executeWrite(self.generateIndexQuery(model, name))
 
 	async def getExistingTable(self) :

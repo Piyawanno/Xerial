@@ -16,7 +16,7 @@ class JSONColumn (Column) :
 		return attribute
 
 	def fromDict(self, data) :
-		return data.get(self.name, None)
+		return data.get(self.name, self.default)
 
 	def getDBDataType(self) :
 		if self.vendor == Vendor.ORACLE or self.vendor == Vendor.SQLITE :

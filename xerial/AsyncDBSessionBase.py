@@ -1,5 +1,6 @@
 from xerial.DBSessionBase import DBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
+from xerial.StringColumn import StringColumn
 
 import logging
 
@@ -36,10 +37,11 @@ class AsyncDBSessionBase (DBSessionBase) :
 		for i in cursor :
 			return i[0]
 
-	async def select(self, modelClass:type, clause:str, isRelated:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
+	async def select(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		print(query)
 		cursor = await self.executeRead(query, parameter)
 		result = []
 		for row in cursor :
@@ -51,6 +53,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 			result.append(record)
 		if isRelated :
 			await self.selectRelated(modelClass, result)
+		if isChildren :
 			await self.selectChildren(modelClass, result)
 		return result
 	
@@ -70,7 +73,10 @@ class AsyncDBSessionBase (DBSessionBase) :
 		self.checkLinkingMeta(modelClass)
 		isMapper = modelClass.__is_mapper__
 		for foreignKey in modelClass.foreignKey :
-			keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
+			if isinstance(foreignKey.columnMeta, StringColumn) :
+				keyList = {f"'{getattr(i, foreignKey.name)}'" for i in recordList}
+			else :
+				keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
 			clause = "WHERE %s IN(%s)"%(foreignKey.column, ",".join(list(keyList)))
 			related = await self.select(foreignKey.model, clause, isMapper)
 			relatedMap = {getattr(i, foreignKey.column):i for i in related}
@@ -82,18 +88,21 @@ class AsyncDBSessionBase (DBSessionBase) :
 		if len(recordList) == 0 : return
 		self.checkLinkingMeta(modelClass)
 		primary = modelClass.primary
-		keyList = [str(getattr(i, primary)) for i in recordList]
-		joined = ','.join(keyList)
+		if isinstance(primary, StringColumn) :
+			keyList = {f"'{getattr(i, primary.name)}'" for i in recordList}
+		else :
+			keyList = {str(getattr(i, primary)) for i in recordList}
+		joined = ','.join(list(keyList))
 		childrenMap = {}
 		childrenFlattedMap = {}
 		for child in modelClass.children :
-			clause = f"WHERE {child.column} IN ({joined})"
+			clause = f"WHERE {child.parentColumn} IN ({joined})"
 			childRecord = await self.select(child.model, clause, False)
 			childrenFlattedMap[child.name] = childRecord
 			columnMap = {}
 			childrenMap[child.name] = columnMap
 			for record in childRecord :
-				parent = getattr(record, child.column)
+				parent = getattr(record, child.parentColumn)
 				childrenList = columnMap.get(parent, [])
 				if len(childrenList) == 0 : columnMap[parent] = childrenList
 				childrenList.append(record)
@@ -101,10 +110,13 @@ class AsyncDBSessionBase (DBSessionBase) :
 		for child in modelClass.children :
 			if not child.model.__is_mapper__ : continue
 			childRecordList = childrenFlattedMap[child.name]
-
 			for foreignKey in child.model.foreignKey :
 				if foreignKey.model == modelClass : continue
-				keyList = {str(getattr(i, foreignKey.name)) for i in childRecordList}
+				if isinstance(foreignKey.columnMeta, StringColumn) :
+					keyList = {f"'{getattr(i, foreignKey.name)}'" for i in childRecordList}
+				else :
+					keyList = {str(getattr(i, foreignKey.name)) for i in childRecordList}
+				if len(keyList) == 0: continue
 				joined = ",".join(list(keyList))
 				linkedList = await self.select(foreignKey.model, f"WHERE {foreignKey.column} IN ({joined})", False)
 				linkedMap = {getattr(i, foreignKey.model.primary):i for i in linkedList}
@@ -125,7 +137,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 			if len(childRecordList) == 0 : continue
 			if not isinstance(childRecordList, list) : continue
 			for childRecord in childRecordList :
-				setattr(childRecord, child.column, primary)
+				setattr(childRecord, child.parentColumn, primary)
 			await self.insertMultiple(childRecordList)
 	
 	async def updateChildren(self, record, modelClass) :
@@ -142,7 +154,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 					await self.update(childRecord)
 				else :
 					insertList.append(childRecord)
-					setattr(childRecord, child.column, primary)
+					setattr(childRecord, child.parentColumn, primary)
 			await self.insertMultiple(insertList)
 	
 	async def dropChildren(self, record, modelClass) :

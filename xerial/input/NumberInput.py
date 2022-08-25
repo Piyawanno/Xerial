@@ -14,8 +14,20 @@ class NumberInput (Input):
 			isZeroIncluded:bool=True,
 			isFloatingPoint:bool=True,
 			maxValue:float=None,
+			documentPath:str=None,
 		) :
-		Input.__init__(self, label, order, group, isTable, isSearch, isRequired, isEditable, help)
+		Input.__init__(
+			self,
+			label,
+			order,
+			group,
+			isTable,
+			isSearch,
+			isRequired,
+			isEditable,
+			help,
+			documentPath
+		)
 		self.typeName = 'Number'
 		self.isNegative = isNegative
 		self.isZeroIncluded = isZeroIncluded

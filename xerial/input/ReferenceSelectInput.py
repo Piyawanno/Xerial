@@ -10,9 +10,21 @@ class ReferenceSelectInput (Input):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
-			help:str=None
+			help:str=None,
+			documentPath:str=None,
 		) :
-		Input.__init__(self, label, order, group, isTable, isSearch, isRequired, isEditable, help)
+		Input.__init__(
+			self,
+			label,
+			order,
+			group,
+			isTable,
+			isSearch,
+			isRequired,
+			isEditable,
+			help,
+			documentPath,
+		)
 		self.url = url
 		self.typeName = 'ReferenceSelect'
 	

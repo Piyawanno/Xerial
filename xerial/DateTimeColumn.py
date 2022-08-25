@@ -21,6 +21,9 @@ class DateTimeColumn (Column) :
 
 	def setValueToDB(self, attribute) :
 		return "'%s'"%(attribute.strftime(DATETIME_FORMAT))
+	
+	def parseValue(self, value) :
+		return datetime.strptime(value, DATETIME_FORMAT)
 
 	def getDBDataType(self) :
 		if self.vendor == Vendor.ORACLE or self.vendor == Vendor.POSTGRESQL:

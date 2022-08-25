@@ -13,8 +13,21 @@ class RadioInput (SelectInput):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
-			help:str=None
+			help:str=None,
+			documentPath:str=None,
 		) :
-		SelectInput.__init__(self, label, option, order, group, isTable, isSearch, isRequired, isEditable, help)
+		SelectInput.__init__(
+			self,
+			label,
+			option,
+			order,
+			group,
+			isTable,
+			isSearch,
+			isRequired,
+			isEditable,
+			help,
+			documentPath
+		)
 		self.typeName = 'Radio'
 

@@ -17,6 +17,9 @@ class DateColumn (Column) :
 		
 	def setValueToDB(self, attribute) :
 		return "'%s'"%(attribute.strftime(DATE_FORMAT))
+	
+	def parseValue(self, value) :
+		return datetime.strptime(value, DATE_FORMAT)
 
 	def getDBDataType(self) :
 		return "DATE"

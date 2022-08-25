@@ -1,6 +1,7 @@
 from xerial.Column import Column
 from xerial.Record import Record
 from xerial.IntegerColumn import IntegerColumn
+from xerial.StringColumn import StringColumn
 from xerial.RoundRobinConnector import RoundRobinConnector
 from enum import Enum
 from packaging.version import Version
@@ -66,10 +67,9 @@ class DBSessionBase :
 	
 	def appendModel(self, modelClass) :
 		self.model[modelClass.__name__] = modelClass
-		if hasattr(modelClass, 'meta') : return
-		self.checkTableName(modelClass)
-		if not hasattr(modelClass, 'meta') :
-			Record.extractMeta(modelClass)
+		if Record.hasMeta(modelClass) : return
+		Record.checkTableName(modelClass, self.prefix)
+		Record.extractMeta(modelClass)
 		Record.extractInput(modelClass)
 		Record.setVendor(modelClass, self.vendor)
 		self.prepareStatement(modelClass)
@@ -101,23 +101,6 @@ class DBSessionBase :
 	def prepareStatement(self, modelClass) :
 		pass
 
-	def checkTableName(self, modelClass) :
-		prefix = self.prefix
-		if not hasattr(modelClass, '__tablename__') :
-			modelClass.__tablename__ = f"{prefix}{modelClass.__name__}"
-		tableName = modelClass.__tablename__
-		if prefix is not None and len(prefix) :
-			if tableName[:len(prefix)] != prefix :
-				modelClass.__tablename__ = f"{prefix}{tableName}"
-		if not hasattr(modelClass, '__fulltablename__') :
-			hasPrefix = False
-			if prefix is not None and len(prefix) :
-				if modelClass.__tablename__[:len(prefix)] != prefix :
-					modelClass.__fulltablename__ = f"{prefix}{modelClass.__tablename__}"
-					hasPrefix = True
-			if not hasPrefix :
-				modelClass.__fulltablename__ = modelClass.__tablename__
-
 	def connect(self, connection=None) :
 		if connection is not None :
 			self.isRoundRobin = isinstance(connection, RoundRobinConnector)
@@ -138,7 +121,7 @@ class DBSessionBase :
 		for i in cursor :
 			return i[0]
 
-	def select(self, modelClass:type, clause:str, isRelated:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
+	def select(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
@@ -153,6 +136,7 @@ class DBSessionBase :
 			result.append(record)
 		if isRelated :
 			self.selectRelated(modelClass, result)
+		if isChildren :
 			self.selectChildren(modelClass, result)
 		return result
 	
@@ -200,7 +184,10 @@ class DBSessionBase :
 		self.checkLinkingMeta(modelClass)
 		isMapper = modelClass.__is_mapper__
 		for foreignKey in modelClass.foreignKey :
-			keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
+			if isinstance(foreignKey.columnMeta, StringColumn) :
+				keyList = {f"'{getattr(i, foreignKey.name)}'" for i in recordList}
+			else :
+				keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
 			clause = "WHERE %s IN(%s)"%(foreignKey.column, ",".join(list(keyList)))
 			related = self.select(foreignKey.model, clause, isMapper)
 			relatedMap = {getattr(i, foreignKey.column):i for i in related}
@@ -212,18 +199,21 @@ class DBSessionBase :
 		if len(recordList) == 0 : return
 		self.checkLinkingMeta(modelClass)
 		primary = modelClass.primary
-		keyList = {str(getattr(i, primary)) for i in recordList}
+		if isinstance(primary, StringColumn) :
+			keyList = {f"'{getattr(i, primary.name)}'" for i in recordList}
+		else :
+			keyList = {str(getattr(i, primary)) for i in recordList}
 		joined = ','.join(list(keyList))
 		childrenMap = {}
 		childrenFlattedMap = {}
 		for child in modelClass.children :
-			clause = f"WHERE {child.column} IN ({joined})"
+			clause = f"WHERE {child.parentColumn} IN ({joined})"
 			childRecord = self.select(child.model, clause, False)
 			childrenFlattedMap[child.name] = childRecord
 			columnMap = {}
 			childrenMap[child.name] = columnMap
 			for record in childRecord :
-				parent = getattr(record, child.column)
+				parent = getattr(record, child.parentColumn)
 				childrenList = columnMap.get(parent, [])
 				if len(childrenList) == 0 : columnMap[parent] = childrenList
 				childrenList.append(record)
@@ -234,7 +224,10 @@ class DBSessionBase :
 
 			for foreignKey in child.model.foreignKey :
 				if foreignKey.model == modelClass : continue
-				keyList = {str(getattr(i, foreignKey.name)) for i in childRecordList}
+				if isinstance(foreignKey.columnMeta, StringColumn) :
+					keyList = {f"'{getattr(i, foreignKey.name)}'" for i in childRecordList}
+				else :
+					keyList = {str(getattr(i, foreignKey.name)) for i in childRecordList}
 				joined = ",".join(list(keyList))
 				linkedList = self.select(foreignKey.model, f"WHERE {foreignKey.column} IN ({joined})", False)
 				linkedMap = {getattr(i, foreignKey.model.primary):i for i in linkedList}
@@ -255,7 +248,7 @@ class DBSessionBase :
 			if not isinstance(childRecordList, list) : continue
 			if len(childRecordList) == 0 : continue
 			for childRecord in childRecordList :
-				setattr(childRecord, child.column, primary)
+				setattr(childRecord, child.parentColumn, primary)
 			self.insertMultiple(childRecordList)
 	
 	def updateChildren(self, record, modelClass) :
@@ -272,7 +265,7 @@ class DBSessionBase :
 					self.update(childRecord)
 				else :
 					insertList.append(childRecord)
-					setattr(childRecord, child.column, primary)
+					setattr(childRecord, child.parentColumn, primary)
 			self.insertMultiple(insertList)
 	
 	def dropChildren(self, record, modelClass) :
@@ -297,12 +290,17 @@ class DBSessionBase :
 			self.checkForeignKey(modelClass)
 
 	def checkChildren(self, modelClass) :
+		modelName = modelClass.__name__
 		for child in modelClass.children :
 			if child.model is None :
 				childModelClass = self.model.get(child.modelName, None)
 				if childModelClass is None :
 					logging.warning(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
 				child.model = childModelClass
+				for foreignKey in childModelClass.foreignKey :
+					if foreignKey.modelName == modelName :
+						child.parentColumn = foreignKey.name
+						break
 		modelClass.isChildrenChecked = True
 	
 	def checkForeignKey(self, modelClass) :
@@ -311,7 +309,9 @@ class DBSessionBase :
 				model = self.model.get(foreignKey.modelName, None)
 				if model is None :
 					logging.warning(f"ForeignKey model {foreignKey.reference} for {modelClass.__name__} cannot be found.")
-				foreignKey.model = model
+				else :
+					foreignKey.model = model
+					foreignKey.columnMeta = model.metaMap.get(foreignKey.column, None)
 		modelClass.isForeignChecked = True
 	
 	def getPrimaryClause(self, record) :

@@ -61,3 +61,6 @@ class StringColumn (Column) :
 	
 	def setValueToDB(self, attribute) :
 		return "'%s'"%(attribute)
+	
+	def parseValue(self, value) :
+		return value

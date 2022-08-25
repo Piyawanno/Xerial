@@ -13,8 +13,20 @@ class FileInput (Input):
 			help:str=None,
 			path:str=None,
 			uploadURL:str=None,
+			documentPath:str=None,
 		) :
-		Input.__init__(self, label, order, group, isTable, isSearch, isRequired, isEditable, help)
+		Input.__init__(
+			self,
+			label,
+			order,
+			group,
+			isTable,
+			isSearch,
+			isRequired,
+			isEditable,
+			help,
+			documentPath,
+		)
 		self.typeName = 'File',
 		self.isPreview = isPreview
 		self.path = path

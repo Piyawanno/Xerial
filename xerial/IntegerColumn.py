@@ -48,6 +48,9 @@ class IntegerColumn (Column) :
 
 	def setValueToDB(self, attribute) :
 		return str(attribute)
+	
+	def parseValue(self, value) :
+		return int(value)
 
 	def getDBDataType(self) :
 		if self.vendor == Vendor.ORACLE :

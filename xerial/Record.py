@@ -1,11 +1,31 @@
-from dataclasses import dataclass
-
+from enum import IntEnum
 from xerial.Column import Column
 from xerial.Children import Children
 from xerial.Input import Input
 from xerial.Modification import Modification
+from xerial.Vendor import Vendor
+
 from packaging.version import Version
-from typing import List, Type
+from typing import Dict, List, Type
+
+import inspect
+
+__MAPPED_META__ = {}
+__RESERVED__ = {'primaryMeta', 'meta', '__tablename__', '__fulltablename__'}
+
+def __getParentTableName__(modelClass) :
+	hierarchy = list(inspect.getmro(modelClass))
+	for parent in hierarchy[1:] :
+		if hasattr(parent, '__tablename__') :
+			return parent.__tablename__
+	return None
+
+def __getParentFullTableName__(modelClass) :
+	hierarchy = list(inspect.getmro(modelClass))
+	for parent in hierarchy[1:] :
+		if hasattr(parent, '__fulltablename__') :
+			return parent.__fulltablename__
+	return None
 
 class Record :
 	def __init__(self, **kw) :
@@ -54,7 +74,8 @@ class Record :
 			if raw is not None :
 				if isinstance(raw, dict) :
 					setattr(self, foreignKey.name, foreignKey.fromDict(raw))
-				else : setattr(self, foreignKey.name, int(raw))
+				else :
+					setattr(self, foreignKey.name, foreignKey.parent.parseValue(raw))
 
 		for column, meta in modelClass.meta :
 			raw = data.get(column, None)
@@ -96,19 +117,37 @@ class Record :
 	
 	def modify(self) :
 		pass
-		
+	
+	@staticmethod
+	def hasMeta(modelClass) :
+		hasMeta = hasattr(modelClass, 'meta')
+		mapped = modelClass in __MAPPED_META__
+		if hasMeta and not mapped : hasMeta = False
+		return hasMeta
+	
+	@staticmethod
+	def hasParent(modelClass) :
+		hasMeta = hasattr(modelClass, 'meta')
+		if not hasMeta : return False
+		mapped = modelClass in __MAPPED_META__
+		return not mapped
+
 	@staticmethod
 	def setVendor(modelClass, vendor) :
 		modelClass.vendor = vendor
 		for column, meta in modelClass.meta :
 			meta.vendor = vendor
-	
+		
+		if modelClass.vendor == Vendor.POSTGRESQL :
+			modelClass.__tablename__ = modelClass.__tablename__.lower()
+			modelClass.__fulltablename__ = modelClass.__fulltablename__.lower()
+
 	@staticmethod
 	def extractInput(modelClass) :
 		order = 1
 		inputList:List[Input] = []
-		for i in dir(modelClass) :
-			attribute = getattr(modelClass, i)
+		inputGroupMapper:Dict[int, List[Input]] = {}
+		for i, attribute in modelClass.meta :
 			if not isinstance(attribute, Column) : continue
 			input:Input = attribute.input
 			if input is None : continue
@@ -119,9 +158,22 @@ class Record :
 			input.columnName = i
 			inputList.append(input)
 			order += 1
+			if input.group is None: continue
+			if not input.group in inputGroupMapper: inputGroupMapper[input.group] = []
+			inputGroupMapper[input.group].append(input)
 		inputList.sort(key=lambda x : x.parsedOrder)
 		modelClass.input = inputList
 		modelClass.inputDict = [i.toDict() for i in inputList]
+		group:IntEnum = getattr(modelClass, '__GROUP_LABEL__', None)
+		if group is None: return
+		groupParsedOrder = []
+		for i in group.order: 
+			parsedOrder = {'id': i.value, 'label': i.label[i], 'order': group.order[i]}
+			parsedOrder['parsedOrder'] = Version(group.order[i])
+			groupParsedOrder.append(parsedOrder)
+		groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
+		groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
+		modelClass.inputGroup = groupParsedOrder
 
 	@staticmethod
 	def extractMeta(modelClass) :
@@ -130,9 +182,18 @@ class Record :
 		if not hasattr(modelClass, '__is_mapper__') :
 			modelClass.__is_mapper__ = False
 		modelClass.isForeignChecked = False
-		primaryMeta = Record.checkPrimary(modelClass)
+		modelClass.isChildrenChecked  = False
+		if not Record.hasParent(modelClass) :
+			primaryMeta = Record.checkPrimary(modelClass)
+		else :
+			if hasattr(modelClass, '__has_primary__') and modelClass.__has_primary__ :
+				primaryMeta = modelClass.primaryMeta
+				modelClass.meta = [(modelClass.primary, primaryMeta)]
+			else :
+				primaryMeta = None
 		Record.extractAttribute(modelClass, primaryMeta)
 		Record.extractChildren(modelClass)
+		__MAPPED_META__[modelClass] = modelClass.meta
 
 	@staticmethod
 	def checkPrimary(modelClass) :
@@ -149,16 +210,23 @@ class Record :
 			primaryMeta.name = 'id'
 			modelClass.meta = [('id', primaryMeta)]
 			return primaryMeta
-		else :
+		elif not modelClass.__has_primary__ :
 			modelClass.meta = []
 			return None
 	
 	@staticmethod
 	def extractAttribute(modelClass, primaryMeta) :
 		modelClass.foreignKey = []
+		parentMetaMap = getattr(modelClass, 'metaMap', {})
 		for i in dir(modelClass) :
 			attribute = getattr(modelClass, i)
-			if isinstance(attribute, Column) :
+			if i in __RESERVED__ : continue
+			if i in parentMetaMap :
+				modelClass.meta.append((i, parentMetaMap[i]))
+				if isinstance(attribute, Column) and attribute.foreignKey is not None :
+					attribute.foreignKey.name = i
+					modelClass.foreignKey.append(attribute.foreignKey)
+			elif isinstance(attribute, Column) :
 				attribute.name = i
 				if attribute.foreignKey is not None :
 					attribute.foreignKey.name = i
@@ -168,9 +236,10 @@ class Record :
 						modelClass.primary = i
 						primaryMeta = attribute
 					elif isinstance(modelClass.primary, list) :
-						modelClass.primary.append(i)
-						primaryMeta.append(attribute)
-					else :
+						if i not in modelClass.primary :
+							modelClass.primary.append(i)
+							primaryMeta.append(attribute)
+					elif  modelClass.primary != i :
 						modelClass.primary = [i]
 						primaryMeta = [primaryMeta]
 				modelClass.meta.append((i, attribute))
@@ -194,3 +263,24 @@ class Record :
 		hours, remainder = divmod(delta.seconds, 3600)
 		minutes, seconds = divmod(remainder, 60)
 		return "%02d:%02d:%02d"%(hours, minutes, seconds)
+	
+	@staticmethod
+	def checkTableName(modelClass, prefix:str) :
+		hasTableName = hasattr(modelClass, '__tablename__')
+		parentTableName = __getParentTableName__(modelClass)
+		if not hasTableName or parentTableName == modelClass.__tablename__ :
+			modelClass.__tablename__ = f"{prefix}{modelClass.__name__}"
+		tableName = modelClass.__tablename__
+		if prefix is not None and len(prefix) :
+			if tableName[:len(prefix)] != prefix :
+				modelClass.__tablename__ = f"{prefix}{tableName}"
+		hasFullName = hasattr(modelClass, '__fulltablename__')
+		parentFullName = __getParentFullTableName__(modelClass)
+		if not hasFullName or parentFullName == modelClass.__fulltablename__ :
+			hasPrefix = False
+			if prefix is not None and len(prefix) :
+				if modelClass.__tablename__[:len(prefix)] != prefix :
+					modelClass.__fulltablename__ = f"{prefix}{modelClass.__tablename__}"
+					hasPrefix = True
+			if not hasPrefix :
+				modelClass.__fulltablename__ = modelClass.__tablename__

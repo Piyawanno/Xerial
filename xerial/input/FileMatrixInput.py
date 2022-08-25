@@ -11,8 +11,21 @@ class FileMatrixInput (Input):
 			isPreview:bool=False,
 			path:str=None,
 			uploadURL:str=None,
+			help:str=None,
+			documentPath:str=None,
 		) :
-		Input.__init__(self, label, order, group, isTable, isSearch, isRequired)
+		Input.__init__(
+			self,
+			label,
+			order,
+			group,
+			isTable,
+			isSearch,
+			isRequired,
+			True,
+			help,
+			documentPath,
+		)
 		self.typeName = 'FileMatrix',
 		self.isPreview = isPreview
 		self.path = path

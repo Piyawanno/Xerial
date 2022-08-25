@@ -1,3 +1,4 @@
+from xerial.input.PrerequisiteReferenceSelectInput import PrerequisiteReferenceSelectInput
 from xerial.input.TextInput import TextInput
 from xerial.input.TextAreaInput import TextAreaInput
 from xerial.input.LabelInput import LabelInput
@@ -20,6 +21,7 @@ from xerial.input.ReferenceCheckBoxInput import ReferenceCheckBoxInput
 from xerial.input.ReferenceRadioInput import ReferenceRadioInput
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 from xerial.input.AutoCompleteInput import AutoCompleteInput
+from xerial.input.SelectInput import SelectInput
 
 from enum import IntEnum
 
@@ -46,6 +48,8 @@ class InputType (IntEnum) :
 	REFERENCE_RADIO = 34
 	REFERENCE_SELECT = 35
 	AUTOCOMPLETE = 36
+	STATIC_SELECT = 37
+	PREREQ_INPUT = 38
 
 InputType.mapped = {
 	InputType.TEXT: TextInput,
@@ -70,4 +74,6 @@ InputType.mapped = {
 	InputType.REFERENCE_RADIO: ReferenceRadioInput,
 	InputType.REFERENCE_SELECT: ReferenceSelectInput,
 	InputType.AUTOCOMPLETE: AutoCompleteInput,
+	InputType.STATIC_SELECT: SelectInput,
+	InputType.PREREQ_INPUT: PrerequisiteReferenceSelectInput,
 }

@@ -4,6 +4,7 @@ class Children :
 		splitted = reference.split(".")
 		self.modelName = splitted[0]
 		self.column = splitted[1]
+		self.parentColumn = None
 		self.name = None
 		self.model = None
 

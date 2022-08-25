@@ -24,26 +24,6 @@ class PostgresDBSession (DBSessionBase) :
 	def generateCreateSchema(self, schema) :
 		return f"CREATE SCHEMA IF NOT EXISTS {schema.lower()}"
 	
-	def checkTableName(self, modelClass) :
-		prefix = self.prefix
-		if not hasattr(modelClass, '__tablename__') :
-			modelClass.__tablename__ = f"{prefix}{modelClass.__name__}"
-		tableName = modelClass.__tablename__
-		if prefix is not None and len(prefix) :
-			if tableName[:len(prefix)] != prefix :
-				modelClass.__tablename__ = f"{prefix}{tableName}"
-		if not hasattr(modelClass, '__fulltablename__') :
-			hasPrefix = False
-			if prefix is not None and len(prefix) :
-				if modelClass.__tablename__[:len(prefix)] != prefix :
-					modelClass.__fulltablename__ = f"{prefix}{modelClass.__tablename__}"
-					hasPrefix = True
-			if not hasPrefix :
-				modelClass.__fulltablename__ = modelClass.__tablename__
-
-		modelClass.__tablename__ = modelClass.__tablename__.lower()
-		modelClass.__fulltablename__ = modelClass.__fulltablename__.lower()
-
 	def createConnection(self):
 		self.connection = psycopg2.connect(
 			user=self.config["user"],
@@ -301,7 +281,7 @@ class PostgresDBSession (DBSessionBase) :
 	def createTable(self) :
 		self.getExistingTable()
 		for model in self.model.values() :
-			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
+			if hasattr(model, '__skip_create__') and not getattr(model, '__skip_create__') : continue
 			if model.__fulltablename__ in self.existingTable :
 				self.createIndex(model)
 				continue

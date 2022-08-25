@@ -28,6 +28,9 @@ class TimeColumn (Column) :
 		else :
 			return "'%s'"%(attribute.strftime(TIME_FORMAT))
 	
+	def parseValue(self, value) :
+		return datetime.strptime(value, TIME_FORMAT)
+	
 	def getDBDataType(self) :
 		if self.vendor == Vendor.ORACLE :
 			return "INTERVAL DAY TO SECOND"

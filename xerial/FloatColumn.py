@@ -27,6 +27,9 @@ class FloatColumn (Column) :
 		
 	def setValueToDB(self, attribute) :
 		return str(attribute)
+	
+	def parseValue(self, value) :
+		return float(value)
 
 	def getDBDataType(self) :
 		if self.vendor == Vendor.ORACLE :

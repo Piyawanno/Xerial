@@ -9,7 +9,8 @@ class Input :
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
-			help:str=None
+			help:str=None,
+			documentPath:str=None,
 		):
 		self.label = label
 		self.order = order
@@ -19,6 +20,7 @@ class Input :
 		self.isRequired = isRequired
 		self.isEditable = isEditable
 		self.help = help
+		self.documentPath = documentPath
 		self.parsedOrder = Version(order) if order is not None else None
 		self.typeName = ''
 		self.columnName = ''
@@ -36,6 +38,7 @@ class Input :
 			'isRequired' : self.isRequired,
 			'isEditable' : self.isEditable,
 			'help' : self.help,
+			'documentPath' : self.documentPath,
 			'typeName' : self.typeName
 		}
 	

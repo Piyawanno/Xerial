@@ -13,8 +13,20 @@ class EnumSelectInput (Input):
 			isRequired:bool=False,
 			isEditable:bool=True,
 			help:str=None,
+			documentPath:str=None,
 		) :
-		Input.__init__(self, label, order, group, isTable, isSearch, isRequired, isEditable, help)
+		Input.__init__(
+			self,
+			label,
+			order,
+			group,
+			isTable,
+			isSearch,
+			isRequired,
+			isEditable,
+			help,
+			documentPath
+		)
 		self.enum = enum
 		self.typeName = 'EnumSelect'
 	

@@ -4,7 +4,7 @@ class Column :
 	def __init__(self, isPrimary=False, length=0, isNotNull=False, default=None, foreignKey=None, isIndex=False, input=None) :
 		self.length = length
 		if foreignKey is not None :
-			self.foreignKey = ForeignKey(foreignKey)
+			self.foreignKey = ForeignKey(foreignKey, self)
 		else :
 			self.foreignKey = None
 		self.isPrimary = isPrimary
@@ -28,6 +28,9 @@ class Column :
 	
 	def setValueToDB(self, attribute) :
 		return attribute
+	
+	def parseValue(self, value) :
+		return value
 	
 	def toDict(self, attribute):
 		return attribute
