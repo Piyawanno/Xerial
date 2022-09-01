@@ -12,6 +12,7 @@ import inspect
 
 __MAPPED_META__ = {}
 __RESERVED__ = {'primaryMeta', 'meta', '__tablename__', '__fulltablename__'}
+__DEFAULT_BACKUP__ = False
 
 def __getParentTableName__(modelClass) :
 	hierarchy = list(inspect.getmro(modelClass))
@@ -54,13 +55,25 @@ class Record :
 				result[foreignKey.name] = linked.__raw__
 
 		for column, meta in self.meta :
+			if column == '__insert_time__' : continue
+			if column == '__update_time__' : continue
 			attribute = getattr(self, column)
 			if attribute is None :
 				result[column] = None
 			elif meta != self :
 				result[column] = meta.toDict(attribute)
 		self.__raw__ = result
-		return result 
+		return result
+	
+	def toRawDict(self) -> dict :
+		result = {}
+		for column, meta in self.meta :
+			attribute = getattr(self, column)
+			if attribute is None :
+				result[column] = None
+			elif meta != self :
+				result[column] = meta.toDict(attribute)
+		return result
 
 	def fromDict(self, data:dict, isID:bool=False) :
 		modelClass = self.__class__
@@ -89,6 +102,15 @@ class Record :
 			self.id = data.get(modelClass.primary, 0)
 		return self
 	
+	def fromRawDict(self, data:dict) :
+		modelClass = self.__class__
+		for column, meta in modelClass.meta :
+			raw = data.get(column, None)
+			if data is None :
+				setattr(self, column, None)
+			else :
+				setattr(self, column, meta.fromDict(data))
+
 	def dereference(self) :
 		modelClass = self.__class__
 		for foreignKey in modelClass.foreignKey :
@@ -181,6 +203,8 @@ class Record :
 			modelClass.__version__ = '1.0'
 		if not hasattr(modelClass, '__is_mapper__') :
 			modelClass.__is_mapper__ = False
+		if not hasattr(modelClass, '__skip_create__') :
+			modelClass.__skip_create__ = False
 		modelClass.isForeignChecked = False
 		modelClass.isChildrenChecked  = False
 		if not Record.hasParent(modelClass) :
@@ -191,6 +215,7 @@ class Record :
 				modelClass.meta = [(modelClass.primary, primaryMeta)]
 			else :
 				primaryMeta = None
+		Record.checkBackup(modelClass)
 		Record.extractAttribute(modelClass, primaryMeta)
 		Record.extractChildren(modelClass)
 		__MAPPED_META__[modelClass] = modelClass.meta
@@ -284,3 +309,16 @@ class Record :
 					hasPrefix = True
 			if not hasPrefix :
 				modelClass.__fulltablename__ = modelClass.__tablename__
+	
+	@staticmethod
+	def enableDefaultBackup() :
+		global __DEFAULT_BACKUP__
+		__DEFAULT_BACKUP__ = True
+
+	@staticmethod
+	def checkBackup(modelClass) :
+		from xerial.FloatColumn import FloatColumn
+		if not hasattr(modelClass, '__backup__') : modelClass.__backup__ = __DEFAULT_BACKUP__
+		if not modelClass.__backup__ : return
+		modelClass.__insert_time__ = FloatColumn(isIndex=True, default=-1.0)
+		modelClass.__update_time__ = FloatColumn(isIndex=True, default=-1.0)

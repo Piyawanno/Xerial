@@ -1,7 +1,7 @@
 from xerial.DBSessionBase import DBSessionBase
 from xerial.IntegerColumn import IntegerColumn
 
-import logging
+import logging, time
 
 try :
 	import cx_Oracle
@@ -150,6 +150,10 @@ class OracleDBSession (DBSessionBase) :
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
 		query = self.generateInsert(modelClass, isAutoID)
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		parameter = self.getRawValue(record, isAutoID)
 		if modelClass.__insert_parameter__ :
 			insertedID = self.cursor.var(cx_Oracle.NUMBER)
@@ -177,16 +181,33 @@ class OracleDBSession (DBSessionBase) :
 		for record in recordList :
 			if modelClass is None :
 				modelClass = record.__class__
+				isBackup = modelClass.__backup__
+				now = time.time()
 				query = self.generateInsert(modelClass, isAutoID, isMultiple=True)
 				if len(modelClass.children) :
 					hasChildren = True
 					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
 			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :
 			for record in recordList :
 				self.insert(record)
 			return
+		try :
+			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
+			cursor.executemany(query, valueList)
+		except Exception as error :
+			logging.debug(query)
+			self.closeConnection()
+			self.connect()
+			raise error
+	
+	def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		query = self.generateInsert(modelClass, isAutoID=False, isMultiple=True)
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
@@ -220,11 +241,18 @@ class OracleDBSession (DBSessionBase) :
 			)
 
 	def update(self, record) :
+		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
 		self.executeWrite(self.generateUpdate(record), value)
-		modelClass = record.__class__
 		if len(modelClass.children) :
 			self.updateChildren(record, modelClass)
+	
+	def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdate(modelClass, raw)
+		self.executeWrite(query, value)
 	
 	def generateUpdate(self, record) :
 		modelClass = record.__class__
@@ -232,6 +260,13 @@ class OracleDBSession (DBSessionBase) :
 			modelClass.__fulltablename__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
+		)
+
+	def generateRawUpdate(self, modelClass, raw) :
+		return "UPDATE %s SET %s WHERE %s"%(
+			modelClass.__fulltablename__,
+			modelClass.__update_set_parameter__,
+			self.getRawPrimaryClause(modelClass, raw)
 		)
 	
 	def drop(self, record) :

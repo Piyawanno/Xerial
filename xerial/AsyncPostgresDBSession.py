@@ -3,7 +3,8 @@ from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.IntegerColumn import IntegerColumn
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 
-import logging, asyncio
+import logging, asyncio, time
+
 try :
 	import asyncpg
 except :
@@ -137,6 +138,10 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 	async def insert(self, record, isAutoID=True) :
 		modelClass = record.__class__
 		query = self.generateInsertQuery(record, isAutoID)
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
 		result = await self.executeWrite(query, value)
 		if not isAutoID :
@@ -163,12 +168,17 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		modelClass = None
 		hasChildren = False
 		for record in recordList :
-			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
+				isBackup = modelClass.__backup__
+				now = time.time()
 				if len(modelClass.children) :
 					hasChildren = True
 					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
+			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :
 			for record in recordList :
@@ -201,15 +211,37 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		else :
 			return f"INSERT INTO {self.schema}{modelClass.__fulltablename__}({modelClass.__all_column__}) VALUES %s"
 
+	async def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		try :
+			connection = self.connection.writer if self.isRoundRobin else self.connection
+			await connection.copy_records_to_table(
+				modelClass.__fulltablename__,
+				records=valueList,
+				columns=modelClass.__all_column_list__,
+				schema_name=self.schema[:-1] if len(self.schema) else "public"
+			)
+		except Exception as error :
+			logging.debug(valueList)
+			await self.closeConnection()
+			await self.connect()
+			raise error
 
 	async def update(self, record) :
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		await self.executeWrite(query, value)
 		if len(modelClass.children) :
 			await self.updateChildren(record, modelClass)
 	
+	async def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdateQuery(modelClass, raw)
+		await self.executeWrite(query, value)
+
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__

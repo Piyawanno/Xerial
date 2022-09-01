@@ -1,7 +1,7 @@
 from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
 from xerial.IntegerColumn import IntegerColumn
 
-import logging
+import logging, time
 
 try :
 	import psycopg2
@@ -142,6 +142,10 @@ class PostgresDBSession (DBSessionBase) :
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
 		query = self.generateInsertQuery(record, isAutoID)
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
 		self.executeWrite(query, value)
 		if not isAutoID :
@@ -192,17 +196,36 @@ class PostgresDBSession (DBSessionBase) :
 		modelClass = None
 		hasChildren = False
 		for record in recordList :
-			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
+				isBackup = modelClass.__backup__
+				now = time.time()
 				if len(modelClass.children) :
 					hasChildren = True
 					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
+			valueList.append(self.getRawValue(record, isAutoID))
+			
 		if hasChildren :
 			for record in recordList :
 				self.insert(record)
 			return
 		query = self.generateInsertMultipleQuery(modelClass, isAutoID)
+		try :
+			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
+			psycopg2.extras.execute_values(cursor, query, valueList)
+		except Exception as error :
+			logging.error(query)
+			logging.error(valueList)
+			self.closeConnection()
+			self.connect()
+			raise error
+	
+	def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		query = self.generateInsertMultipleQuery(modelClass, isAutoID=False)
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
 			psycopg2.extras.execute_values(cursor, query, valueList)
@@ -221,12 +244,19 @@ class PostgresDBSession (DBSessionBase) :
 
 	def update(self, record) :
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
 		if len(modelClass.children) :
 			self.updateChildren(record, modelClass)
 	
+	def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdateQuery(modelClass, raw)
+		self.executeWrite(query, value)
+
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
 		return "UPDATE %s%s SET %s WHERE %s"%(
@@ -234,6 +264,14 @@ class PostgresDBSession (DBSessionBase) :
 			modelClass.__fulltablename__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
+		)
+	
+	def generateRawUpdateQuery(self, modelClass, raw) :
+		return "UPDATE %s%s SET %s WHERE %s"%(
+			self.schema,
+			modelClass.__fulltablename__,
+			modelClass.__update_set_parameter__,
+			self.getRawPrimaryClause(modelClass, raw)
 		)
 
 	def drop(self, record) :

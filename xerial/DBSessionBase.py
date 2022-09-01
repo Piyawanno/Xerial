@@ -49,8 +49,14 @@ class DBSessionBase :
 	
 	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		pass
+
+	def insertMultipleDirect(self, modelClass, rawList) :
+		pass
 	
 	def update(self, record) :
+		pass
+	
+	def updateDirect(self, modelClass, raw) :
 		pass
 	
 	def drop(self, record) :
@@ -151,6 +157,21 @@ class DBSessionBase :
 				result[name].append(data[name])
 		return result
 	
+	def selectRaw(self, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) -> dict :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
+		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		cursor = self.executeRead(query, parameter)
+		result = []
+		for row in cursor :
+			data = {}
+			i = 0
+			for columnName, column in modelClass.meta :
+				data[columnName] = column.toDict(row[i])
+				i += 1
+			result.append(data)
+		return result
+	
 	def getValue(self, record, isAutoID=True) :
 		value = []
 		meta = record.__class__.insertMeta if isAutoID else record.__class__.meta
@@ -178,6 +199,9 @@ class DBSessionBase :
 			else :
 				value.append(attribute)
 		return value
+	
+	def toTuple(self, modelClass, raw) :
+		return [column.fromDict(raw) for name, column in modelClass.meta]
 	
 	def selectRelated(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
@@ -328,6 +352,23 @@ class DBSessionBase :
 			return " AND ".join(clause)
 		else :
 			ID = meta.setValueToDB(getattr(record, modelClass.primary))
+			return "%s=%s"%(record.__class__.primary, ID)
+	
+	def getRawPrimaryClause(self, modelClass, raw) :
+		if not hasattr(modelClass, 'primaryMeta') :
+			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be referenced.")
+			return
+		meta = modelClass.primaryMeta
+		if isinstance(meta, list) :
+			clause = []
+			for i in meta :
+				ID = raw.get(i.name, None)
+				if ID is not None :
+					clause.append("%s=%s"%(i.name, meta.setValueToDB())	)
+			return " AND ".join(clause)
+		else :
+			ID = raw.get(modelClass.primary, None)
+			ID = meta.setValueToDB(ID)
 			return "%s=%s"%(record.__class__.primary, ID)
 
 	def generateDropCommand(self) :

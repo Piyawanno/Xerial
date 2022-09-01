@@ -3,7 +3,7 @@ from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.IntegerColumn import IntegerColumn
 
-import logging, traceback
+import logging, traceback, time
 
 try :
 	import aiomysql
@@ -114,6 +114,10 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 
 	async def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
 		query = self.generateInsert(modelClass)
 		cursor = await self.executeWrite(query, value)
@@ -139,11 +143,17 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 		modelClass = None
 		hasChildren = False
 		for record in recordList :
-			valueList.append(tuple(self.getRawValue(record, isAutoID)))
-			modelClass = record.__class__
-			if len(modelClass.children) :
-				hasChildren = True
-				break
+			if modelClass is None :
+				modelClass = record.__class__
+				isBackup = modelClass.__backup__
+				now = time.time()
+				if len(modelClass.children) :
+					hasChildren = True
+					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
+			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :
 			for record in recordList :
@@ -162,13 +172,34 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 			await self.connect()
 			raise error
 	
+	async def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		query = self.generateInsert(modelClass, isAutoID=False)
+		try :
+			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
+			await cursor.executemany(query, valueList)
+		except Exception as error :
+			print(query)
+			logging.debug(query)
+			logging.debug(valueList)
+			await self.closeConnection()
+			await self.connect()
+			raise error
+	
 	async def update(self, record) :
-		value = self.getRawValue(record)
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
+		value = self.getRawValue(record)
 		query = self.generateUpdate(record)
 		await self.executeWrite(query, value)
 		if len(modelClass.children) :
 			await self.updateChildren(record, modelClass)
+	
+	async def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdate(modelClass, raw)
+		await self.executeWrite(query, value)
 	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)

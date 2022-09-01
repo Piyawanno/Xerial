@@ -1,7 +1,7 @@
 from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
 from xerial.IntegerColumn import IntegerColumn
 
-import logging
+import logging, time
 
 try :
 	import pyodbc
@@ -144,6 +144,10 @@ class MSSQLDBSession (DBSessionBase) :
 			
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
 		query = self.generateInsert(modelClass)
 		if not isAutoID and modelClass.__is_increment__:
@@ -171,11 +175,17 @@ class MSSQLDBSession (DBSessionBase) :
 		modelClass = None
 		hasChildren = False
 		for record in recordList :
-			valueList.append(tuple(self.getRawValue(record, isAutoID)))
-			modelClass = record.__class__
-			if len(modelClass.children) :
-				hasChildren = True
-				break
+			if modelClass is None :
+				modelClass = record.__class__
+				isBackup = modelClass.__backup__
+				now = time.time()
+				if len(modelClass.children) :
+					hasChildren = True
+					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
+			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :
 			for record in recordList :
@@ -196,6 +206,24 @@ class MSSQLDBSession (DBSessionBase) :
 			self.closeConnection()
 			self.connect()
 			raise error
+	
+	def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		query = self.generateInsert(modelClass, isAutoID=False)
+		try :
+			if modelClass.__is_increment__ :
+				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} ON;")
+			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
+			cursor.executemany(query, valueList)
+			if modelClass.__is_increment__ :
+				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
+		except Exception as error :
+			logging.debug(query)
+			logging.debug(valueList)
+			self.closeConnection()
+			self.connect()
+			raise error
+
 
 	def generateInsert(self, modelClass, isAutoID=True) :
 		if isAutoID :
@@ -220,11 +248,18 @@ class MSSQLDBSession (DBSessionBase) :
 	
 	def update(self, record) :
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
 		if len(modelClass.children) :
 			self.updateChildren(record, modelClass)
+	
+	def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdateQuery(modelClass, raw)
+		self.executeWrite(query, value)
 	
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
@@ -232,6 +267,13 @@ class MSSQLDBSession (DBSessionBase) :
 			modelClass.__fulltablename__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
+		)
+	
+	def generateRawUpdateQuery(self, modelClass, raw) :
+		return "UPDATE %s SET %s WHERE %s"%(
+			modelClass.__fulltablename__,
+			modelClass.__update_set_parameter__,
+			self.getRawPrimaryClause(modelClass, raw)
 		)
 
 	def drop(self, record) :

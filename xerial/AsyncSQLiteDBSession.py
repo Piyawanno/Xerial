@@ -4,7 +4,7 @@ from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.IntegerColumn import IntegerColumn
 
-import logging, traceback
+import logging, traceback, time
 
 try :
 	import aiosqlite
@@ -88,6 +88,10 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 	async def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
 		query = self.generateInsertQuery(record, isAutoID)
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
 		cursor = await self.executeWrite(query, value)
 		if not isAutoID :
@@ -111,20 +115,38 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		valueList = []
 		modelClass = None
 		hasChildren = False
+		isBackup = modelClass.__backup__
+		now = time.time()
 		for record in recordList :
-			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
 				if len(modelClass.children) :
 					hasChildren = True
 					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
+			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :
 			for record in recordList :
 				await self.insert(record)
 			return
 
-		query = self.generateInsertQuery(record, isAutoID)
+		query = self.generateInsertQuery(modelClass, isAutoID)
+		try :
+			connection = self.connection.writer if self.isRoundRobin else self.connection
+			await connection.executemany(query, valueList)
+		except Exception as error :
+			logging.debug(query)
+			logging.debug(valueList)
+			self.closeConnection()
+			self.connect()
+			raise error
+	
+	async def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		query = self.generateInsertQuery(modelClass, isAutoID=False)
 		try :
 			connection = self.connection.writer if self.isRoundRobin else self.connection
 			await connection.executemany(query, valueList)
@@ -137,12 +159,19 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 	
 	async def update(self, record) :
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		await self.executeWrite(query, value)
 		if len(modelClass.children) :
 			await self.updateChildren(record, modelClass)
 	
+	async def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdateQuery(modelClass, raw)
+		await self.executeWrite(query, value)
+
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)
 		table = record.__fulltablename__

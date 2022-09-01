@@ -5,6 +5,11 @@ import os, sys, site, getpass, setuptools
 class XerialSetup :
 	def __init__(self) :
 		self.rootPath = os.path.dirname(os.path.abspath(__file__))
+		self.sitePackagesPath = ''
+		for path in site.getsitepackages()[::-1]:
+			if os.path.isdir(path): 
+				self.sitePackagesPath = path
+				break
 
 	def operate(self, operation) :
 		if operation == 'setup' :
@@ -78,7 +83,7 @@ class XerialSetup :
 		# self.installConfig()
 		self.installScript()
 		command = [
-			"ln -s %s/xerial %s/xerial"%(self.rootPath, site.getsitepackages()[-1]),
+			"ln -s %s/xerial %s/xerial"%(self.rootPath, self.sitePackagesPath),
 		]
 		for i in command :
 			print(i)
@@ -92,7 +97,7 @@ class XerialSetup :
 		path = "/var/katatong"
 		if not os.path.isdir(path) :
 			os.makedirs(path)
-		packagePath = site.getsitepackages()[-1]+'/xerial'
+		packagePath = self.sitePackagesPath+'/xerial'
 		if not os.path.isdir(packagePath) :
 			os.makedirs(packagePath)
 		command = [

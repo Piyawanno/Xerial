@@ -2,7 +2,7 @@ from xerial.OracleDBSession import OracleDBSession
 from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 
-import logging, traceback
+import logging, traceback, time
 
 try :
 	import cx_Oracle_async
@@ -88,6 +88,10 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 	async def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
 		query = self.generateInsert(modelClass, isAutoID)
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		parameter = self.getRawValue(record, isAutoID)
 		if modelClass.__insert_parameter__ :
 			insertedID = self.cursor._cursor.var(cx_Oracle.NUMBER)
@@ -119,9 +123,14 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 			if modelClass is None :
 				modelClass = record.__class__
 				query = self.generateInsert(modelClass, isAutoID, isMultiple=True)
+				isBackup = modelClass.__backup__
+				now = time.time()
 				if len(modelClass.children) :
 					hasChildren = True
 					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
 			valueList.append(self.getRawValue(record, isAutoID))
 			
 		if hasChildren :
@@ -133,12 +142,25 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 		for value in valueList :
 			await self.executeWrite(query, value)
 	
+	async def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		query = self.generateInsert(modelClass, isAutoID=False, isMultiple=True)
+		for value in valueList :
+			await self.executeWrite(query, value)
+	
 	async def update(self, record) :
+		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
 		await self.executeWrite(self.generateUpdate(record), value)
-		modelClass = record.__class__
 		if len(modelClass.children) :
 			await self.updateChildren(record, modelClass)
+	
+	async def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdate(modelClass, raw)
+		await self.executeWrite(query, value)
 	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)

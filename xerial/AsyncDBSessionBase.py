@@ -41,11 +41,10 @@ class AsyncDBSessionBase (DBSessionBase) :
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
-		print(query)
 		cursor = await self.executeRead(query, parameter)
 		result = []
 		for row in cursor :
-			record = modelClass()
+			record = modelClass.__new__(modelClass)
 			i = 0
 			for columnName, column in modelClass.meta :
 				setattr(record, columnName, column.processValue(row[i]))
@@ -57,8 +56,8 @@ class AsyncDBSessionBase (DBSessionBase) :
 			await self.selectChildren(modelClass, result)
 		return result
 	
-	async def selectTranspose(self, modelClass:type, clause:str, isRelated:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> dict :
-		recordList = await self.select(modelClass, clause, isRelated, limit, offset, parameter)
+	async def selectTranspose(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> dict :
+		recordList = await self.select(modelClass, clause, isRelated, isChildren, limit, offset, parameter)
 		result = {}
 		for name, column in modelClass.meta :
 			result[name] = []
@@ -68,6 +67,21 @@ class AsyncDBSessionBase (DBSessionBase) :
 				result[name].append(data[name])
 		return result
 	
+	async def selectRaw(self, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) -> dict :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
+		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		cursor = await self.executeRead(query, parameter)
+		result = []
+		for row in cursor :
+			data = {}
+			i = 0
+			for columnName, column in modelClass.meta :
+				data[columnName] = column.toDict(row[i])
+				i += 1
+			result.append(data)
+		return result
+
 	async def selectRelated(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
 		self.checkLinkingMeta(modelClass)
@@ -129,7 +143,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 				primary = getattr(record, modelClass.primary)
 				setattr(record, child.name, childrenMap[child.name].get(primary, []))
 
-	async def insertChildren(self, record, modelClass) :
+	async def insertChildren(self, record, modelClass, isReturningID=True) :
 		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
@@ -138,7 +152,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 			if not isinstance(childRecordList, list) : continue
 			for childRecord in childRecordList :
 				setattr(childRecord, child.parentColumn, primary)
-			await self.insertMultiple(childRecordList)
+			await self.insertMultiple(childRecordList, isReturningID=isReturningID)
 	
 	async def updateChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)
@@ -190,7 +204,13 @@ class AsyncDBSessionBase (DBSessionBase) :
 	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		pass
 	
+	async def insertMultipleDirect(self, modelClass, rawList) :
+		pass
+
 	async def update(self, record) :
+		pass
+	
+	async def updateDirect(self, modelClass, raw) :
 		pass
 	
 	async def drop(self, record) :

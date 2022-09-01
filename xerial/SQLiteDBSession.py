@@ -1,7 +1,7 @@
 from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
 from xerial.IntegerColumn import IntegerColumn
 
-import logging, sqlite3, traceback
+import logging, sqlite3, traceback, time
 
 class SQLiteDBSession (DBSessionBase) :
 	def createConnection(self):
@@ -110,7 +110,11 @@ class SQLiteDBSession (DBSessionBase) :
 	
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
-		query = self.generateInsertQuery(record, isAutoID)
+		query = self.generateInsertQuery(modelClass, isAutoID)
+		if modelClass.__backup__ :
+			now = time.time()
+			record.__insert_time__ = now
+			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
 		cursor = self.executeWrite(query, value)
 		if not isAutoID :
@@ -124,8 +128,7 @@ class SQLiteDBSession (DBSessionBase) :
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
 
-	def generateInsertQuery(self, record, isAutoID=True) :
-		modelClass = record.__class__
+	def generateInsertQuery(self, modelClass, isAutoID=True) :
 		if isAutoID :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
 				modelClass.__fulltablename__,
@@ -147,17 +150,38 @@ class SQLiteDBSession (DBSessionBase) :
 		modelClass = None
 		hasChildren = False
 		for record in recordList :
-			valueList.append(self.getRawValue(record, isAutoID))
 			if modelClass is None :
 				modelClass = record.__class__
+				isBackup = modelClass.__backup__
+				now = time.time()
 				if len(modelClass.children) :
 					hasChildren = True
 					break
+			if isBackup :
+				record.__insert_time__ = now
+				record.__update_time__ = -1.0
+			valueList.append(self.getRawValue(record, isAutoID))
+			
 		if hasChildren :
 			for record in recordList :
 				self.insert(record)
 			return
-		query = self.generateInsertQuery(record, isAutoID)
+		query = self.generateInsertQuery(modelClass, isAutoID)
+		try :
+			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
+			cursor.executemany(query, valueList)
+		except Exception as error :
+			print(query)
+			print(valueList)
+			logging.error(query)
+			logging.error(valueList)
+			self.closeConnection()
+			self.connect()
+			raise error
+	
+	def insertMultipleDirect(self, modelClass, rawList) :
+		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
+		query = self.generateInsertQuery(modelClass, isAutoID=False)
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
@@ -172,11 +196,18 @@ class SQLiteDBSession (DBSessionBase) :
 	
 	def update(self, record) :
 		modelClass = record.__class__
+		if modelClass.__backup__ :
+			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
 		query = self.generateUpdateQuery(record)
 		self.executeWrite(query, value)
 		if len(modelClass.children) :
 			self.updateChildren(record, modelClass)
+	
+	def updateDirect(self, modelClass, raw) :
+		value = self.toTuple(modelClass, raw)
+		query = self.generateRawUpdateQuery(modelClass, raw)
+		self.executeWrite(query, value)
 
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
@@ -184,6 +215,13 @@ class SQLiteDBSession (DBSessionBase) :
 			modelClass.__fulltablename__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
+		)
+	
+	def generateRawUpdateQuery(self, modelClass, raw) :
+		return "UPDATE %s SET %s WHERE %s"%(
+			modelClass.__fulltablename__,
+			modelClass.__update_set_parameter__,
+			self.getRawPrimaryClause(modelClass, raw)
 		)
 
 	def drop(self, record) :

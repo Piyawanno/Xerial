@@ -13,6 +13,7 @@ class DateColumn (Column) :
 			return datetime.now().date()
 
 	def toDict(self, attribute):
+		if type(attribute) == str: attribute = datetime.strptime(attribute, DATE_FORMAT)
 		return attribute.strftime(DATE_FORMAT)
 		
 	def setValueToDB(self, attribute) :
