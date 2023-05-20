@@ -56,6 +56,21 @@ class MSSQLDBSession (DBSessionBase) :
 			clause, offsetClause, limitClause
 		)
 
+	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
+		if 'order by' not in clause.lower() :
+			clause += f' ORDER BY id'
+		if limit is not None and offset is None :
+			limitClause = "FETCH FIRST %d ROWS ONLY"%(limit)
+			offsetClause = "OFFSET 0 ROWS"
+		else :
+			limitClause = "" if limit is None else "FETCH NEXT %d ROWS ONLY"%(limit)
+			offsetClause = "" if offset is None else "OFFSET %d ROWS"%(offset)
+
+		return "SELECT * FROM %s %s %s %s"%(
+			tableName,
+			clause, offsetClause, limitClause
+		)
+
 	def prepareStatement(self, modelClass) :
 		if hasattr(modelClass, 'primaryMeta') :
 			primary = modelClass.primaryMeta
@@ -363,4 +378,6 @@ class MSSQLDBSession (DBSessionBase) :
 		result = self.executeRead("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES")
 		self.existingTable = {row[0] for row in result}
 		return self.existingTable
-			
+	
+	def generateResetID(self, modelClass:type) -> str :
+		return f"DBCC CHECKIDENT ('{modelClass.__fulltablename__}', RESEED, ?);"

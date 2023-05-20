@@ -108,6 +108,14 @@ class MariaDBSession (DBSessionBase) :
 			modelClass.__fulltablename__,
 			clause, limitClause, offsetClause
 		)
+
+	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
+		limitClause = "" if limit is None else "LIMIT %d"%(limit)
+		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
+		return "SELECT * FROM %s %s %s %s"%(
+			tableName,
+			clause, limitClause, offsetClause
+		)
 	
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
@@ -287,13 +295,15 @@ class MariaDBSession (DBSessionBase) :
 
 	def createIndex(self, model) :
 		result = self.executeRead("SHOW INDEX FROM %s"%(model.__fulltablename__))
-		exisitingIndex = {i[4] for i in result}
+		existingIndex = {i[4] for i in result}
 		for name, column in model.meta :
-			if column.isIndex and name not in exisitingIndex :
+			if column.isIndex and name not in existingIndex :
 				self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__fulltablename__, name, model.__fulltablename__, name))
 	
 	def getExistingTable(self) :
 		result = self.executeRead("SHOW TABLES")
 		self.existingTable = {row[0] for row in result}
 		return self.existingTable
-			
+	
+	def generateResetID(self, modelClass:type) -> str :
+		return f"ALTER TABLE {modelClass.__fulltablename__} AUTO_INCREMENT=?"

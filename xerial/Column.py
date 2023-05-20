@@ -1,7 +1,17 @@
 from xerial.ForeignKey import ForeignKey
 
 class Column :
-	def __init__(self, isPrimary=False, length=0, isNotNull=False, default=None, foreignKey=None, isIndex=False, input=None) :
+	compatible = set()
+	def __init__(self,
+			isPrimary=False,
+			length=0,
+			isNotNull=False,
+			default=None,
+			foreignKey=None,
+			isIndex=False,
+			isRepresentative=False,
+			input=None) :
+		
 		self.length = length
 		if foreignKey is not None :
 			self.foreignKey = ForeignKey(foreignKey, self)
@@ -12,7 +22,12 @@ class Column :
 		self.isNotNull = isNotNull
 		self.default = default
 		self.isIndex = isIndex
+		self.isRepresentative = isRepresentative
 		self.input = input
+		self.isConvertRaw = False
+	
+	def convertRaw(self, value) :
+		return value
 	
 	def getReference(self, attribute) :
 		if self.foreignKey is None :

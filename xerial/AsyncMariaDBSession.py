@@ -2,6 +2,8 @@ from xerial.MariaDBSession import MariaDBSession
 from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.IntegerColumn import IntegerColumn
+from typing import List, Dict, Any
+from datetime import datetime
 
 import logging, traceback, time
 
@@ -111,6 +113,12 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 			await self.closeConnection()
 			await self.connect()
 			raise error
+	
+	async def selectRaw(self, query:str) -> List[Dict[str, Any]] :
+		cursor = await self.connection.cursor(aiomysql.DictCursor)
+		await cursor.execute(query)
+		fetched = await cursor.fetchall()
+		return self.convertRaw(fetched)
 
 	async def insert(self, record, isAutoID=True):
 		modelClass = record.__class__

@@ -1,8 +1,13 @@
 from xerial.DBSessionBase import DBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.StringColumn import StringColumn
+from xerial.ExcelWriter import ExcelWriter
+from xerial.Record import Record
+from typing import Dict, List, Any
+from datetime import datetime, date, timedelta
+from decimal import Decimal
 
-import logging
+import logging, csv, xlsxwriter, time
 
 class AsyncDBSessionBase (DBSessionBase) :
 	async def checkModification(self, modelClass, currentVersion) :
@@ -18,6 +23,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 		return lastVersion
 
 	async def connect(self, connection=None) :
+		self.lastConnectionTime = time.time()
 		if connection is not None :
 			self.isRoundRobin = isinstance(connection, AsyncRoundRobinConnector)
 			self.connection = connection
@@ -36,6 +42,49 @@ class AsyncDBSessionBase (DBSessionBase) :
 		cursor = await self.executeRead(query, parameter)
 		for i in cursor :
 			return i[0]
+	
+	async def selectRaw(self, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) -> dict :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
+		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		cursor = await self.executeRead(query, parameter)
+		result = []
+		for row in cursor :
+			data = {}
+			i = 0
+			for columnName, column in modelClass.meta :
+				data[columnName] = column.toDict(row[i])
+				i += 1
+			result.append(data)
+		return result
+
+	def convertRaw(self, fetched) :
+		for i in fetched :
+			for k, v in i.items() :
+				if isinstance(v, datetime) :
+					i[k] = v.strftime("%Y-%m-%d %H:%M:%S")
+				elif isinstance(v, date) :
+					i[k] = v.strftime("%Y-%m-%d")
+				elif isinstance(v, Decimal) :
+					i[k] = float(v)
+				elif isinstance(v, timedelta) :
+					i[k] = v.seconds
+				elif isinstance(v, bytes) :
+					i[k] = v.hex()
+		return fetched
+	
+	# NOTE : Return None if not found.
+	async def selectByID(self, modelClass:type, ID:int, isRelated:bool=False, isChildren:bool=False) -> Record :
+		fetched = await self.select(
+			modelClass,
+			f"WHERE {modelClass.primary}=?",
+			parameter = [int(ID)],
+			limit=1,
+			isRelated=isRelated,
+			isChildren=isChildren
+		)
+		if len(fetched) : return fetched[0]
+		else : None
 
 	async def select(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
 		if parameter is not None :
@@ -45,14 +94,15 @@ class AsyncDBSessionBase (DBSessionBase) :
 		result = []
 		for row in cursor :
 			record = modelClass.__new__(modelClass)
+			record.initRelation()
 			i = 0
 			for columnName, column in modelClass.meta :
 				setattr(record, columnName, column.processValue(row[i]))
 				i += 1
 			result.append(record)
-		if isRelated :
+		if isRelated and len(result) :
 			await self.selectRelated(modelClass, result)
-		if isChildren :
+		if isChildren and len(result) :
 			await self.selectChildren(modelClass, result)
 		return result
 	
@@ -82,30 +132,64 @@ class AsyncDBSessionBase (DBSessionBase) :
 			result.append(data)
 		return result
 
+	# NOTE
+	# For writing string descriptor = io.StringIO()
+	async def selectCSV(self, descriptor, modelClass:type, clause:str, limit:int, offset:int, parameter:list=None) :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
+		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		cursor = await self.executeRead(query, parameter)
+		writer = csv.writer(descriptor)
+		columnNameList = [columnName for columnName, _ in modelClass.meta]
+		writer.writerow(columnNameList)
+		for row in cursor :
+			writer.writerow(row)
+	
+	async def selectExcel(self, fileName:str, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
+		
+		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		cursor = await self.executeRead(query, parameter)
+		self.checkLinkingMeta(modelClass)
+		with xlsxwriter.Workbook(fileName) as workbook :
+			writer = ExcelWriter(modelClass, workbook)
+			writer.writeMain(cursor)
+			for foreignKey in modelClass.foreignKey :
+				clause = writer.getForeignClause(foreignKey)
+				query = self.generateSelectQuery(foreignKey.model, clause, None, None)
+				cursor = await self.executeRead(query, None)
+				writer.writeForeign(foreignKey, cursor)
+			writer.writeReference()
+
 	async def selectRelated(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
 		self.checkLinkingMeta(modelClass)
 		isMapper = modelClass.__is_mapper__
 		for foreignKey in modelClass.foreignKey :
-			if isinstance(foreignKey.columnMeta, StringColumn) :
-				keyList = {f"'{getattr(i, foreignKey.name)}'" for i in recordList}
-			else :
-				keyList = {str(getattr(i, foreignKey.name)) for i in recordList}
-			clause = "WHERE %s IN(%s)"%(foreignKey.column, ",".join(list(keyList)))
-			related = await self.select(foreignKey.model, clause, isMapper)
-			relatedMap = {getattr(i, foreignKey.column):i for i in related}
-			for record in recordList :
-				value = getattr(record, foreignKey.name)
-				setattr(record, foreignKey.name, relatedMap.get(value, value))
+			keyList = [getattr(i, foreignKey.name) for i in recordList]
+			keyList = [i for i in keyList if i is not None]
+			if len(keyList) :
+				if isinstance(foreignKey.columnMeta, StringColumn) :
+					keyList = {f"'{i}'" for i in keyList}
+				else :
+					keyList = {str(i) for i in keyList}
+				
+				clause = "WHERE %s IN(%s)"%(foreignKey.column, ",".join(list(keyList)))
+				related = await self.select(foreignKey.model, clause, isMapper)
+				relatedMap = {getattr(i, foreignKey.column):i for i in related}
+				for record in recordList :
+					value = getattr(record, foreignKey.name)
+					setattr(record, foreignKey.name, relatedMap.get(value, value))
 	
 	async def selectChildren(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
 		self.checkLinkingMeta(modelClass)
 		primary = modelClass.primary
 		if isinstance(primary, StringColumn) :
-			keyList = {f"'{getattr(i, primary.name)}'" for i in recordList}
+			keyList = [f"'{getattr(i, primary.name)}'" for i in recordList]
 		else :
-			keyList = {str(getattr(i, primary)) for i in recordList}
+			keyList = [str(getattr(i, primary)) for i in recordList]
 		joined = ','.join(list(keyList))
 		childrenMap = {}
 		childrenFlattedMap = {}
@@ -169,7 +253,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 				else :
 					insertList.append(childRecord)
 					setattr(childRecord, child.parentColumn, primary)
-			await self.insertMultiple(insertList)
+			await self.insertMultiple(insertList, isReturningID=True)
 	
 	async def dropChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)
@@ -219,6 +303,25 @@ class AsyncDBSessionBase (DBSessionBase) :
 	async def dropByID(self, modelClass, id) :
 		pass
 	
+	async def dropByCondition(self, modelClass, condition) :
+		pass
+	
+	async def setFieldByID(self, modelClass:type, fieldMap:Dict[str, Any], id:int) :
+		query, parameter = self.generateSetField(modelClass, fieldMap, id)
+		query = self.processClause(query, parameter)
+		await self.executeWrite(query, parameter)
+
+	async def setFieldByIDList(self, modelClass:type, fieldMap:Dict[str, Any], ids:List[int]) :
+		query, parameter = self.generateSetFieldIDList(modelClass, fieldMap, ids)
+		query = self.processClause(query, parameter)
+		await self.executeWrite(query, parameter)
+	
+	async def resetIDSequence(self, modelClass:type, renewStartID:int) :
+		query = self.generateResetID(modelClass)
+		parameter = [int(renewStartID)]
+		query = self.processClause(query, parameter)
+		await self.executeWrite(query, parameter)
+
 	async def createTable(self) :
 		pass
 	

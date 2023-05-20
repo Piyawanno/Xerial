@@ -1,12 +1,37 @@
 #!/usr/bin/python3
 
-from marshal import load
-from xerial.DataLoader import DataLoader
+"""
+xerial-load -c /etc/gaimon/Database.json -m config/DBMigration.json
+"""
 
-import json
+from xerial.DBMigration import DBMigration
+import sys, argparse, os, json, asyncio
 
-with open('/etc/xerial/Xerial.json', 'rt') as fd :
-	config = json.load(fd)
+__parser__ = argparse.ArgumentParser(description="Xerial-Dump : dump data from DB into json file.")
+__parser__.add_argument("-c", "--connection", help="Path for connection configuration.")
+__parser__.add_argument("-m", "--migration", help="Path for dump migration configuration.")
+__option__ = __parser__.parse_args(sys.argv[1:])
 
-loader = DataLoader(config)
-loader.load()
+connectionPath = __option__.connection
+
+if connectionPath is None or not os.path.isfile(connectionPath) :
+	connectionPath = "/etc/xerial/Xerial.json"
+
+with open(connectionPath) as fd :
+	connectionConfig = json.load(fd)
+
+migrationPath = __option__.migration
+
+if migrationPath is None or not os.path.isfile(migrationPath) :
+	connectionPath = "/etc/xerial/DBMigration.json"
+
+with open(migrationPath) as fd :
+	migrationConfig = json.load(fd)
+
+async def run() :
+	migration = DBMigration(connectionConfig)
+	await migration.connect(migrationConfig['model'])
+	await migration.load(migrationConfig['dataPath'])
+	await migration.close()
+
+asyncio.run(run())

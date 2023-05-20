@@ -9,8 +9,22 @@ class ForeignKey :
 		self.model = None
 		self.modelRecord = None
 		self.columnMeta = None
+
+		self.enumLabel = None
+		self.representativeColumn = -1
 	
 	def fromDict(self, data:dict) :
 		if self.modelRecord is None :
 			self.modelRecord = self.model()
 		return self.modelRecord.fromDict(data)
+
+	def processEnumLabel(self) :
+		if self.enumLabel is not None : return
+		self.enumLabel = []
+		for i, (columnName, column) in enumerate(self.model.meta) :
+			if column.isRepresentative : self.representativeColumn = i
+			if hasattr(column, 'enum') and column.enum is not None :
+				if hasattr(column.enum, 'label') :
+					self.enumLabel.append((i, column.enum.label))
+				else :
+					self.enumLabel.append((i, {i.value:str(i) for i in column.enum}))

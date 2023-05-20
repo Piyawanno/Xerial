@@ -3,10 +3,12 @@ from xerial.Record import Record
 from xerial.IntegerColumn import IntegerColumn
 from xerial.StringColumn import StringColumn
 from xerial.RoundRobinConnector import RoundRobinConnector
+from xerial.ExcelWriter import ExcelWriter
 from enum import Enum
 from packaging.version import Version
+from typing import Dict, List, Any, Tuple
 
-import logging
+import logging, csv, xlsxwriter, time
 
 class PrimaryDataError (Exception) :
 	pass
@@ -20,6 +22,7 @@ class DBSessionBase :
 		self.model = {}
 		self.mapExecute()
 		self.queryCount = 0
+		self.lastConnectionTime = -1.0
 	
 	def resetCount(self) :
 		self.queryCount = 0
@@ -64,12 +67,43 @@ class DBSessionBase :
 	
 	def dropByID(self, modelClass, id) :
 		pass
-	
+
+	def dropByCondition(self, modelClass, condition) :
+		pass
+
+	def setFieldByID(self, modelClass:type, fieldMap:Dict[str, Any], id:int) :
+		query, parameter = self.generateSetField(modelClass, fieldMap, id)
+		query = self.processClause(query, parameter)
+		self.executeWrite(query, parameter)
+
+	def setFieldByIDList(self, modelClass:type, fieldMap:Dict[str, Any], ids:List[int]) :
+		query, parameter = self.generateSetFieldIDList(modelClass, fieldMap, ids)
+		query = self.processClause(query, parameter)
+		self.executeWrite(query, parameter)
+
 	def createTable(self) :
 		pass
 	
-	def getExistingTable(self) :
+	def getExistingTable(self) -> List[str] :
 		pass
+
+	def resetIDSequence(self, modelClass:type, renewStartID:int) :
+		query = self.generateResetID(modelClass)
+		parameter = [int(renewStartID)]
+		query = self.processClause(query, parameter)
+		self.executeWrite(query, parameter)
+	
+	def dropTable(self, modelClass:type) :
+		existing = {i.lower() for i in self.getExistingTable()}
+		if modelClass.__fulltablename__.lower() in existing :
+			query = self.generateDropTable(modelClass)
+			self.executeWrite(query)
+
+	def generateResetID(self, modelClass:type) -> str :
+		return ""
+	
+	def generateDropTable(self, modelClass:type) -> str :
+		return f"DROP TABLE {modelClass.__fulltablename__}"
 	
 	def appendModel(self, modelClass) :
 		self.model[modelClass.__name__] = modelClass
@@ -119,6 +153,12 @@ class DBSessionBase :
 			else :
 				self.createConnection()
 	
+	def generateSelectQuery(self, modelClass:type, clause:str, limit:int, offset:int) -> str :
+		return ''
+	
+	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
+		return ''
+	
 	def count(self, modelClass:type, clause:str, parameter:list=None) -> int :
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
@@ -126,23 +166,39 @@ class DBSessionBase :
 		cursor = self.executeRead(query, parameter)
 		for i in cursor :
 			return i[0]
+	
+	# NOTE : Return None if not found.
+	def selectByID(self, modelClass:type, ID:int, isRelated:bool=False, isChildren:bool=False) -> Record :
+		fetched = self.select(
+			modelClass,
+			f"WHERE {modelClass.primary}=?",
+			parameter = [int(ID)],
+			limit=1,
+			isRelated=isRelated,
+			isChildren=isChildren
+		)
+		if len(fetched) : return fetched[0]
+		else : None
 
 	def select(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
+		
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		import time
 		cursor = self.executeRead(query, parameter)
 		result = []
 		for row in cursor :
-			record = modelClass()
+			record = modelClass.__new__(modelClass)
+			record.initRelation()
 			i = 0
 			for columnName, column in modelClass.meta :
 				setattr(record, columnName, column.processValue(row[i]))
 				i += 1
 			result.append(record)
-		if isRelated :
+		if isRelated and len(result) :
 			self.selectRelated(modelClass, result)
-		if isChildren :
+		if isChildren and len(result) :
 			self.selectChildren(modelClass, result)
 		return result
 	
@@ -171,6 +227,34 @@ class DBSessionBase :
 				i += 1
 			result.append(data)
 		return result
+
+	# NOTE
+	# For writing string descriptor = io.StringIO()
+	def selectCSV(self, descriptor, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) :
+		if parameter is not None :
+			clause = self.processClause(clause, parameter)
+		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		cursor = self.executeRead(query, parameter)
+		writer = csv.writer(descriptor)
+		columnNameList = [columnName for columnName, _ in modelClass.meta]
+		writer.writerow(columnNameList)
+		for row in cursor :
+			writer.writerow(row)
+	
+	def selectExcel(self, fileName:str, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) :
+		if parameter is not None : clause = self.processClause(clause, parameter)
+		query = self.generateSelectQuery(modelClass, clause, limit, offset)
+		cursor = self.executeRead(query, parameter)
+		self.checkLinkingMeta(modelClass)
+		with xlsxwriter.Workbook(fileName) as workbook :
+			writer = ExcelWriter(modelClass, workbook)
+			writer.writeMain(cursor)
+			for foreignKey in modelClass.foreignKey :
+				clause = writer.getForeignClause(foreignKey)
+				query = self.generateSelectQuery(foreignKey.model, clause, None, None)
+				cursor = self.executeRead(query, None)
+				writer.writeForeign(foreignKey, cursor)
+			writer.writeReference()
 	
 	def getValue(self, record, isAutoID=True) :
 		value = []
@@ -196,6 +280,8 @@ class DBSessionBase :
 				value.append(column.getReference(attribute))
 			elif isinstance(attribute, Enum) :
 				value.append(attribute.value)
+			elif column.isConvertRaw :
+				value.append(column.convertRaw(attribute))
 			else :
 				value.append(attribute)
 		return value
@@ -273,7 +359,7 @@ class DBSessionBase :
 			if len(childRecordList) == 0 : continue
 			for childRecord in childRecordList :
 				setattr(childRecord, child.parentColumn, primary)
-			self.insertMultiple(childRecordList)
+			self.insertMultiple(childRecordList, isReturningID=True)
 	
 	def updateChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)
@@ -290,7 +376,7 @@ class DBSessionBase :
 				else :
 					insertList.append(childRecord)
 					setattr(childRecord, child.parentColumn, primary)
-			self.insertMultiple(insertList)
+			self.insertMultiple(insertList, isReturningID=True)
 	
 	def dropChildren(self, record, modelClass) :
 		self.checkLinkingMeta(modelClass)
@@ -369,7 +455,7 @@ class DBSessionBase :
 		else :
 			ID = raw.get(modelClass.primary, None)
 			ID = meta.setValueToDB(ID)
-			return "%s=%s"%(record.__class__.primary, ID)
+			return "%s=%s"%(modelClass.primary, ID)
 
 	def generateDropCommand(self) :
 		for model in self.model.values() :
@@ -377,3 +463,32 @@ class DBSessionBase :
 	
 	def processClause(self, clause:str, parameter:list) -> str:
 		return clause
+	
+	def generateSetField(self, modelClass:type, fieldMap:Dict[str, Any], id:int) -> Tuple[str, list]:
+		setList = []
+		parameter = []
+		for name, value in fieldMap.items():
+			setList.append(f'{name}=?')
+			parameter.append(value)
+		parameter.append(id)
+		query = "UPDATE %s SET %s WHERE %s=?"%(
+			modelClass.__fulltablename__,
+			",".join(setList),
+			modelClass.primary
+		)
+		return query, parameter
+	
+	def generateSetFieldIDList(self, modelClass:type, fieldMap:Dict[str, Any], ids:List[int]) -> Tuple[str, list]:
+		setList = []
+		parameter = []
+		for name, value in fieldMap.items():
+			setList.append(f'{name}=?')
+			parameter.append(value)
+		parameter.extend(ids)
+		query = "UPDATE %s SET %s WHERE %s IN (%s)"%(
+			modelClass.__fulltablename__,
+			",".join(setList),
+			modelClass.primary,
+			",".join('?'*len(ids))
+		)
+		return query, parameter

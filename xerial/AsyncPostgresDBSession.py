@@ -2,6 +2,7 @@ from xerial.PostgresDBSession import PostgresDBSession
 from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.IntegerColumn import IntegerColumn
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
+from typing import List, Dict, Any
 
 import logging, asyncio, time
 
@@ -23,6 +24,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		n = 1
 		p = 0
 		processed = []
+		cursor = -1
 		while True :
 			i = clause.find("?", p)
 			if i < 0 :
@@ -32,7 +34,9 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			processed.append(f"${n}")
 			p = i+1
 			n = n+1
-		return "".join(processed)
+			cursor = i
+		if cursor == -1: return "".join(processed)
+		return "".join(processed) + clause[cursor+1:]
 
 	def prepareStatement(self, modelClass) :
 		if hasattr(modelClass, 'primaryMeta') :
@@ -133,8 +137,9 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			raise error
 	
 	async def executeRegularWrite(self, query, parameter=None) :
+		self.queryCount += 1
 		return await self.executeRegularRead(query, parameter)
-	
+
 	async def insert(self, record, isAutoID=True) :
 		modelClass = record.__class__
 		query = self.generateInsertQuery(record, isAutoID)
@@ -159,11 +164,6 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 
 	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
-		if isAutoID and isReturningID :
-			keyList = []
-			for record in recordList :
-				keyList.append(await self.insert(record))
-			return keyList
 		valueList = []
 		modelClass = None
 		hasChildren = False
@@ -172,7 +172,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 				modelClass = record.__class__
 				isBackup = modelClass.__backup__
 				now = time.time()
-				if len(modelClass.children) :
+				if len(modelClass.children) and not (isAutoID and isReturningID):
 					hasChildren = True
 					break
 			if isBackup :
@@ -180,9 +180,11 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 				record.__update_time__ = -1.0
 			valueList.append(self.getRawValue(record, isAutoID))
 
-		if hasChildren :
+		if isAutoID and isReturningID :
+			return await self.insertMultipleWithID(modelClass, recordList, valueList)
+		elif hasChildren :
 			for record in recordList :
-				await self.insert(record)
+				await self.insert(record, isAutoID=isAutoID)
 			return
 		
 		try :
@@ -199,13 +201,52 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			await self.connect()
 			raise error
 	
-	def generateInsertMultipleQuery(self, modelClass, isAutoID=True) :
+	async def insertMultipleWithID(self, modelClass:type, recordList:list, valueList:list) :
+		query = self.generateInsertMultipleQuery(modelClass, len(recordList))
+		processed = []
+		for i in valueList :
+			processed.extend(i)
+		fetched = await self.executeWrite(query, processed)
+		result = []
+		for record, raw in zip(recordList, fetched) :
+			setattr(record, modelClass.primary, raw[0])
+			result.append(raw[0])
+
+		primary = getattr(record, modelClass.primary)
+		for child in modelClass.children :
+			childrenNumber = []
+			accumulateChildren = []
+			for record in recordList :
+				childRecordList = getattr(record, child.name)
+				primary = getattr(record, modelClass.primary)
+				for childRecord in childRecordList :
+					setattr(childRecord, child.parentColumn, primary)
+				childrenNumber.append(len(childRecordList))
+				accumulateChildren.extend(childRecordList)
+			await self.insertMultiple(accumulateChildren, isAutoID=True, isReturningID=True)
+			primary = getattr(recordList[0], modelClass.primary)
+			change = childrenNumber[0]
+			i, j, n = 0, 0, len(recordList)
+			for childRecord in accumulateChildren :
+				setattr(childRecord, child.parentColumn, primary)
+				i += 1
+				if i >= change and j+1 < n:
+					i, j = 0, j+1
+					primary = getattr(recordList[j], modelClass.primary)
+					change = childrenNumber[j]
+		return result
+	
+	def generateInsertMultipleQuery(self, modelClass, n:int, isAutoID=True) :
 		if isAutoID :
+			i, m = 1, len(modelClass.meta)-1
+			parameter = []
+			for _ in range(n) :
+				parameter.append(','.join([f'${j}' for j in range(i, i+m)]))
+				i += m
 			return ''.join([
 				f"INSERT INTO {self.schema}{modelClass.__fulltablename__}",
-				f"({modelClass.__insert_column__}) (",
-				f"SELECT {modelClass.__insert_record_column__} FROM ",
-				f"unnest($1::{self.schema}{modelClass.__fulltablename__}[]) as r",
+				f"({modelClass.__insert_column__}) VALUES (",
+				'),('.join(parameter),
 				f") RETURNING {modelClass.primary}"
 			])
 		else :
@@ -263,6 +304,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		table = modelClass.__fulltablename__
 		parentQuery = f"SELECT {modelClass.primary} FROM {self.schema}{table} {clause}"
 		for child in modelClass.children :
+			if not hasattr(child.model, '__fulltablename__'): continue
 			childTable = child.model.__fulltablename__
 			query = f"DELETE FROM {self.schema}{childTable} WHERE {child.column} IN ({parentQuery})"
 			await self.executeWrite(query)

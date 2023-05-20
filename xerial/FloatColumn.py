@@ -1,9 +1,18 @@
 from xerial.Column import Column
-from xerial.Record import Record
 from xerial.Vendor import Vendor
 
 class FloatColumn (Column) :
-	def __init__(self, isPrimary=False, length=32, precision=8, isNotNull=False, default=None, foreignKey=None, isIndex=False, input=None) :
+	def __init__(self,
+			isPrimary=False,
+			length=32,
+			precision=8,
+			isNotNull=False,
+			default=None,
+			foreignKey=None,
+			isIndex=False,
+			isRepresentative=False,
+			input=None) :
+			
 		Column.__init__(self,
 			isPrimary=isPrimary,
 			length=length,
@@ -11,13 +20,11 @@ class FloatColumn (Column) :
 			default=default,
 			foreignKey=foreignKey,
 			isIndex=isIndex,
+			isRepresentative=isRepresentative,
 			input=input
 		)
 		self.precision = precision
 	
-	def getParameterFormat(self) :
-		return f"%({self.name})f"
-
 	def fromDict(self, data) :
 		raw = data.get(self.name, self.default)
 		if raw is None :

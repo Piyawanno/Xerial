@@ -1,4 +1,5 @@
 from xerial.AsyncSQLiteDBSession import AsyncSQLiteDBSession
+from xerial.AsyncPostgresDBSession import AsyncPostgresDBSession
 from xerial.Vendor import Vendor
 from xerial.Record import Record
 from xerial.StringColumn import StringColumn
@@ -9,7 +10,7 @@ from xerial.Children import Children
 from datetime import datetime
 from typing import List
 
-import asyncio
+import asyncio, copy, time
 
 class Poll (Record) :
 	topic = StringColumn(length=64)
@@ -32,12 +33,22 @@ class Choice (Record) :
 		return f"{self.id} {self.choice} {self.count}"
 
 async def runTest() :
-	config = {
-		"vendor" : Vendor.SQLITE,
-		"database" : "./example.sqlite.bin"
-	}
+	# config = {
+	# 	"vendor" : Vendor.SQLITE,
+	# 	"database" : "./example.sqlite.bin"
+	# }
 
-	session = AsyncSQLiteDBSession(config)
+	# session = AsyncSQLiteDBSession(config)
+
+	config = {
+		"vendor" : Vendor.POSTGRESQL,
+		"host" : "localhost",
+		"database" : "Gaimon",
+		"port": 5432,
+		"user": "admin",
+		"password": "SECRET_PASSWORD",
+	}
+	session = AsyncPostgresDBSession(config)
 	await session.connect()
 
 	session.appendModel(Poll)
@@ -57,11 +68,22 @@ async def runTest() :
 		Choice().fromDict({"choice" : "Sun"}),
 	]
 
+	pollList1 = [copy.copy(poll) for i in range(100)]
+	pollList2 = [copy.copy(poll) for i in range(100)]
+
 	await session.insert(poll)
 
-	pollList:List[Poll] = await session.select(Poll, "ORDER BY id DESC", isRelated=True, limit=1)
+	start = time.time()
+	await session.insertMultiple(pollList1, True, True)
+	print("Insert Multiple", time.time()- start)
+
+	start = time.time()
+	for poll in pollList2 :
+		await session.insert(poll)
+	print("Insert Each", time.time()- start)
+
+	pollList:List[Poll] = await session.select(Poll, "ORDER BY id DESC", isRelated=True, isChildren=True, limit=1)
 	poll = pollList[0]
-	print(poll)
 
 	poll.choices[-1].choice = "Sun is a star not a planet."
 	poll.choices.append(Choice().fromDict({"choice" : "Pluto"}),)
@@ -70,11 +92,9 @@ async def runTest() :
 	pollList:List[Poll] = await session.select(Poll, "ORDER BY id DESC", isRelated=True, limit=1)
 	poll = pollList[0]
 	pollID = poll.id
-	print(poll)
 
 	await session.drop(poll)
 	choiceList = await session.select(Choice, f"WHERE poll=?", parameter=[pollID])
-	print(choiceList)
 	await session.closeConnection()
 	return
 

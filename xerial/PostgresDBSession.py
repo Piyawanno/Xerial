@@ -138,6 +138,14 @@ class PostgresDBSession (DBSessionBase) :
 			modelClass.__fulltablename__,
 			clause, limitClause, offsetClause
 		)
+
+	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
+		limitClause = "" if limit is None else "LIMIT %d"%(limit)
+		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
+		return "SELECT * FROM %s %s %s %s"%(
+			tableName,
+			clause, limitClause, offsetClause
+		)
 	
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
@@ -319,7 +327,7 @@ class PostgresDBSession (DBSessionBase) :
 	def createTable(self) :
 		self.getExistingTable()
 		for model in self.model.values() :
-			if hasattr(model, '__skip_create__') and not getattr(model, '__skip_create__') : continue
+			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
 			if model.__fulltablename__ in self.existingTable :
 				self.createIndex(model)
 				continue
@@ -340,7 +348,8 @@ class PostgresDBSession (DBSessionBase) :
 					else : primary = "PRIMARY KEY"
 				notNull = "NOT NULL" if column.isNotNull else ""
 				isDefault = hasattr(column, 'default') and column.default is not None
-				default = "DEFAULT %s"%(column.setValueToDB(column.default)) if isDefault else ""
+				defaultValue = column.default() if callable(column.default) else column.default
+				default = "DEFAULT %s"%(column.setValueToDB(defaultValue)) if isDefault else ""
 				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
 		query = [f"CREATE TABLE IF NOT EXISTS {self.schema}{model.__fulltablename__} (\n\t"]
 		if len(primaryList) :
@@ -355,9 +364,9 @@ class PostgresDBSession (DBSessionBase) :
 	def createIndex(self, model) :
 		query = self.generateIndexCheckQuery(model)
 		self.cursor.execute("".join(query))
-		exisitingIndex = {i[0] for i in self.cursor}
+		existingIndex = {i[0] for i in self.cursor}
 		for name, column in model.meta :
-			if column.isIndex and name not in exisitingIndex :
+			if column.isIndex and name not in existingIndex :
 				self.executeWrite(self.generateIndexQuery(model, name))
 	
 	def generateIndexQuery(self, model, columnName) :
@@ -383,4 +392,10 @@ class PostgresDBSession (DBSessionBase) :
 		query.append("WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND ")
 		query.append("a.attrelid = t.oid AND a.attnum = ANY(ix.indkey) AND ")
 		query.append(f"t.relkind = 'r' AND t.relname='{self.schema}{model.__fulltablename__}'")
-		return "".join(query)	
+		return "".join(query)
+	
+	def generateResetID(self, modelClass:type) -> str :
+		return f"ALTER SEQUENCE {self.schema}{modelClass.__fulltablename__} RESTART ?;"
+
+	def generateDropTable(self, modelClass:type) -> str :
+		return f"DROP TABLE {modelClass.__fulltablename__} CASCADE"

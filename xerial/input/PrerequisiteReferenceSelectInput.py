@@ -1,3 +1,4 @@
+from typing import Dict
 from xerial.Input import Input
 
 class PrerequisiteReferenceSelectInput (Input):
@@ -8,11 +9,13 @@ class PrerequisiteReferenceSelectInput (Input):
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
+			isMobile:bool=False,
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
 			help:str=None,
 			documentPath:str=None,
+			config: Dict=None
 		) :
 		Input.__init__(
 			self,
@@ -20,11 +23,13 @@ class PrerequisiteReferenceSelectInput (Input):
 			order,
 			group,
 			isTable,
+			isMobile,
 			isSearch,
 			isRequired,
 			isEditable,
 			help,
-			documentPath
+			documentPath,
+			config
 		)
 		self.url = url
 		self.prerequisite = prerequisite

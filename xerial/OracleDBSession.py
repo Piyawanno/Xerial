@@ -147,6 +147,17 @@ class OracleDBSession (DBSessionBase) :
 			clause, limitClause
 		)
 	
+	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
+		if limit is not None :
+			if offset is None : offset = 0
+			limitClause = "OFFSET %d ROWS FETCH NEXT %d ROWS ONLY"%(offset, limit)
+		else :
+			limitClause = ""
+		return "SELECT * FROM %s %s %s"%(
+			tableName,
+			clause, limitClause
+		)
+	
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
 		query = self.generateInsert(modelClass, isAutoID)
@@ -370,3 +381,6 @@ class OracleDBSession (DBSessionBase) :
 	def generateCheckTable(self) :
 		joined = "', '".join(self.config['owner'])
 		return f"SELECT table_name, owner  from all_tables WHERE owner IN ('{joined}')"
+
+	def generateResetID(self, modelClass:type) -> str :
+		return f"ALTER TABLE {modelClass.__fulltablename__} MODIFY(ID GENERATED AS IDENTITY (START WITH ?));"

@@ -1,18 +1,26 @@
 import logging
 
+"""
+NOTE
+
+RoundRobinConnector is designed for the case of Replication.
+The read cursor/connector to each Read-Replica will be iterated
+with RoundRobin algorithm. There is, however, only one write connector.
+Since the most DB support one active Replica.
+"""
 class RoundRobinConnector :
 	def __init__(self, config:dict) :
 		self.config = config
 		self.reader = []
 		self.writer = None
-		self.readerCurosr = []
+		self.readerCursor = []
 		self.writerCursor = None
 	
 	def connect(self, hasCursor=True) :
 		from xerial.DBSessionPool import DBSessionPool
 		self.reader = []
 		self.writer = None
-		self.readerCurosr = []
+		self.readerCursor = []
 		self.writerCursor = None
 		for i in self.config['connectionList'] :
 			i['vendor'] = self.config['vendor']
@@ -23,7 +31,7 @@ class RoundRobinConnector :
 			if hasCursor :
 				cursor = connector.cursor()
 				if isWrite : self.writerCursor = cursor
-				self.readerCurosr.append(cursor)
+				self.readerCursor.append(cursor)
 
 		if self.writer is None :
 			raise ValueError("No write connector is defined.")
@@ -37,7 +45,7 @@ class RoundRobinConnector :
 		return connector
 	
 	def getNextReadCursor(self) :
-		cursor = self.readerCurosr[self.i]
+		cursor = self.readerCursor[self.i]
 		self.i = self.i+1
 		if self.i >= self.n : self.i = 0
 		return cursor

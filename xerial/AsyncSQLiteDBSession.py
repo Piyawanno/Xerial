@@ -115,11 +115,11 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		valueList = []
 		modelClass = None
 		hasChildren = False
-		isBackup = modelClass.__backup__
 		now = time.time()
 		for record in recordList :
 			if modelClass is None :
 				modelClass = record.__class__
+				isBackup = modelClass.__backup__
 				if len(modelClass.children) :
 					hasChildren = True
 					break

@@ -1,3 +1,4 @@
+from typing import Dict
 from xerial.Input import Input
 
 class EnableInput (Input):
@@ -6,11 +7,13 @@ class EnableInput (Input):
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
+			isMobile:bool=False,
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
 			help:str=None,
 			documentPath:str=None,
+			config:Dict=None
 		) :
 		Input.__init__(
 			self,
@@ -18,10 +21,12 @@ class EnableInput (Input):
 			order,
 			group,
 			isTable,
+			isMobile,
 			isSearch,
 			isRequired,
 			isEditable,
 			help,
 			documentPath,
+			config
 		)
 		self.typeName = 'Enable'

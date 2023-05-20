@@ -1,7 +1,7 @@
 from typing import Dict
 from xerial.Input import Input
 
-class EmailInput (Input):
+class RichTextInput (Input):
 	def __init__(self,
 			label:str,
 			order:str=None,
@@ -29,4 +29,9 @@ class EmailInput (Input):
 			documentPath,
 			config
 		)
-		self.typeName = 'Email'
+		self.typeName = 'RichText'
+
+	def toDict(self) -> dict:
+		result = super().toDict()
+		result['config'] = self.config
+		return result

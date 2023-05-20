@@ -4,11 +4,17 @@ from xerial.Record import Record
 from xerial.StringColumn import StringColumn
 from xerial.IntegerColumn import IntegerColumn
 from xerial.Children import Children
+from enum import IntEnum
 
 import asyncio
 
+class WarehouseType (IntEnum) :
+	SUPPLIER = 1
+	PRODUCTION = 2
+	CUSTOMER = 3
+
 class ProductType (Record) :
-	name = StringColumn(length=32)
+	name = StringColumn(length=32, isRepresentative=True)
 	description = StringColumn(length=-1)
 	warehouse = Children("ProductWareHouseMapper.productTypeID")
 
@@ -16,8 +22,9 @@ class ProductType (Record) :
 		return f"<ProductType {self.id}, {self.name}, {self.description}, {self.warehouse}>"
 
 class WareHouse (Record) :
-	name = StringColumn(length=32)
+	name = StringColumn(length=32, isRepresentative=True)
 	location = StringColumn(length=255)
+	type = IntegerColumn(enum=WarehouseType)
 	productType = Children("ProductWareHouseMapper.warehouseID")
 
 	def __repr__(self) -> str:
@@ -47,9 +54,9 @@ async def runTest() :
 	await session.createTable()
 
 	warehouseList = [
-		WareHouse().fromDict({"name" : "WH1", "location" : "Konohakagure"}),
-		WareHouse().fromDict({"name" : "WH2", "location" : "Kumogakure"}),
-		WareHouse().fromDict({"name" : "WH3", "location" : "Iwagakure"}),
+		WareHouse().fromDict({"name" : "WH1", "location" : "Konohakagure", "type" : 1}),
+		WareHouse().fromDict({"name" : "WH2", "location" : "Kumogakure", "type" : 2}),
+		WareHouse().fromDict({"name" : "WH3", "location" : "Iwagakure", "type" : 3}),
 	]
 
 	await session.insertMultiple(warehouseList)
@@ -80,6 +87,8 @@ async def runTest() :
 			print(j)
 
 	print([i.toDict() for i in fetchedWarehouse])
+
+	await session.selectExcel("ProductWareHouseMapper.xlsx", ProductWareHouseMapper, "")
 
 	fetchedProduct = await session.select(ProductType, "", isRelated=True)
 	for i in fetchedProduct :

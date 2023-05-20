@@ -1,6 +1,9 @@
 from xerial.Column import Column
-from xerial.Record import Record
 from xerial.Vendor import Vendor
+
+import time, math
+
+DAY_SECONDS = 60*60*24
 
 __INT_ULIMIT__ = 2**31
 __INT_LLIMIT__ = -1*2**31
@@ -9,7 +12,18 @@ __BIG_INT_LLIMIT__ = -1*2**63
 
 class IntegerColumn (Column) :
 	isBigInt = False
-	def __init__(self, isPrimary=False, length=32, isNotNull=False, default=None, foreignKey=None, isIndex=False, input=None) :
+	def __init__(self,
+			isPrimary=False,
+			length=32,
+			isNotNull=False,
+			default=None,
+			foreignKey=None,
+			isIndex=False,
+			isRepresentative=False,
+			input=None,
+			enum=None,
+		) :
+		
 		Column.__init__(self,
 			isPrimary=isPrimary,
 			length=length,
@@ -17,14 +31,17 @@ class IntegerColumn (Column) :
 			default=default,
 			foreignKey=foreignKey,
 			isIndex=isIndex,
+			isRepresentative=isRepresentative,
 			input=input
 		)
+		self.enum = enum
 		if self.length > 32 :
 			self.isBigInt = True
 	
-	def getParameterFormat(self) :
-		return f"%({self.name})d"
-
+	@staticmethod
+	def getDateID() :
+		return int(math.floor((time.time() - time.timezone) / DAY_SECONDS))
+	
 	def fromDict(self, data) :
 		raw = data.get(self.name, self.default)
 		if raw == "": raw = self.default
@@ -41,6 +58,7 @@ class IntegerColumn (Column) :
 			return result
 	
 	def toDict(self, attribute):
+		from xerial.Record import Record
 		if isinstance(attribute, Record) :
 			return attribute.toDict()
 		else :

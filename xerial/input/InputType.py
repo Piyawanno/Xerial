@@ -22,6 +22,9 @@ from xerial.input.ReferenceRadioInput import ReferenceRadioInput
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 from xerial.input.AutoCompleteInput import AutoCompleteInput
 from xerial.input.SelectInput import SelectInput
+from xerial.input.RadioInput import RadioInput
+from xerial.input.CheckBoxInput import CheckBoxInput
+from xerial.input.RichTextInput import RichTextInput
 
 from enum import IntEnum
 
@@ -50,6 +53,9 @@ class InputType (IntEnum) :
 	AUTOCOMPLETE = 36
 	STATIC_SELECT = 37
 	PREREQ_INPUT = 38
+	RADIO = 39
+	CHECKBOX = 40
+	RICH_TEXT = 41
 
 InputType.mapped = {
 	InputType.TEXT: TextInput,
@@ -76,4 +82,7 @@ InputType.mapped = {
 	InputType.AUTOCOMPLETE: AutoCompleteInput,
 	InputType.STATIC_SELECT: SelectInput,
 	InputType.PREREQ_INPUT: PrerequisiteReferenceSelectInput,
+	InputType.RADIO: RadioInput,
+	InputType.CHECKBOX: CheckBoxInput,
+	InputType.RICH_TEXT: RichTextInput,
 }

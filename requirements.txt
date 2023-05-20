@@ -1,4 +1,4 @@
-mariadb
+mariadb==1.0.11
 aiomysql
 cx_Oracle
 cx_Oracle_async
@@ -10,3 +10,4 @@ aioodbc
 shapely
 packaging
 tabulate
+xlsxwriter

@@ -3,7 +3,17 @@ from xerial.Vendor import Vendor
 
 class StringColumn (Column) :
 	isCLOB = False
-	def __init__(self, isPrimary=False, length=255, isNotNull=False, default=None, foreignKey=None, isIndex=False, isFixedLength=False, input=None) :
+	def __init__(self,
+			isPrimary=False,
+			length=255,
+			isNotNull=False,
+			default=None,
+			foreignKey=None,
+			isIndex=False,
+			isRepresentative=False,
+			isFixedLength=False,
+			input=None) :
+			
 		Column.__init__(self,
 			isPrimary=isPrimary,
 			length=length,
@@ -11,6 +21,7 @@ class StringColumn (Column) :
 			default=default,
 			foreignKey=foreignKey,
 			isIndex=isIndex,
+			isRepresentative=isRepresentative,
 			input=input
 		)
 		self.isFixedLength = isFixedLength
@@ -21,7 +32,10 @@ class StringColumn (Column) :
 		return attribute.read() if self.isCLOB and hasattr(attribute, 'read') else attribute
 
 	def fromDict(self, data) :
-		return data.get(self.name, '')
+		value = data.get(self.name, None)
+		if value is None: return value
+		if not type(value) is str: value = str(value)
+		return value
 
 	def getDBDataType(self) :
 		if self.vendor == Vendor.ORACLE :

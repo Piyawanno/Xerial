@@ -1,7 +1,7 @@
 from typing import Dict
 from xerial.Input import Input
 
-class FileInput (Input):
+class FractionInput (Input):
 	def __init__(self,
 			label:str,
 			order:str=None,
@@ -10,11 +10,12 @@ class FileInput (Input):
 			isMobile:bool=False,
 			isSearch:bool=False,
 			isRequired:bool=False,
-			isPreview:bool=False,
 			isEditable:bool=True,
 			help:str=None,
-			path:str=None,
-			uploadURL:str=None,
+			isNegative:bool=True,
+			isZeroIncluded:bool=True,
+			isFloatingPoint:bool=True,
+			maxValue:float=None,
 			documentPath:str=None,
 			config:Dict=None
 		) :
@@ -32,14 +33,16 @@ class FileInput (Input):
 			documentPath,
 			config
 		)
-		self.typeName = 'File'
-		self.isPreview = isPreview
-		self.path = path
-		self.uploadURL = uploadURL
-	
+		self.typeName = 'Fraction'
+		self.isNegative = isNegative
+		self.isZeroIncluded = isZeroIncluded
+		self.isFloatingPoint = isFloatingPoint
+		self.maxValue=maxValue
+
 	def toDict(self) -> dict :
 		data = Input.toDict(self)
-		data['isPreview'] = self.isPreview
-		data['path'] = self.path
-		data['uploadURL'] = self.uploadURL
+		data['isNegative'] = self.isNegative
+		data['isZeroIncluded'] = self.isZeroIncluded
+		data['isFloatingPoint'] = self.isFloatingPoint
+		data['maxValue'] = self.maxValue
 		return data

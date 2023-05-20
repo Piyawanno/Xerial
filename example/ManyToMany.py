@@ -5,8 +5,15 @@ from xerial.StringColumn import StringColumn
 from xerial.IntegerColumn import IntegerColumn
 from xerial.Children import Children
 
+from enum import IntEnum
+
+class WarehouseType (IntEnum) :
+	SUPPLIER = 1
+	PRODUCTION = 2
+	CUSTOMER = 3
+
 class ProductType (Record) :
-	name = StringColumn(length=32)
+	name = StringColumn(length=32, isRepresentative=True)
 	description = StringColumn(length=-1)
 	warehouse = Children("ProductWareHouseMapper.productTypeID")
 
@@ -14,8 +21,9 @@ class ProductType (Record) :
 		return f"<ProductType {self.id}, {self.name}, {self.description}, {self.warehouse}>"
 
 class WareHouse (Record) :
-	name = StringColumn(length=32)
+	name = StringColumn(length=32, isRepresentative=True)
 	location = StringColumn(length=255)
+	type = IntegerColumn(enum=WarehouseType)
 	productType = Children("ProductWareHouseMapper.warehouseID")
 
 	def __repr__(self) -> str:
@@ -44,9 +52,9 @@ session.checkModelLinking()
 session.createTable()
 
 warehouseList = [
-	WareHouse().fromDict({"name" : "WH1", "location" : "Konohakagure"}),
-	WareHouse().fromDict({"name" : "WH2", "location" : "Kumogakure"}),
-	WareHouse().fromDict({"name" : "WH3", "location" : "Iwagakure"}),
+	WareHouse().fromDict({"name" : "WH1", "location" : "Konohakagure", "type" : 1}),
+	WareHouse().fromDict({"name" : "WH2", "location" : "Kumogakure", "type" : 2}),
+	WareHouse().fromDict({"name" : "WH3", "location" : "Iwagakure", "type" : 3}),
 ]
 
 session.insertMultiple(warehouseList)
@@ -70,6 +78,8 @@ shuriken.warehouse = [
 session.insert(summonSeal)
 session.insert(shuriken)
 
+session.selectExcel("ProductWareHouseMapper.xlsx", ProductWareHouseMapper, "")
+
 fetchedWarehouse = session.select(WareHouse, "", isRelated=True)
 for i in fetchedWarehouse :
 	print(f"Warehouse {i.name}")
@@ -80,7 +90,7 @@ print([i.toDict() for i in fetchedWarehouse])
 
 fetchedProduct = session.select(ProductType, "", isRelated=True)
 for i in fetchedProduct :
-	print(f"Product {i.name}")
+	print(f"Product {i.name} {i.toOption()}")
 	for j in i.warehouse :
 		print(j)
 print([i.toDict() for i in fetchedProduct])
@@ -94,4 +104,5 @@ for i in fetchedWarehouse :
 	for j in i.productType :
 		print(j)
 print([i.toDict() for i in fetchedWarehouse])
+
 

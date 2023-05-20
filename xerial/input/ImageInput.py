@@ -1,9 +1,10 @@
 from typing import Dict
 from xerial.Input import Input
 
-class FileInput (Input):
+class ImageInput (Input):
 	def __init__(self,
 			label:str,
+			url:str,
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
@@ -16,6 +17,7 @@ class FileInput (Input):
 			path:str=None,
 			uploadURL:str=None,
 			documentPath:str=None,
+			hasCrop:bool=False,
 			config:Dict=None
 		) :
 		Input.__init__(
@@ -32,14 +34,18 @@ class FileInput (Input):
 			documentPath,
 			config
 		)
-		self.typeName = 'File'
+		self.url = url
+		self.typeName = 'Image',
 		self.isPreview = isPreview
 		self.path = path
 		self.uploadURL = uploadURL
+		self.hasCrop = hasCrop
 	
 	def toDict(self) -> dict :
 		data = Input.toDict(self)
 		data['isPreview'] = self.isPreview
 		data['path'] = self.path
 		data['uploadURL'] = self.uploadURL
+		data['url'] = self.url
+		data['hasCrop'] = self.hasCrop
 		return data

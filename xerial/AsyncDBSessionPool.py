@@ -4,8 +4,10 @@ from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.Vendor import Vendor
 from xerial.Record import Record
 
-import logging, traceback, os, importlib, asyncio
+import logging, traceback, os, importlib, asyncio, time
 
+MAX_WAIT = 10_000
+WAIT_TIME = 0.0001
 class AsyncDBSessionPool (DBSessionPool) :
 	def __init__(self, config):
 		super().__init__(config)
@@ -26,6 +28,8 @@ class AsyncDBSessionPool (DBSessionPool) :
 		elif self.vendor == Vendor.MSSQL :
 			from xerial.AsyncMSSQLDBSession import AsyncMSSQLDBSession
 			self.sessionInstance = AsyncMSSQLDBSession
+		self.maxConnectionTime = config.get('maxConnectionTime', 60*60*6)
+		self.lastConnectionTime = -1.0
 	
 	async def createConnection(self) :
 		for i in range(self.connectionNumber) :
@@ -43,13 +47,28 @@ class AsyncDBSessionPool (DBSessionPool) :
 			session.model = self.model
 		return session
 	
-	async def getSession(self) -> AsyncDBSessionBase :
+	async def getSession(self) -> AsyncDBSessionBase :	
+		now = time.time()
+		wait = 0
 		while True :
 			if len(self.pool) == 0 :
-				await asyncio.sleep(0.002)
+				if wait >= MAX_WAIT :
+					logging.warning("*** Warning no Session left, create new session.")
+					session = await self.reconnectDB()
+					session.queryCount = 0
+					return session
+				else :
+					await asyncio.sleep(WAIT_TIME)
 			else :
 				session = self.pool.pop()
+				if now - session.lastConnectionTime > self.maxConnectionTime :
+					logging.info(">>> Reconnect Session")
+					await session.closeConnection()
+					await session.connect()
+					session.lastConnectionTime = now
+				session.queryCount = 0
 				return session
+			wait = wait + 1
 	
 	async def release(self, session) :
 		if len(self.pool) < self.connectionNumber :
@@ -72,12 +91,14 @@ class AsyncDBSessionPool (DBSessionPool) :
 		for i in os.listdir(path) :
 			if os.path.isdir("%s/%s"%(path, i)) and os.path.isfile(f"{path}/{i}/__init__.py") :
 				for j in os.listdir("%s/%s"%(path, i)) :
-					if j[-3:] != '.py' or j == "__init__.py" or os.path.isdir("%s/%s/%s"%(path, i,j)) : pass
+					if j[-3:] != '.py' or j == "__init__.py" or os.path.isdir("%s/%s/%s"%(path, i,j)) : 
+						pass
 					else:
 						name = j[:-3]
 						try :
 							module = importlib.import_module('%s.%s.%s'%(baseName,i, name))
 							modelClass = getattr(module, name)
+							print(f">>> Append Model {name}")
 							if issubclass(modelClass, Record) :
 								session.appendModel(modelClass)
 						except Exception as error :

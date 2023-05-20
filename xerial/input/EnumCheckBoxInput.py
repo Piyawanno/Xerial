@@ -1,6 +1,6 @@
 from xerial.input.EnumSelectInput import EnumSelectInput
 from enum import IntEnum
-from typing import Type
+from typing import Dict, Type
 
 class EnumCheckBoxInput (EnumSelectInput) :
 	def __init__(self,
@@ -9,11 +9,13 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
+			isMobile:bool=False,
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
 			help:str=None,
 			documentPath:str=None,
+			config:Dict=None
 		) :
 		EnumSelectInput.__init__(
 			self,
@@ -22,10 +24,12 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			order,
 			group,
 			isTable,
+			isMobile,
 			isSearch,
 			isRequired,
 			isEditable,
 			help,
 			documentPath,
+			config
 		)
 		self.typeName = 'EnumCheckBox'

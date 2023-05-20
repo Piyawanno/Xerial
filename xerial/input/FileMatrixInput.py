@@ -1,3 +1,4 @@
+from typing import Dict
 from xerial.Input import Input
 
 class FileMatrixInput (Input):
@@ -6,6 +7,7 @@ class FileMatrixInput (Input):
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
+			isMobile:bool=False,
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isPreview:bool=False,
@@ -13,6 +15,7 @@ class FileMatrixInput (Input):
 			uploadURL:str=None,
 			help:str=None,
 			documentPath:str=None,
+			config:Dict=None
 		) :
 		Input.__init__(
 			self,
@@ -20,11 +23,13 @@ class FileMatrixInput (Input):
 			order,
 			group,
 			isTable,
+			isMobile,
 			isSearch,
 			isRequired,
 			True,
 			help,
 			documentPath,
+			config
 		)
 		self.typeName = 'FileMatrix',
 		self.isPreview = isPreview

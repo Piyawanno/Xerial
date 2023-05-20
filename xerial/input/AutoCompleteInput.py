@@ -1,3 +1,4 @@
+from typing import Dict
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 
 class AutoCompleteInput (ReferenceSelectInput) :
@@ -8,11 +9,13 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
+			isMobile:bool=False,
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
 			help:str=None,
 			documentPath:str=None,
+			config:Dict=None
 		) :
 		ReferenceSelectInput.__init__(
 			self,
@@ -21,11 +24,13 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			order,
 			group,
 			isTable,
+			isMobile,
 			isSearch,
 			isRequired,
 			isEditable,
 			help,
-			documentPath
+			documentPath,
+			config
 		)
 		self.template = template
 		self.typeName = 'AutoComplete'

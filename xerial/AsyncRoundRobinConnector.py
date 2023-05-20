@@ -5,17 +5,18 @@ class AsyncRoundRobinConnector (RoundRobinConnector) :
 		from xerial.AsyncDBSessionPool import AsyncDBSessionPool
 		self.reader = []
 		self.writer = None
-		self.readerCurosr = []
+		self.readerCursor = []
 		self.writerCursor = None
 		for i in self.config['connectionList'] :
 			i['vendor'] = self.config['vendor']
 			connector = await AsyncDBSessionPool.connect(i)
-			if i.get('isWrite', False) : self.writer = connector
+			isWrite = i.get('isWrite', False)
+			if isWrite : self.writer = connector
 			self.reader.append(connector)
 			if hasCursor :
 				cursor = connector.cursor()
 				if isWrite : self.writerCursor = cursor
-				self.readerCurosr.append(cursor)
+				self.readerCursor.append(cursor)
 		if self.writer is None :
 			raise ValueError("No write connector is defined.")
 		self.i = 0

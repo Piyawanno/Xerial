@@ -1,9 +1,28 @@
 from xerial.Column import Column
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 DATE_FORMAT = '%Y-%m-%d'
 
 class DateColumn (Column) :
+	@staticmethod
+	def getToday() :
+		return date.today().strftime(DATE_FORMAT)
+	
+	@staticmethod
+	def getDayAfterToday(dayNumber:int) :
+		def getDay() :
+			day = date.today()+timedelta(days=dayNumber)
+			return day.strftime(DATE_FORMAT)
+		return getDay
+	
+	@staticmethod
+	def getYearAfterToday(yearNumber:int) :
+		def getDay() :
+			today = date.today()
+			day = date(year=today+yearNumber, month=today.month, day=today.day)
+			return day.strftime(DATE_FORMAT)
+		return getDay
+
 	def fromDict(self, data):
 		if self.name in data :
 			raw = data.get(self.name, None)
@@ -13,7 +32,10 @@ class DateColumn (Column) :
 			return datetime.now().date()
 
 	def toDict(self, attribute):
-		if type(attribute) == str: attribute = datetime.strptime(attribute, DATE_FORMAT)
+		if attribute is None :
+			return None
+		elif isinstance(attribute, str) :
+			attribute = datetime.strptime(attribute, DATE_FORMAT)
 		return attribute.strftime(DATE_FORMAT)
 		
 	def setValueToDB(self, attribute) :

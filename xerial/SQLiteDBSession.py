@@ -1,5 +1,6 @@
 from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
 from xerial.IntegerColumn import IntegerColumn
+from typing import Dict, Any, List
 
 import logging, sqlite3, traceback, time
 
@@ -108,6 +109,14 @@ class SQLiteDBSession (DBSessionBase) :
 			clause, limitClause, offsetClause
 		)
 	
+	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
+		limitClause = "" if limit is None else "LIMIT %d"%(limit)
+		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
+		return "SELECT * FROM %s %s %s %s"%(
+			tableName,
+			clause, limitClause, offsetClause
+		)
+
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
 		query = self.generateInsertQuery(modelClass, isAutoID)
@@ -309,4 +318,7 @@ class SQLiteDBSession (DBSessionBase) :
 
 	def generateIndexCheckQuery(self, model) :
 		return f'SELECT name FROM sqlite_master WHERE type = "index" AND tbl_name="{model.__fulltablename__}"'
+	
+	def generateResetID(self, modelClass:type) -> str :
+		return f"UPDATE SQLITE_SEQUENCE SET SEQ=? WHERE NAME='{modelClass.__fulltablename__}';"
 		

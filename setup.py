@@ -2,18 +2,69 @@
 
 import os, sys, site, getpass, setuptools
 
+__help__ = """Xerial setup script :
+setup : Install dependencies of Xerial.
+install : Install Xerial into machine.
+link : Link package and script into machine, suitable for setting up developing environment.
+bdist_wheel : Build wheel file into ./dist
+"""
+
+
+def __conform__(path) :
+	isRootPath = False
+	splited = path.split("/")
+	if len(splited) <= 1: return path
+	rootPrefix = ('etc', 'var', 'usr')
+	if splited[1] in rootPrefix: isRootPath = True
+	if sys.platform == 'win32':
+		result = os.sep.join([i for i in splited if len(i)])
+		if isRootPath: result = str(Path.home()) + os.sep + result
+		if path[-1] == "/": result = result + os.sep
+		return result
+	result = "/"+("/".join([i for i in splited if len(i)]))
+	if isRootPath: result = '/' + result
+	if path[-1] == "/": result = result + "/"
+	return result
+
+
+def __link__(source, destination):
+	source = __conform__(source)
+	destination = __conform__(destination)
+	command = f"ln -s {source} {destination}"
+	if sys.platform == 'win32': command = f"mklink /D {destination} {source}"
+	print(command)
+	os.system(command)
+
 class XerialSetup :
 	def __init__(self) :
 		self.rootPath = os.path.dirname(os.path.abspath(__file__))
 		self.sitePackagesPath = ''
 		for path in site.getsitepackages()[::-1]:
-			if os.path.isdir(path): 
+			if os.path.isdir(path):
 				self.sitePackagesPath = path
 				break
+		
+		self.script = [
+			'xerial-dump',
+			'xerial-raw-dump',
+			'xerial-generate',
+			'xerial-load',
+		]
 
-	def operate(self, operation) :
+		self.configList = [
+			(f'DBMigration.example.json', 'DBMigration.json'),
+		]
+
+		self.installPathList = [
+			(f"{self.rootPath}/xerial", f"{self.sitePackagesPath}/xerial"),
+		]
+
+		self.copyCommand = 'cp'
+		if sys.platform == 'win32': self.copyCommand = "copy"
+
+	def operate(self, operation, platform) :
 		if operation == 'setup' :
-			self.setup()
+			self.setup(platform)
 		elif operation == 'link' :
 			self.link()
 		elif operation == 'install' :
@@ -45,22 +96,23 @@ class XerialSetup :
 				"Operating System :: OS Independent",
 				"Topic :: Database",
 			],
+			scripts=[f'script/{i}' for i in self.script],
 			python_requires='>=3.8',
 		)
 
-	def setup(self):
-		self.setupBase()
+	def setup(self, platform):
+		self.setupBase(platform)
 		self.setupPIP()
 	
-	def setupBase(self) :
-		if 'oracle' in sys.argv :
+	def setupBase(self, platform) :
+		if 'oracle' in platform or 'centos' in platform:
 			with open('requirements-centos.txt') as fd :
 				content = fd.read()
 			self.setupYum(content.replace("\n", " "))
-		elif 'debian10' in sys.argv or 'ubuntu20.04' in sys.argv:
+		elif 'debian10' in platform or 'ubuntu20.04' in platform:
 			with open('requirements-ubuntu-20.04.txt') as fd :
 				content = fd.read()
-			self.setupAPT(content.replace("\n", " "))
+			self.setupAPT(content.split("\n"))
 		else :
 			print("*** Error Not support for platform")
 			print("*** Supported platform : debian10, ubuntu20.04, oracle")
@@ -80,35 +132,42 @@ class XerialSetup :
 		os.system(command)
 	
 	def link(self) :
-		# self.installConfig()
+		self.installConfig()
 		self.installScript()
-		command = [
-			"ln -s %s/xerial %s/xerial"%(self.rootPath, self.sitePackagesPath),
-		]
-		for i in command :
-			print(i)
-			os.system(i)
+		
+		for source, destination in self.installPathList  :
+			destination = __conform__(destination)
+			source = __conform__(source)
+			if not os.path.isdir(destination) :
+				__link__(source, destination)
 
 	def install(self) :
 		print(">>> Installing Xerial.")
-		if '-s' not in sys.argv : self.installConfig()
-		else : os.system('cp config/Xerial.json /etc/xerial/')
+		self.installConfig()
 		self.installScript()
-		path = "/var/katatong"
-		if not os.path.isdir(path) :
-			os.makedirs(path)
-		packagePath = self.sitePackagesPath+'/xerial'
-		if not os.path.isdir(packagePath) :
-			os.makedirs(packagePath)
-		command = [
-			"cp -rfv %s/xerial/* %s"%(self.rootPath, packagePath),
-		]
-		for i in command :
-			print(i)
-			os.system(i)
+		for source, destination in self.installPathList  :
+			destination = __conform__(destination)
+			source = __conform__(source)
+			# if not os.path.isdir(destination) :
+			command = f"{self.copyCommand} -fR {source} {destination}"
+			print(command)
+			os.system(command)
 	
 	def installConfig(self) :
+		path = __conform__("/etc/xerial")
+		for source, destination in self.configList :
+			destinationPath = __conform__(f"{path}/{destination}")
+			if not os.path.isfile(destinationPath) :
+				sourcePath = __conform__(f"{self.rootPath}/config/{source}")
+				command = f"{self.copyCommand} {sourcePath} {destinationPath}"
+				print(command)
+				os.system(command)
+		self.installConnectionConfig()
+	
+	def installConnectionConfig(self) :
 		if os.path.isfile("/etc/xerial/Xerial.json") :
+			if not os.path.isfile("/etc/gaimon/Database.json"):
+				__link__("/etc/xerial/Xerial.json", "/etc/gaimon/Database.json")
 			return
 		path = "/etc/xerial"
 		if not os.path.isdir(path) :
@@ -124,15 +183,10 @@ class XerialSetup :
 				target.write(raw)
 	
 	def installScript(self) :
-		command = [
-			"ln -s %s/script/xerial-generate /usr/bin"%(self.rootPath),
-			"ln -s %s/script/xerial-dump /usr/bin"%(self.rootPath),
-			"ln -s %s/script/xerial-load /usr/bin"%(self.rootPath),
-		]
-		for i in command :
-			print(i)
-			os.system(i)
-	
+		for i in self.script :
+			if not os.path.isfile(f"/usr/bin/{i}") :
+				__link__(f"{self.rootPath}/script/{i}", f"/usr/bin/{i}")
+
 	def getParameter(self) :
 		parameter = {}
 		parameter['DB_HOST'] = input("DB host : ")
@@ -157,6 +211,12 @@ class XerialSetup :
 	
 
 if __name__ == '__main__' :
-    setup = XerialSetup()
-    setup.operate(sys.argv[-1])
+	from argparse import RawTextHelpFormatter
+	import argparse
+	parser = argparse.ArgumentParser(description=__help__, formatter_class=RawTextHelpFormatter)
+	parser.add_argument("operation", help="Operation of setup", choices=['setup', 'install', 'link', 'bdist_wheel'])
+	parser.add_argument("-p", "--platform", help="Platform for installation of base environment.", choices=['oracle', 'centos', 'debian10', 'ubuntu20.04'])
+	option = parser.parse_args(sys.argv[1:])
+	setup = XerialSetup()
+	setup.operate(option.operation, option.platform)
 

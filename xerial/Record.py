@@ -1,17 +1,25 @@
 from enum import IntEnum
 from xerial.Column import Column
 from xerial.Children import Children
+from xerial.ForeignKey import ForeignKey
 from xerial.Input import Input
 from xerial.Modification import Modification
 from xerial.Vendor import Vendor
 
 from packaging.version import Version
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Tuple
 
-import inspect
+import inspect, logging, copy
 
 __MAPPED_META__ = {}
-__RESERVED__ = {'primaryMeta', 'meta', '__tablename__', '__fulltablename__'}
+__RESERVED__ = {
+	'meta',
+	'primaryMeta',
+	'primitive',
+	'representativeMeta',
+	'__fulltablename__',
+	'__tablename__',
+}
 __DEFAULT_BACKUP__ = False
 
 def __getParentTableName__(modelClass) :
@@ -33,13 +41,23 @@ class Record :
 		modelClass = self.__class__
 		if not hasattr(modelClass, 'meta') :
 			Record.extractMeta(modelClass)
+		self.initRelation(**kw)
+
+	def initRelation(self, **kw) :
+		modelClass = self.__class__
 		for child in modelClass.children :
 			setattr(self, child.name, [])
 		for column, meta in modelClass.meta :
-			setattr(self, column, kw.get(column, meta.default))
+			setattr(self, column, kw.get(column, meta.default() if callable(meta.default) else meta.default))
 
+	
+	def toOption(self):
+		return {
+			'value': getattr(self, self.primaryMeta.name),
+			'label': getattr(self, self.representativeMeta.name)
+		}
+	
 	def toDict(self) -> dict :
-		if hasattr(self, '__raw__') : return self.__raw__
 		result = {}
 		modelClass = self.__class__
 		for child in modelClass.children :
@@ -61,8 +79,7 @@ class Record :
 			if attribute is None :
 				result[column] = None
 			elif meta != self :
-				result[column] = meta.toDict(attribute)
-		self.__raw__ = result
+				result[column] = meta.toDict(attribute() if callable(attribute) else attribute)
 		return result
 	
 	def toRawDict(self) -> dict :
@@ -79,8 +96,11 @@ class Record :
 		modelClass = self.__class__
 		for child in modelClass.children :
 			raw = data.get(child.name, None)
-			if raw is not None and isinstance(raw, list) :
-				setattr(self, child.name, child.fromDict(raw))
+			if raw is not None :
+				if isinstance(raw, list) :
+					setattr(self, child.name, child.fromDict(raw))
+				elif isinstance(raw, dict) :
+					setattr(self, child.name, child.fromDict(raw.values()))
 			
 		for foreignKey in modelClass.foreignKey :
 			raw = data.get(foreignKey.name, None)
@@ -90,13 +110,13 @@ class Record :
 				else :
 					setattr(self, foreignKey.name, foreignKey.parent.parseValue(raw))
 
+		meta:Column
 		for column, meta in modelClass.meta :
-			raw = data.get(column, None)
-			if data is None :
-				setattr(self, column, None)
-			elif meta.foreignKey is None and isinstance(raw, dict) :
+			if column not in data : continue
+			raw = data[column]
+			if meta.foreignKey is None and isinstance(raw, dict) :
 				setattr(self, column, meta.fromDict(raw))
-			elif meta.foreignKey is None:
+			elif meta.foreignKey is None :
 				setattr(self, column, meta.fromDict(data))
 		if isID :
 			self.id = data.get(modelClass.primary, 0)
@@ -166,36 +186,65 @@ class Record :
 
 	@staticmethod
 	def extractInput(modelClass) :
+		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
 		order = 1
-		inputList:List[Input] = []
+		inputList:List[Dict] = []
+		groupedInputList = []
 		inputGroupMapper:Dict[int, List[Input]] = {}
+		hasDefaultCallable = False
 		for i, attribute in modelClass.meta :
 			if not isinstance(attribute, Column) : continue
-			input:Input = attribute.input
-			if input is None : continue
-			if input.order is None :
-				input.order = f'{order}.0'
-				input.parsedOrder = Version(input.order)
-			input.columnType = attribute.__class__.__name__
-			input.columnName = i
+			if attribute.input is None : continue
+			input:Dict = attribute.input.toDict()
+			if not 'order' in input or input['order'] is None: input['order'] = f'{order}.0'
+			input['parsedOrder'] = Version(input['order'])
+			input['columnType'] = attribute.__class__.__name__
+			input['columnName'] = i
+			input['isGroup'] = False
+			input['inputPerLine'] = inputPerLine
+			default = getattr(attribute, 'default', None)
+			if not hasDefaultCallable : hasDefaultCallable = callable(default)
+			input['default'] = default
 			inputList.append(input)
 			order += 1
-			if input.group is None: continue
-			if not input.group in inputGroupMapper: inputGroupMapper[input.group] = []
-			inputGroupMapper[input.group].append(input)
-		inputList.sort(key=lambda x : x.parsedOrder)
-		modelClass.input = inputList
-		modelClass.inputDict = [i.toDict() for i in inputList]
+			if attribute.input.group is None: 
+				groupedInputList.append(copy.copy(input))
+				continue
+			if not attribute.input.group in inputGroupMapper:
+				inputGroupMapper[attribute.input.group] = []
+			inputGroupMapper[attribute.input.group].append(input)
+		modelClass.__has_callable_default__ = hasDefaultCallable
+		inputList.sort(key=lambda x : x['parsedOrder'])
+		Record.extractGroupInput(modelClass, inputGroupMapper, groupedInputList)
+		groupedInputList.sort(key=lambda x : x['parsedOrder'])
+		modelClass.input = []
+		for item in groupedInputList:
+			del item['parsedOrder']
+			modelClass.input.append(item)
+		for item in inputList:
+			if 'parsedOrder' in item: del item['parsedOrder']
+		modelClass.inputDict = inputList
+
+	@staticmethod
+	def extractGroupInput(modelClass, inputGroupMapper, groupedInputList:list=[]) :
+		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
 		group:IntEnum = getattr(modelClass, '__GROUP_LABEL__', None)
-		if group is None: return
-		groupParsedOrder = []
-		for i in group.order: 
-			parsedOrder = {'id': i.value, 'label': i.label[i], 'order': group.order[i]}
-			parsedOrder['parsedOrder'] = Version(group.order[i])
-			groupParsedOrder.append(parsedOrder)
-		groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
-		groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
-		modelClass.inputGroup = groupParsedOrder
+		if not group is None:
+			groupParsedOrder = []
+			for i in group.order: 
+				parsedOrder = {'id': i.value, 'label': i.label[i], 'order': group.order[i], 'isGroup': True, 'inputPerLine': inputPerLine}
+				parsedOrder['parsedOrder'] = Version(group.order[i])
+				if parsedOrder['id'] in inputGroupMapper: 
+					inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
+					parsedOrder['input'] = []
+					for item in inputGroupMapper[parsedOrder['id']]:
+						del item['parsedOrder']
+						parsedOrder['input'].append(item)
+				groupedInputList.append(parsedOrder)
+				groupParsedOrder.append(parsedOrder)
+			groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
+			groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
+			modelClass.inputGroup = groupParsedOrder
 
 	@staticmethod
 	def extractMeta(modelClass) :
@@ -205,6 +254,8 @@ class Record :
 			modelClass.__is_mapper__ = False
 		if not hasattr(modelClass, '__skip_create__') :
 			modelClass.__skip_create__ = False
+		
+		modelClass.representativeMeta = None
 		modelClass.isForeignChecked = False
 		modelClass.isChildrenChecked  = False
 		if not Record.hasParent(modelClass) :
@@ -253,6 +304,11 @@ class Record :
 					modelClass.foreignKey.append(attribute.foreignKey)
 			elif isinstance(attribute, Column) :
 				attribute.name = i
+				if attribute.isRepresentative :
+					if modelClass.representativeMeta is None :
+						modelClass.representativeMeta = attribute
+					else :
+						logging.warning("Multiple representative columns are defined.")
 				if attribute.foreignKey is not None :
 					attribute.foreignKey.name = i
 					modelClass.foreignKey.append(attribute.foreignKey)
