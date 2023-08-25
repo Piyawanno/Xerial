@@ -5,6 +5,7 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 	def __init__(self,
 			label:str,
 			url:str,
+			tableURL:str=None,
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
@@ -12,13 +13,17 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			documentPath:str=None,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		ReferenceSelectInput.__init__(
 			label,
 			url,
+			tableURL,
 			order,
 			group,
 			isTable,
@@ -26,8 +31,11 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.typeName = 'ReferenceCheckBox'

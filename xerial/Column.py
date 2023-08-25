@@ -12,6 +12,7 @@ class Column :
 			isRepresentative=False,
 			input=None) :
 		
+		from xerial.Input import Input
 		self.length = length
 		if foreignKey is not None :
 			self.foreignKey = ForeignKey(foreignKey, self)
@@ -23,7 +24,7 @@ class Column :
 		self.default = default
 		self.isIndex = isIndex
 		self.isRepresentative = isRepresentative
-		self.input = input
+		self.input:Input = input
 		self.isConvertRaw = False
 	
 	def convertRaw(self, value) :

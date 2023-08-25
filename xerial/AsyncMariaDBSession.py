@@ -24,8 +24,11 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 		self.cursor = await self.connection.cursor()
 
 	async def closeConnection(self) :
-		await self.cursor.close()
-		self.connection.close()
+		try :
+			await self.cursor.close()
+			self.connection.close()
+		except :
+			print(">>> Error by closing MariaDB connection.")
 	
 	def processClause(self, clause: str, parameter: list) -> str:
 		return clause.replace("?", "%s")
@@ -125,7 +128,7 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 		if modelClass.__backup__ :
 			now = time.time()
 			record.__insert_time__ = now
-			record.__update_time__ = -1.0
+			record.__update_time__ = now
 		value = self.getRawValue(record, isAutoID)
 		query = self.generateInsert(modelClass)
 		cursor = await self.executeWrite(query, value)
@@ -160,7 +163,7 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 					break
 			if isBackup :
 				record.__insert_time__ = now
-				record.__update_time__ = -1.0
+				record.__update_time__ = now
 			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :

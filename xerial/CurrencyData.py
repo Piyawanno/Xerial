@@ -14,7 +14,7 @@ class CurrencyData :
 	rate: Fraction
 	exchangeDate: datetime
 
-	def __init__(self, origin:Union[float, str]=0.0, currency:str="THB") :
+	def __init__(self, origin:Union[float, str, Fraction]=0.0, currency:str="THB") :
 		self.origin = Fraction(origin)
 		self.originCurrency = COMMON_CURRENCY_MAP.get(currency, None)
 		self.rate = Fraction("1.0")

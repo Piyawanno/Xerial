@@ -11,11 +11,15 @@ class FileMatrixInput (Input):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isPreview:bool=False,
+			isForm:bool=True,
 			path:str=None,
 			uploadURL:str=None,
+			url:str=None,
 			help:str=None,
 			documentPath:str=None,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		Input.__init__(
 			self,
@@ -27,18 +31,25 @@ class FileMatrixInput (Input):
 			isSearch,
 			isRequired,
 			True,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.typeName = 'FileMatrix',
 		self.isPreview = isPreview
 		self.path = path
 		self.uploadURL = uploadURL
+		self.url = url
+		self.isFile = True
 	
 	def toDict(self) -> dict :
 		data = Input.toDict(self)
 		data['isPreview'] = self.isPreview
 		data['path'] = self.path
 		data['uploadURL'] = self.uploadURL
+		data['url'] = self.url
+		data['isFile'] = True
 		return data

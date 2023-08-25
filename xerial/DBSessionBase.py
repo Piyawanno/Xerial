@@ -1,4 +1,7 @@
+import json
 from xerial.Column import Column
+from xerial.CurrencyColumn import CurrencyColumn
+from xerial.CurrencyData import CurrencyData
 from xerial.Record import Record
 from xerial.IntegerColumn import IntegerColumn
 from xerial.StringColumn import StringColumn
@@ -23,6 +26,7 @@ class DBSessionBase :
 		self.mapExecute()
 		self.queryCount = 0
 		self.lastConnectionTime = -1.0
+		self.parentMap = {}
 	
 	def resetCount(self) :
 		self.queryCount = 0
@@ -73,11 +77,13 @@ class DBSessionBase :
 
 	def setFieldByID(self, modelClass:type, fieldMap:Dict[str, Any], id:int) :
 		query, parameter = self.generateSetField(modelClass, fieldMap, id)
+		if query is None : return
 		query = self.processClause(query, parameter)
 		self.executeWrite(query, parameter)
 
 	def setFieldByIDList(self, modelClass:type, fieldMap:Dict[str, Any], ids:List[int]) :
 		query, parameter = self.generateSetFieldIDList(modelClass, fieldMap, ids)
+		if query is None : return
 		query = self.processClause(query, parameter)
 		self.executeWrite(query, parameter)
 
@@ -110,11 +116,31 @@ class DBSessionBase :
 		if Record.hasMeta(modelClass) : return
 		Record.checkTableName(modelClass, self.prefix)
 		Record.extractMeta(modelClass)
-		Record.extractInput(modelClass)
+		# Record.extractInput(modelClass)
 		Record.setVendor(modelClass, self.vendor)
 		self.prepareStatement(modelClass)
+		self.getParent(modelClass)
+
+	def getParent(self, modelClass) :
+		record = modelClass.__new__(modelClass)
+		parentModel:str = record.setAsChildrenOf()
+		if parentModel is not None :
+			splitted = parentModel.split('.')
+			parentModelName = splitted[0]
+			columnName = splitted[1]
+			childrenList = self.parentMap.get(parentModelName, [])
+			if len(childrenList) == 0 : self.parentMap[parentModelName] = childrenList
+			childrenList.append((columnName, f'{modelClass.__name__}.{modelClass.primary}'))
 	
 	def checkModelLinking(self) :
+		from xerial.Children import Children
+		for modelClass in self.model.values() :
+			additionalChildren = self.parentMap.get(modelClass.__name__, None)
+			if additionalChildren is None : continue
+			for attribute, child in additionalChildren :
+				setattr(modelClass, attribute, Children(child))
+			Record.extractChildren(modelClass)
+
 		for modelClass in self.model.values() :
 			self.checkLinkingMeta(modelClass)
 	
@@ -287,7 +313,14 @@ class DBSessionBase :
 		return value
 	
 	def toTuple(self, modelClass, raw) :
-		return [column.fromDict(raw) for name, column in modelClass.meta]
+		result = []
+		defaultCurrencyValue = CurrencyData(0).toDict()
+		for name, column in modelClass.meta:
+			if isinstance(column, CurrencyColumn): 
+				result.append(json.dumps(raw.get(name, defaultCurrencyValue)))
+			else: 
+				result.append(column.fromDict(raw))
+		return result
 	
 	def selectRelated(self, modelClass, recordList) :
 		if len(recordList) == 0 : return
@@ -482,8 +515,10 @@ class DBSessionBase :
 		setList = []
 		parameter = []
 		for name, value in fieldMap.items():
+			if name not in modelClass.metaMap : continue
 			setList.append(f'{name}=?')
 			parameter.append(value)
+		if len(setList) == 0 : return None, None
 		parameter.extend(ids)
 		query = "UPDATE %s SET %s WHERE %s IN (%s)"%(
 			modelClass.__fulltablename__,

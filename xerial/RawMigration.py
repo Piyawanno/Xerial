@@ -51,5 +51,5 @@ class RawMigration :
 					offset += len(result)
 				if offset > 0 : fd.write("]")
 			print(f">>> Dump {table} of {offset}.")
-		print(">>> FINIS DUMP")
+		print(">>> FINISH DUMP")
 				

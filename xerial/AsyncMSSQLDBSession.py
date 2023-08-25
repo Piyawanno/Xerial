@@ -94,7 +94,7 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 		if modelClass.__backup__ :
 			now = time.time()
 			record.__insert_time__ = now
-			record.__update_time__ = -1.0
+			record.__update_time__ = now
 		value = self.getRawValue(record, isAutoID)
 		query = self.generateInsert(modelClass)
 		if not isAutoID and modelClass.__is_increment__ :
@@ -135,7 +135,7 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 					break
 			if isBackup :
 				record.__insert_time__ = now
-				record.__update_time__ = -1.0
+				record.__update_time__ = now
 			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :

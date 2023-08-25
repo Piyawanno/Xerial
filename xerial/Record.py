@@ -159,6 +159,9 @@ class Record :
 	
 	def modify(self) :
 		pass
+
+	def setAsChildrenOf(self) :
+		return None
 	
 	@staticmethod
 	def hasMeta(modelClass) :
@@ -185,21 +188,30 @@ class Record :
 			modelClass.__fulltablename__ = modelClass.__fulltablename__.lower()
 
 	@staticmethod
-	def extractInput(modelClass) :
+	def extractInput(modelClass, extendedInput:List[Input]=[]) :
 		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
 		order = 1
 		inputList:List[Dict] = []
+		mergedInput:List[Input] = []
 		groupedInputList = []
 		inputGroupMapper:Dict[int, List[Input]] = {}
 		hasDefaultCallable = False
+		modelClass.fileInput = []
 		for i, attribute in modelClass.meta :
 			if not isinstance(attribute, Column) : continue
 			if attribute.input is None : continue
-			input:Dict = attribute.input.toDict()
-			if not 'order' in input or input['order'] is None: input['order'] = f'{order}.0'
+			attribute.input.columnType = attribute.__class__.__name__
+			attribute.input.columnName = i
+			mergedInput.append(attribute.input)
+			if getattr(attribute, 'isFile', False) :
+				modelClass.fileInput.append(attribute)
+		mergedInput.extend(extendedInput)
+
+		for i in mergedInput :
+			input:Dict = i.toDict()
+			if not 'order' in input or input['order'] is None:
+				input['order'] = f'{order}.0'
 			input['parsedOrder'] = Version(input['order'])
-			input['columnType'] = attribute.__class__.__name__
-			input['columnName'] = i
 			input['isGroup'] = False
 			input['inputPerLine'] = inputPerLine
 			default = getattr(attribute, 'default', None)
@@ -207,12 +219,12 @@ class Record :
 			input['default'] = default
 			inputList.append(input)
 			order += 1
-			if attribute.input.group is None: 
+			if i.group is None: 
 				groupedInputList.append(copy.copy(input))
 				continue
-			if not attribute.input.group in inputGroupMapper:
-				inputGroupMapper[attribute.input.group] = []
-			inputGroupMapper[attribute.input.group].append(input)
+			if not i.group in inputGroupMapper:
+				inputGroupMapper[i.group] = []
+			inputGroupMapper[i.group].append(input)
 		modelClass.__has_callable_default__ = hasDefaultCallable
 		inputList.sort(key=lambda x : x['parsedOrder'])
 		Record.extractGroupInput(modelClass, inputGroupMapper, groupedInputList)
@@ -229,23 +241,29 @@ class Record :
 	def extractGroupInput(modelClass, inputGroupMapper, groupedInputList:list=[]) :
 		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
 		group:IntEnum = getattr(modelClass, '__GROUP_LABEL__', None)
-		if not group is None:
-			groupParsedOrder = []
-			for i in group.order: 
-				parsedOrder = {'id': i.value, 'label': i.label[i], 'order': group.order[i], 'isGroup': True, 'inputPerLine': inputPerLine}
-				parsedOrder['parsedOrder'] = Version(group.order[i])
-				if parsedOrder['id'] in inputGroupMapper: 
-					inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
-					parsedOrder['input'] = []
-					for item in inputGroupMapper[parsedOrder['id']]:
-						del item['parsedOrder']
-						parsedOrder['input'].append(item)
-				groupedInputList.append(parsedOrder)
-				groupParsedOrder.append(parsedOrder)
-			groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
-			groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
-			modelClass.inputGroup = groupParsedOrder
-
+		if group is None: return
+		groupParsedOrder = []
+		for i in group.order: 
+			parsedOrder = {
+				'id': i.value,
+				'label': i.label[i],
+				'order': group.order[i],
+				'isGroup': True,
+				'inputPerLine': inputPerLine
+			}
+			parsedOrder['parsedOrder'] = Version(group.order[i])
+			if parsedOrder['id'] in inputGroupMapper: 
+				inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
+				parsedOrder['input'] = []
+				for item in inputGroupMapper[parsedOrder['id']]:
+					del item['parsedOrder']
+					parsedOrder['input'].append(item)
+			groupedInputList.append(parsedOrder)
+			groupParsedOrder.append(parsedOrder)
+		groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
+		groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
+		modelClass.inputGroup = groupParsedOrder
+	
 	@staticmethod
 	def extractMeta(modelClass) :
 		if not hasattr(modelClass, '__version__') :

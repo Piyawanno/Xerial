@@ -11,6 +11,7 @@ class NumberInput (Input):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			isNegative:bool=True,
 			isZeroIncluded:bool=True,
@@ -18,7 +19,9 @@ class NumberInput (Input):
 			minValue:float=None,
 			maxValue:float=None,
 			documentPath:str=None,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		Input.__init__(
 			self,
@@ -30,9 +33,12 @@ class NumberInput (Input):
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.typeName = 'Number'
 		self.isNegative = isNegative
@@ -40,6 +46,7 @@ class NumberInput (Input):
 		self.isFloatingPoint = isFloatingPoint
 		self.minValue=minValue
 		self.maxValue=maxValue
+		self.isNumber = True
 
 	def toDict(self) -> dict :
 		data = Input.toDict(self)

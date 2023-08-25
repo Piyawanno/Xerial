@@ -13,9 +13,12 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			documentPath:str=None,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		EnumSelectInput.__init__(
 			self,
@@ -28,8 +31,11 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.typeName = 'EnumCheckBox'

@@ -91,7 +91,7 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		if modelClass.__backup__ :
 			now = time.time()
 			record.__insert_time__ = now
-			record.__update_time__ = -1.0
+			record.__update_time__ = now
 		value = self.getRawValue(record, isAutoID)
 		cursor = await self.executeWrite(query, value)
 		if not isAutoID :
@@ -125,7 +125,7 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 					break
 			if isBackup :
 				record.__insert_time__ = now
-				record.__update_time__ = -1.0
+				record.__update_time__ = now
 			valueList.append(self.getRawValue(record, isAutoID))
 
 		if hasChildren :

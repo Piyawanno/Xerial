@@ -1,4 +1,5 @@
 from xerial.Column import Column
+from xerial.Vendor import Vendor
 
 
 # NOTE : Due to data in DB from Absolute Co.,Ltd. x and y are confound.
@@ -7,9 +8,14 @@ class PointColumn (Column) :
 		return data.get(self.name, [])
 		
 	def processValue(self, raw):
-		splitted = raw[6:-1].split(' ')
-		x = float(splitted[1])
-		y = float(splitted[0])
+		if raw is None: return None
+		if self.vendor == Vendor.POSTGRESQL :
+			x = float(raw[1])
+			y = float(raw[0])
+		else:
+			splitted = raw[6:-1].split(' ')
+			x = float(splitted[1])
+			y = float(splitted[0])
 		return [x, y]
 	
 	def setValueToDB(self, attribute) :

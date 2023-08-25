@@ -11,13 +11,16 @@ class CurrencyInput (Input):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			isNegative:bool=True,
 			isZeroIncluded:bool=True,
 			isFloatingPoint:bool=True,
 			maxValue:float=None,
 			documentPath:str=None,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		Input.__init__(
 			self,
@@ -29,15 +32,19 @@ class CurrencyInput (Input):
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.typeName = 'Currency'
 		self.isNegative = isNegative
 		self.isZeroIncluded = isZeroIncluded
 		self.isFloatingPoint = isFloatingPoint
 		self.maxValue=maxValue
+		self.isNumber = True
 
 	def toDict(self) -> dict :
 		data = Input.toDict(self)

@@ -27,7 +27,6 @@ class CurrencyColumn (Column) :
 		self.isConvertRaw = True
 	
 	def convertRaw(self, value) :
-		print(self.name, value)
 		if value is None: return None
 		return json.dumps(value.toDict())
 	
@@ -43,6 +42,8 @@ class CurrencyColumn (Column) :
 		if raw is None :
 			return None
 		else :
+			if raw.get('originString', None) is None:
+				raw = raw.get(self.name, self.default)
 			return CurrencyData(0).fromDict(raw)
 		
 	def setValueToDB(self, attribute:CurrencyData) :

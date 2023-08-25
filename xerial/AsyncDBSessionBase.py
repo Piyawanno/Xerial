@@ -313,11 +313,13 @@ class AsyncDBSessionBase (DBSessionBase) :
 
 	async def setFieldByIDList(self, modelClass:type, fieldMap:Dict[str, Any], ids:List[int]) :
 		query, parameter = self.generateSetFieldIDList(modelClass, fieldMap, ids)
+		if query is None : return
 		query = self.processClause(query, parameter)
 		await self.executeWrite(query, parameter)
 	
 	async def resetIDSequence(self, modelClass:type, renewStartID:int) :
 		query = self.generateResetID(modelClass)
+		if query is None : return
 		parameter = [int(renewStartID)]
 		query = self.processClause(query, parameter)
 		await self.executeWrite(query, parameter)

@@ -1,5 +1,6 @@
-from typing import Dict
+from typing import Dict, Type
 from xerial.Input import Input
+from enum import IntEnum
 
 class HiddenInput (Input):
 	def __init__(self,
@@ -11,9 +12,12 @@ class HiddenInput (Input):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			documentPath:str=None,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		Input.__init__(
 			self,
@@ -25,8 +29,11 @@ class HiddenInput (Input):
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.typeName = 'Hidden'

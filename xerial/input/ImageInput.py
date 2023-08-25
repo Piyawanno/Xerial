@@ -13,12 +13,15 @@ class ImageInput (Input):
 			isRequired:bool=False,
 			isPreview:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			path:str=None,
 			uploadURL:str=None,
 			documentPath:str=None,
 			hasCrop:bool=False,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		Input.__init__(
 			self,
@@ -30,9 +33,12 @@ class ImageInput (Input):
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.url = url
 		self.typeName = 'Image',
@@ -40,6 +46,7 @@ class ImageInput (Input):
 		self.path = path
 		self.uploadURL = uploadURL
 		self.hasCrop = hasCrop
+		self.isFile = True
 	
 	def toDict(self) -> dict :
 		data = Input.toDict(self)
@@ -48,4 +55,5 @@ class ImageInput (Input):
 		data['uploadURL'] = self.uploadURL
 		data['url'] = self.url
 		data['hasCrop'] = self.hasCrop
+		data['isFile'] = True
 		return data

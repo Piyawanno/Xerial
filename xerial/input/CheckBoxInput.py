@@ -14,9 +14,12 @@ class CheckBoxInput (SelectInput):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			documentPath:str=None,
-			config:Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		SelectInput.__init__(
 			self,
@@ -29,9 +32,12 @@ class CheckBoxInput (SelectInput):
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.typeName = 'CheckBox'
 

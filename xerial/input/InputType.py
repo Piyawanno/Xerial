@@ -1,3 +1,4 @@
+from xerial.input.PositionInput import PositionInput
 from xerial.input.PrerequisiteReferenceSelectInput import PrerequisiteReferenceSelectInput
 from xerial.input.TextInput import TextInput
 from xerial.input.TextAreaInput import TextAreaInput
@@ -25,6 +26,8 @@ from xerial.input.SelectInput import SelectInput
 from xerial.input.RadioInput import RadioInput
 from xerial.input.CheckBoxInput import CheckBoxInput
 from xerial.input.RichTextInput import RichTextInput
+from xerial.input.CurrencyInput import CurrencyInput
+from xerial.input.FractionInput import FractionInput
 
 from enum import IntEnum
 
@@ -56,6 +59,9 @@ class InputType (IntEnum) :
 	RADIO = 39
 	CHECKBOX = 40
 	RICH_TEXT = 41
+	POSITION = 42
+	CURRENCY = 50
+	FRACTION = 51
 
 InputType.mapped = {
 	InputType.TEXT: TextInput,
@@ -85,4 +91,7 @@ InputType.mapped = {
 	InputType.RADIO: RadioInput,
 	InputType.CHECKBOX: CheckBoxInput,
 	InputType.RICH_TEXT: RichTextInput,
+	InputType.POSITION: PositionInput,
+	InputType.CURRENCY: CurrencyInput,
+	InputType.FRACTION: FractionInput,
 }

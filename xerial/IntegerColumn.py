@@ -47,8 +47,13 @@ class IntegerColumn (Column) :
 		if raw == "": raw = self.default
 		if raw is None :
 			return None
-		else : 
-			result = int(raw)
+		else :
+			result = self.default
+			if type(raw) is str and '.' in raw:
+				result = int(float(raw))
+			else:
+				result = int(raw)
+
 			if self.isBigInt :
 				if result > __BIG_INT_ULIMIT__ or result < __BIG_INT_LLIMIT__ :
 					raise ValueError(f"Value {result} exceed limit.")
@@ -68,6 +73,7 @@ class IntegerColumn (Column) :
 		return str(attribute)
 	
 	def parseValue(self, value) :
+		if value == "": return self.default
 		return int(value)
 
 	def getDBDataType(self) :

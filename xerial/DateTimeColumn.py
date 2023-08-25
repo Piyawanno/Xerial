@@ -6,21 +6,39 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class DateTimeColumn (Column) :
 	@staticmethod
-	def getNow() :
-		return datetime.now().strftime(DATETIME_FORMAT)
+	def getNow():
+		return datetime.now()
+	
+	@staticmethod
+	def getNowString() :
+		def getTime():
+			return DateTimeColumn.getNow().strftime(DATETIME_FORMAT)
+		return getTime
 	
 	@staticmethod
 	def getLater(seconds:int) :
 		def getTime() :
 			later = datetime.now() + timedelta(seconds=seconds)
-			return later.strftime(DATETIME_FORMAT)
+			return later
+		return getTime
+	
+	@staticmethod
+	def getLaterString(seconds:int) :
+		def getTime() :
+			return DateTimeColumn.getLater(seconds)().strftime(DATETIME_FORMAT)
 		return getTime
 	
 	@staticmethod
 	def getDayLater(dayNumber:int) :
 		def getTime() :
 			later = datetime.now() + timedelta(days=dayNumber)
-			return later.strftime(DATETIME_FORMAT)
+			return later
+		return getTime
+	
+	@staticmethod
+	def getDayLaterString(dayNumber:int) :
+		def getTime() :
+			return DateTimeColumn.getDayLater(dayNumber)().strftime(DATETIME_FORMAT)
 		return getTime
 
 	def fromDict(self, data):
@@ -41,6 +59,8 @@ class DateTimeColumn (Column) :
 
 	def setValueToDB(self, attribute) :
 		if not callable(attribute) :
+			if type(attribute) is str:
+				return  "'%s'"%attribute
 			return "'%s'"%(attribute.strftime(DATETIME_FORMAT))
 		else :
 			return 'NULL'

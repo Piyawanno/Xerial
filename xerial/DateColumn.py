@@ -5,22 +5,40 @@ DATE_FORMAT = '%Y-%m-%d'
 
 class DateColumn (Column) :
 	@staticmethod
-	def getToday() :
-		return date.today().strftime(DATE_FORMAT)
+	def getToday():
+		return date.today()
 	
 	@staticmethod
-	def getDayAfterToday(dayNumber:int) :
+	def getTodayString() :
 		def getDay() :
-			day = date.today()+timedelta(days=dayNumber)
-			return day.strftime(DATE_FORMAT)
+			return DateColumn.getToday().strftime(DATE_FORMAT)
 		return getDay
 	
 	@staticmethod
-	def getYearAfterToday(yearNumber:int) :
+	def getDayAfterToday(dayNumber:int):
+		def getDay() :
+			day = date.today()+timedelta(days=dayNumber)
+			return day
+		return getDay
+	
+	@staticmethod
+	def getDayAfterTodayString(dayNumber:int) :
+		def getDay() :
+			return DateColumn.getDayAfterToday(dayNumber)().strftime(DATE_FORMAT)
+		return getDay
+	
+	@staticmethod
+	def getYearAfterToday(yearNumber:int):
 		def getDay() :
 			today = date.today()
-			day = date(year=today+yearNumber, month=today.month, day=today.day)
-			return day.strftime(DATE_FORMAT)
+			day = date(year=today.year+yearNumber, month=today.month, day=today.day)
+			return day
+		return getDay
+	
+	@staticmethod
+	def getYearAfterTodayString(yearNumber:int) :
+		def getDay() :
+			return DateColumn.getYearAfterTodayString(yearNumber)().strftime(DATE_FORMAT)
 		return getDay
 
 	def fromDict(self, data):
@@ -39,9 +57,13 @@ class DateColumn (Column) :
 		return attribute.strftime(DATE_FORMAT)
 		
 	def setValueToDB(self, attribute) :
-		return "'%s'"%(attribute.strftime(DATE_FORMAT))
+		if type(attribute) is str:
+			return  "'%s'"%attribute
+		else:
+			return "'%s'"%(attribute.strftime(DATE_FORMAT))
 	
 	def parseValue(self, value) :
+		if isinstance(value, str) : return value
 		return datetime.strptime(value, DATE_FORMAT)
 
 	def getDBDataType(self) :

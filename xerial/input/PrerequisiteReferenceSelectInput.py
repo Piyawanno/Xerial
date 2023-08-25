@@ -6,6 +6,7 @@ class PrerequisiteReferenceSelectInput (Input):
 			label:str,
 			url:str,
 			prerequisite: str,
+			tableURL:str=None,
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
@@ -13,9 +14,12 @@ class PrerequisiteReferenceSelectInput (Input):
 			isSearch:bool=False,
 			isRequired:bool=False,
 			isEditable:bool=True,
+			isForm:bool=True,
 			help:str=None,
 			documentPath:str=None,
-			config: Dict=None
+			config:Dict=None,
+			columnType:str='',
+			columnName:str='',
 		) :
 		Input.__init__(
 			self,
@@ -27,16 +31,21 @@ class PrerequisiteReferenceSelectInput (Input):
 			isSearch,
 			isRequired,
 			isEditable,
+			isForm,
 			help,
 			documentPath,
-			config
+			config,
+			columnType,
+			columnName,
 		)
 		self.url = url
+		self.tableURL = tableURL
 		self.prerequisite = prerequisite
 		self.typeName = 'PrerequisiteReferenceSelect'
 	
 	def toDict(self) -> dict:
 		result = super().toDict()
 		result['url'] = self.url
+		result['tableURL'] = self.tableURL
 		result['prerequisite'] = self.prerequisite
 		return result
