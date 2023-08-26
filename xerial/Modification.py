@@ -98,6 +98,14 @@ class Modification :
 		self.generator = __GENERATOR__[vendor]
 	
 	def add(self, name:str, column:Column) :
+		"""
+		Add a column into the existing Model.
+		
+		Parameters
+		----------
+		name: str  name of the added column
+		column: Column attribute of the added column
+		"""
 		column.name = name
 		column.vendor = self.vendor
 		self.column.append((ModificationType.ADD, self.table, name, column))
