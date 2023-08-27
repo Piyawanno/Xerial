@@ -11,7 +11,7 @@ from enum import Enum
 from packaging.version import Version
 from typing import Dict, List, Any, Tuple
 
-import logging, csv, xlsxwriter, time
+import logging, csv, xlsxwriter, os, json
 
 class PrimaryDataError (Exception) :
 	pass
@@ -144,7 +144,30 @@ class DBSessionBase :
 		for modelClass in self.model.values() :
 			self.checkLinkingMeta(modelClass)
 	
-	def checkModification(self, modelClass, currentVersion) :
+	def checkModification(self, versionPath:str) :
+		"""
+		Automatic checking of Structure Modification.
+
+		Parameters
+		----------
+		versionPath : Path to JSON file storing the current version of each model.
+		"""
+		if os.path.isfile(versionPath) :
+			with open(versionPath) as fd :
+				modelVersion = {}
+		else :
+			modelVersion = {}
+
+		for name, model in self.model.items():
+			current = modelVersion.get(name, '1.0')
+			last = self.checkModelModification(model, current)
+			modelVersion[name] = str(last)
+
+		with open(versionPath, 'wt') as fd:
+			raw = json.dumps(modelVersion, indent=4)
+			fd.write(raw)
+	
+	def checkModelModification(self, modelClass, currentVersion) :
 		modificationList = self.generateModification(modelClass, currentVersion)
 		lastVersion = currentVersion
 		for v, queryList in modificationList :

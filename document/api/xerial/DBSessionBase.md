@@ -34,8 +34,15 @@ Classes
     `checkModelLinking(self)`
     :
 
-    `checkModification(self, modelClass, currentVersion)`
+    `checkModelModification(self, modelClass, currentVersion)`
     :
+
+    `checkModification(self, versionPath: str)`
+    :   Automatic checking of Structure Modification.
+        
+        Parameters
+        ----------
+        versionPath : Path to JSON file storing the current version of each model.
 
     `closeConnection(self)`
     :

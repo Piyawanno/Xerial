@@ -21,7 +21,7 @@ Classes
 
     ### Methods
 
-    `checkModification(self, modelClass, currentVersion)`
+    `checkModelModification(self, modelClass, currentVersion)`
     :
 
     `closeConnection(self)`

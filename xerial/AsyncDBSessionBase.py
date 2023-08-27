@@ -7,10 +7,26 @@ from typing import Dict, List, Any
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 
-import logging, csv, xlsxwriter, time
+import logging, csv, xlsxwriter, time, os, json
 
 class AsyncDBSessionBase (DBSessionBase) :
-	async def checkModification(self, modelClass, currentVersion) :
+	async def checkModification(self, versionPath:str) :
+		if os.path.isfile(versionPath) :
+			with open(versionPath) as fd :
+				modelVersion = {}
+		else :
+			modelVersion = {}
+
+		for name, model in self.model.items():
+			current = modelVersion.get(name, '1.0')
+			last = await self.checkModelModification(model, current)
+			modelVersion[name] = str(last)
+
+		with open(versionPath, 'wt') as fd:
+			raw = json.dumps(modelVersion, indent=4)
+			fd.write(raw)
+
+	async def checkModelModification(self, modelClass, currentVersion) :
 		modificationList = self.generateModification(modelClass, currentVersion)
 		lastVersion = currentVersion
 		for version, queryList in modificationList :

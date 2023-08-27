@@ -145,6 +145,13 @@ class Record :
 				setattr(self, column, getattr(other, column))
 	
 	def createModification(self, version:str) :
+		"""
+		Create a Modification object to modify Structure of Model.
+
+		Parameters
+		----------
+		version: String of the new version of modification e.g. '2.0'.
+		"""
 		modelClass = self.__class__
 		if not hasattr(modelClass, '__modification__') :
 			modelClass.__modification__ = []
@@ -158,6 +165,14 @@ class Record :
 		return modification
 	
 	def modify(self) :
+		"""
+		A placeholder method for Structure Modification. By calling
+		DBSession.checkModification(), this method of each Model
+		registered to the DBSession will be called. To implement
+		Structure Modification, this method must be overridden
+		by creating Modification object with the method
+		Record.createModification()
+		"""
 		pass
 
 	def setAsChildrenOf(self) :
