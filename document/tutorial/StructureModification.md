@@ -51,11 +51,11 @@ based on the version system provided from the module
 The first modification must have the version `> 1.0`.
 The modification will be used to modify the structure of Model
 from the latest version to the current version.
-For detail, please, see [Modification API](api/xerial/Modification.md).
+For detail, please, see [Modification API](../api/xerial/Modification.md).
 
 To execute the modification, the method
-[DBSessionBase.checkModification()](api/xerial/DBSessionBase.md) or
-[AsyncDBSessionBase.checkModification()](api/xerial/AsyncDBSessionDBSessionBase.md) or
+[DBSessionBase.checkModification()](../api/xerial/DBSessionBase.md) or
+[AsyncDBSessionBase.checkModification()](../api/xerial/AsyncDBSessionDBSessionBase.md) or
 must be called, whereas all modifications of registered Model will
 be automatically executed. Followed is the example :
 
