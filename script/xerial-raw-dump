@@ -1,0 +1,37 @@
+#!/usr/bin/python3
+
+"""
+xerial-dump -c /etc/gaimon/Database.json -m config/DBMigration.json
+"""
+
+from xerial.RawMigration import RawMigration
+import sys, argparse, os, json, asyncio
+
+__parser__ = argparse.ArgumentParser(description="Xerial-Raw-Dump : dump data from DB into json file (Raw Mode no Model).")
+__parser__.add_argument("-c", "--connection", help="Path for connection configuration.")
+__parser__.add_argument("-m", "--migration", help="Path for dump migration configuration.")
+__option__ = __parser__.parse_args(sys.argv[1:])
+
+connectionPath = __option__.connection
+
+if connectionPath is None or not os.path.isfile(connectionPath) :
+	connectionPath = "/etc/xerial/Xerial.json"
+
+with open(connectionPath) as fd :
+	connectionConfig = json.load(fd)
+
+migrationPath = __option__.migration
+
+if migrationPath is None or not os.path.isfile(migrationPath) :
+	connectionPath = "/etc/xerial/DBMigration.json"
+
+with open(migrationPath) as fd :
+	migrationConfig = json.load(fd)
+
+async def run() :
+	migration = RawMigration(connectionConfig)
+	await migration.connect()
+	await migration.dump(migrationConfig['dataPath'])
+	await migration.close()
+
+asyncio.run(run())

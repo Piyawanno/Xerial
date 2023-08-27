@@ -71,18 +71,23 @@ class Person (Record) :
 
 This can be useful to avoid reserved words of SQL syntax.
 
-Note that each column will be assigned as instance of **Column**
+Note that each column will be assigned as instance of
+[**Column**](../api/xerial/Column.md)
 classes with defined attribute of each column. Xerial provides followed
 type of Column  :
 
-- IntegerColumn
-- FloatColumn
-- StringColumn
-- DateColumn
-- DateTimeColumn
-- TimeColumn
-- DayIntervalColumn
-- JSONColumn
+- [IntegerColumn](../api/xerial/IntegerColumn.md)
+- [FloatColumn](../api/xerial/FloatColumn.md)
+- [StringColumn](../api/xerial/StringColumn.md)
+- [DateColumn](../api/xerial/DateColumn.md)
+- [DateTimeColumn](../api/xerial/DateTimeColumn.md)
+- [TimeColumn](../api/xerial/TimeColumn.md)
+- [DayIntervalColumn](../api/xerial/DayIntervalColumn.md)
+- [JSONColumn](../api/xerial/JSONColumn.md)
+- [CurrencyColumn](../api/xerial/CurrencyColumn.md)
+- [FractionColumn](../api/xerial/FractionColumn.md)
+- [MultiPointColumn](../api/xerial/MultiPointColumn.md)
+- [PointColumn](../api/xerial/PointColumn.md)
 
 It can be seen that Xerial provides only a small set of column types.
 This is another concept of Xerial that we intentionally keep things simple
@@ -264,7 +269,82 @@ for multiple time and no performance gain can be retrieved.
 session.insertMultiple([Person().fromDict(i) for i in data], isReturningID=True)
 ```
 
-More over, like `session.insert()`, parameter `isAutoID=False` can also
+Moreover, like `session.insert()`, parameter `isAutoID=False` can also
 set to `session.insertMultiple()`.
 
-# Query data
+## Query data
+
+Data query should be the most frequently used of `DBSessionBase`.
+Since the SQL has a powerful query clause, Xerial inherits this
+capability nearby directly. The developer can use the `WHERE`, `ORDER BY`
+and `GROUP BY` clause with the method `DBSessionBase.select`.
+
+```python
+name = 'Kurt'
+clause = "WHERE name=? ORDER BY id DESC"
+personList = session.select(Person, clause, parameter=[name])
+```
+
+The result of the method calls will be the list of `Person` complied
+with the given WHERE clause. Note that in the example, the optional
+parameter `parameter` is used to given the list of parameter in the placement
+of `?` in the WHERE clause. The developer can directly give the parameter
+directly into the WHERE clause :
+
+```python
+name = 'Kurt'
+clause = f"WHERE name={name} ORDER BY id DESC"
+personList = session.select(Person, clause)
+```
+
+However, this method is not recommended due to the security issue
+with SQL injection.
+
+To set the offset and the limit of the result, the parameter `limit`
+and `offset` can be used. These parameters are useful for pagination
+of the data. Note that, these parameters are set outside the `clause`
+parameter, because SQL statement is different for each database vendor.
+
+```python
+name = 'Kurt'
+clause = f"WHERE name=? ORDER BY id DESC"
+personList = session.select(Person, clause, parameter=[name], limit=10, offset=20)
+```
+
+Other special use case but frequently used for data selection is
+the method `selectByID`, where Record will be directly selected with the primary key
+
+```python
+person = session.selectByID(Person, ID=20)
+```
+
+The return value of this method call will be a single object of the class
+`Person`, if the `ID=20` exists in the database. Otherwise, `None` will
+be returned.
+
+For the other usage of data selection, Xerial also provides methods with
+data formats other than list of Records like :
+
+- `selectRaw` : Returning the list of dictionary compatible with JSON.
+This can increase performance by skipping the process of mapping from
+data to Record object and back to JSON compatible data.
+- `selectTranspose` : Resulting the dictionary of data list compatible
+with JSON. The structure will be `{columnName: [value, ...]}`.
+This is helpful for saving bandwidth between HTTP server and client in RESTFull fashion.
+- `selectCSV` : The selected data will be written directly into the
+given file with the CSV data format.
+- `selectExcel` : The selected data will be written directly into the
+given file with the Excel data format.
+
+## Further Reading
+
+For the relation between Model, Xerial provides the followed relation :
+
+- [One-to-One Relation](OneToOneRelation.md)
+- [One-to-Many Relation](OneToManyRelation.md)
+- [Many-to-Many Relation](ManyToManyRelation.md)
+
+Xerial also provide tools for data backup like :
+
+- [Data dumping and restore with Xerial](DataDump.md)
+- [Incremental data backup](IncremetalBackup.md)

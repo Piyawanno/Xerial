@@ -52,9 +52,33 @@ class DBSessionBase :
 		pass
 	
 	def insert(self, record, isAutoID=True) :
+		"""
+		Insert record into database.
+
+		Parameters
+		----------
+		record: Object of class Record or its inheritance to insert into database.
+		
+		isAutoID: If setting to True, primary key of the record will be
+		auto generated from database. Otherwise, the primary key must be set.
+		"""
 		pass
 	
 	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
+		"""
+		Insert list of records into database.
+
+		Parameters
+		----------
+		recordList: List of Object of class Record or its inheritance to insert into database.
+		
+		isAutoID: If setting to True, primary key of the record will be
+		auto generated from database. Otherwise, the primary key must be set.
+		
+		isReturningID: If setting to False and isAutoID=True,
+		Although the primary key of the record will be auto generated,
+		it will not set to the record due to the performance reason.
+		"""
 		pass
 
 	def insertMultipleDirect(self, modelClass, rawList) :
@@ -150,7 +174,8 @@ class DBSessionBase :
 
 		Parameters
 		----------
-		versionPath : Path to JSON file storing the current version of each model.
+		versionPath : Path to JSON file storing the current version
+		of each model.
 		"""
 		if os.path.isfile(versionPath) :
 			with open(versionPath) as fd :
@@ -229,7 +254,37 @@ class DBSessionBase :
 		if len(fetched) : return fetched[0]
 		else : None
 
-	def select(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
+	def select(self,
+			modelClass:type,
+			clause:str,
+			isRelated:bool=False,
+			isChildren:bool=False,
+			limit:int=None,
+			offset:int=None,
+			parameter:list=None
+		) -> list:
+		"""
+		Select data from database.
+
+		Parameters
+		----------
+		modelClass: Class of model to select
+		
+		clause: String of query clause, Xerial allows WHERE, ORDER BY, GROUP BY
+		
+		isRelated: By setting to True, the related data with foreignKey
+		will be selected. Otherwise, the foreignKey column will have
+		the reference value.
+		
+		isChildren: By setting to True, the children records will be selected.
+		
+		limit: Maximum number of records to select. If setting to None=no limit.
+		
+		offset: Offset of records to select. If setting to None=no offset.
+		
+		parameter: List of query parameter for the '?' placement
+		in the clause parameter.
+		"""
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
 		

@@ -66,12 +66,6 @@ Classes
     `getExistingTable(self)`
     :
 
-    `insert(self, record, isAutoID=True)`
-    :
-
-    `insertMultiple(self, recordList, isAutoID=True, isReturningID=False)`
-    :
-
     `insertMultipleDirect(self, modelClass, rawList)`
     :
 

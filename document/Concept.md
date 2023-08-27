@@ -1,4 +1,4 @@
-# Xerial Design anc Concept
+# Xerial Design and Concept
 
 ## Code Centric Data Structure
 

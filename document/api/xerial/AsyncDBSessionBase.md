@@ -66,22 +66,13 @@ Classes
     `getExistingTable(self)`
     :
 
-    `insert(self, record, isAutoID=True)`
-    :
-
     `insertChildren(self, record, modelClass, isReturningID=True)`
-    :
-
-    `insertMultiple(self, recordList, isAutoID=True, isReturningID=False)`
     :
 
     `insertMultipleDirect(self, modelClass, rawList)`
     :
 
     `resetIDSequence(self, modelClass: type, renewStartID: int)`
-    :
-
-    `select(self, modelClass: type, clause: str, isRelated: bool = False, isChildren: bool = False, limit: int = None, offset: int = None, parameter: list = None) ‑> list`
     :
 
     `selectByID(self, modelClass: type, ID: int, isRelated: bool = False, isChildren: bool = False) ‑> xerial.Record.Record`

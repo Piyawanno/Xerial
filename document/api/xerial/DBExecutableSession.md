@@ -28,15 +28,6 @@ Classes
     `getExistingTable(self)`
     :
 
-    `insert(self, record)`
-    :
-
-    `insertMultiple(self, recordList)`
-    :
-
-    `select(self, modelClass, clause, isRelated=False, limit=None, offset=None, isDebug=False)`
-    :
-
     `selectRelated(self, modelClass, recordList)`
     :
 
