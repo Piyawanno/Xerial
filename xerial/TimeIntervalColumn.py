@@ -24,7 +24,7 @@ class TimeIntervalColumn (FloatColumn) :
 		self.precision = 8
 	
 	def toDict(self, attribute):
-		return attribute
+		return attribute.total_seconds()
 
 	def fromDict(self, data) :
 		return data.get(self.name, self.default)

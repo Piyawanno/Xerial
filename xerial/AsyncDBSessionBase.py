@@ -11,9 +11,10 @@ import logging, csv, xlsxwriter, time, os, json
 
 class AsyncDBSessionBase (DBSessionBase) :
 	async def checkModification(self, versionPath:str) :
+		print(versionPath)
 		if os.path.isfile(versionPath) :
 			with open(versionPath) as fd :
-				modelVersion = {}
+				modelVersion = json.load(fd)
 		else :
 			modelVersion = {}
 
@@ -23,8 +24,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 			modelVersion[name] = str(last)
 
 		with open(versionPath, 'wt') as fd:
-			raw = json.dumps(modelVersion, indent=4)
-			fd.write(raw)
+			raw = json.dump(modelVersion, fd, indent=4)
 
 	async def checkModelModification(self, modelClass, currentVersion) :
 		modificationList = self.generateModification(modelClass, currentVersion)

@@ -44,5 +44,7 @@ class EnumSelectInput (Input):
 		result = super().toDict()
 		result['option'] = []
 		for value in self.enum.label:
-			result['option'].append({'label': self.enum.label[value], 'value': value})
+			raw = value
+			if type(value) != int: raw = value.value
+			result['option'].append({'label': self.enum.label[value], 'value': raw})
 		return result

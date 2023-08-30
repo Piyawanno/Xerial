@@ -46,15 +46,15 @@ class CurrencyData :
 
 	def toDict(self) :
 		return {
-			'origin' : [self.origin.numerator, self.origin.denominator],
+			'origin' : [str(self.origin.numerator), str(self.origin.denominator)],
 			'originValue' : float(self.origin),
 			'originString' : f"{self.origin.numerator}/{self.origin.denominator}",
 			'originCurrency' : None if self.originCurrency is None else self.originCurrency.code,
-			'exchanged' : None if self.exchanged is None else [self.exchanged.numerator, self.exchanged.denominator],
+			'exchanged' : None if self.exchanged is None else [str(self.exchanged.numerator), str(self.exchanged.denominator)],
 			'exchangedString' : None if self.exchanged is None else f"{self.exchanged.numerator}/{self.exchanged.denominator}",
 			'exchangedValue' : None if self.exchanged is None else float(self.exchanged),
 			'exchangedCurrency' : None if self.exchangedCurrency is None else self.exchangedCurrency.code,
-			'rate' : None if self.rate is None else [self.rate.numerator, self.rate.denominator],
+			'rate' : None if self.rate is None else [str(self.rate.numerator), str(self.rate.denominator)],
 			'rateString' : None if self.rate is None else f"{self.rate.numerator}/{self.rate.denominator}",
 			'rateValue' : None if self.rate is None else float(self.rate),
 			'exchangeDate' : None if self.exchangeDate is None else self.exchangeDate.strftime(DATE_FORMAT)

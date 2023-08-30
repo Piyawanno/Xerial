@@ -179,7 +179,7 @@ class DBSessionBase :
 		"""
 		if os.path.isfile(versionPath) :
 			with open(versionPath) as fd :
-				modelVersion = {}
+				modelVersion = json.load(fd)
 		else :
 			modelVersion = {}
 

@@ -1,4 +1,5 @@
 from xerial.ForeignKey import ForeignKey
+from xerial.Vendor import Vendor
 
 class Column :
 	compatible = set()
@@ -40,6 +41,10 @@ class Column :
 		return f"%({self.name})s"
 	
 	def processValue(self, raw) :
+		if self.vendor == Vendor.POSTGRESQL:
+			from asyncpg.pgproto.pgproto import UUID
+			if type(raw) == UUID:
+				raw = str(raw)
 		return raw
 	
 	def setValueToDB(self, attribute) :
