@@ -10,7 +10,7 @@ In the term of relation between tables or Models, the One-to-One relation
 is the simplest relation. In this case, we have 2 Models. The first Model,
 we call it **referee**, which is referenced from the second Model. And we call
 the second model **referrer**. The visibility is a key point of this relation,
-where the referrer knows the referee but not otherwise. 
+where the referrer knows the referee but not vise versa. 
 
 In the followed example, the model `Department` is the referee and the
 model `Personnel` is the referrer. 
@@ -46,12 +46,37 @@ method `session.checkModelLinking()` with check the correctness of
 the linking. If the linked column does not exist, Xerial will print
 the warning message to the terminal.
 
+To insert or update data, it is 
+
 By selecting the data, no data will be linked by default. To link
 the data with One-to-One relation, the parameter `isRelated` must
 be set to `True`. Xerial will be automatically link the data with
 optimized query.
 
-Without the linking between models,  	
+Without the linking between models, the data selection can be as
+followed implemented:
+
+```python
+personnelList = session.select(Personnel, '')
+print([i.toDict() for i in personnelList])
+```
+
+From the given code, the result will be:
+
+```json
+[
+	{
+		"id": 1,
+		"department": 1,
+		"firstName": "Kittipong",
+		"lastName": "Piyawanno",
+		"email": "k.piyawanno@gmail.com"
+	}
+]
+```
+
+Otherwise, the data between `Personnel` and `Department` can be
+linked as followed:
 
 ```python
 personnelList = session.select(Personnel, '', isRelated=True)
@@ -65,7 +90,7 @@ From the given code, the result will be:
 	{
 		"id": 1,
 		"department": {
-			"id" : 2,
+			"id" : 1,
 			"name": "Computer Engineering",
 			"description": "Computer Engineering by KMUTT"
 		},
@@ -76,25 +101,10 @@ From the given code, the result will be:
 ]
 ```
 
-```python
-personnelList = session.select(Personnel, '', isRelated=True)
-print([i.toDict() for i in personnelList])
-```
-
-From the given code, the result will be:
-
-```json
-[
-	{
-		"id": 1,
-		"department": {
-			"id" : 2,
-			"name": "Computer Engineering",
-			"description": "Computer Engineering by KMUTT"
-		},
-		"firstName": "Kittipong",
-		"lastName": "Piyawanno",
-		"email": "k.piyawanno@gmail.com"
-	}
-]
-```
+It can be seen that from the relation between `Department` and
+`Personnel`, a record of `Department` can be linked to multiple
+records of `Personnel`. To be pendant, this is not a strict
+One-to-One relation, but can be also used as One-to-Many relation
+with one direction visibility. In Xerial, the strict One-to-One
+relation is not supported. And for the case of strict One-to-One
+relation, we recommend table merge if possible.
