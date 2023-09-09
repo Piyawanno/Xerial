@@ -217,6 +217,7 @@ if __name__ == '__main__' :
 	parser.add_argument("operation", help="Operation of setup", choices=['setup', 'install', 'link', 'bdist_wheel'])
 	parser.add_argument("-p", "--platform", help="Platform for installation of base environment.", choices=['oracle', 'centos', 'debian10', 'ubuntu20.04'])
 	option = parser.parse_args(sys.argv[1:])
+	if option.platform is None : option.platform = 'ubuntu20.04'
 	setup = XerialSetup()
 	setup.operate(option.operation, option.platform)
 
