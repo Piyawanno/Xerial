@@ -255,7 +255,7 @@ class Record :
 	@staticmethod
 	def extractGroupInput(modelClass, inputGroupMapper, groupedInputList:list=[]) :
 		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
-		group:IntEnum = getattr(modelClass, '__GROUP_LABEL__', None)
+		group:IntEnum = getattr(modelClass, '__grouplabel__', None)
 		if group is None: return
 		groupParsedOrder = []
 		for i in group.order: 
