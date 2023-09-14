@@ -7,3 +7,4 @@ postgresql
 postgresql-contrib
 libpq-dev
 unixodbc-dev
+redis-server

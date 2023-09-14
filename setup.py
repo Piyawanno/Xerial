@@ -207,6 +207,7 @@ class XerialSetup :
 			parameter['DB_VENDOR'] = "2"
 		if parameter['DB_VENDOR'] == "4" :
 			parameter['DB_DOMAIN'] = input("DB domain : ")
+		
 		return parameter
 	
 
