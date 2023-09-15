@@ -1,7 +1,6 @@
 from enum import IntEnum
 from xerial.Column import Column
 from xerial.Children import Children
-from xerial.ForeignKey import ForeignKey
 from xerial.Input import Input
 from xerial.Modification import Modification
 from xerial.Vendor import Vendor
@@ -256,11 +255,11 @@ class Record :
 	def extractGroupInput(modelClass, inputGroupMapper, groupedInputList:list=[]) :
 		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
 		group:IntEnum = getattr(modelClass, '__group_label__', None)
-		additionalGroup = getattr(modelClass, '__additiongroup__', None)
-		if group is None or additionalGroup is None: return
+		addition = getattr(modelClass, '__addition_group__', None)
+		if group is None and addition is None : return
 		groupParsedOrder = []
-		def groupInput(parsedOrder):
-			if parsedOrder['id'] in inputGroupMapper: 
+		def groupInput(parsedOrder) :
+			if parsedOrder['id'] in inputGroupMapper:
 				inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
 				parsedOrder['input'] = []
 				for item in inputGroupMapper[parsedOrder['id']]:
@@ -268,7 +267,8 @@ class Record :
 					parsedOrder['input'].append(item)
 			groupedInputList.append(parsedOrder)
 			groupParsedOrder.append(parsedOrder)
-		for i in group.order: 
+
+		for i in group.order:
 			parsedOrder = {
 				'id': i.value,
 				'label': i.label[i],
@@ -278,14 +278,16 @@ class Record :
 			}
 			parsedOrder['parsedOrder'] = Version(group.order[i])
 			groupInput(parsedOrder)
-		for i in additionalGroup.values() :
-			i['parsedOrder'] = Version(i['order'])
-			groupInput(i)
+		
+		if addition is not None :
+			for i in addition.values() :
+				i['parsedOrder'] = Version(i['order'])
+				groupInput(i)
 
 		groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
 		groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
 		modelClass.inputGroup = groupParsedOrder
-	
+
 	@staticmethod
 	def extractMeta(modelClass) :
 		if not hasattr(modelClass, '__version__') :
@@ -421,9 +423,9 @@ class Record :
 	
 	@staticmethod
 	def appendGroup(modelClass, label:str, value:int, order:str, inputPerLine:int=2) :
-		if not hasattr(modelClass, '__additiongroup__') :
-			modelClass.__additiongroup__ = {}
-		modelClass.__additiongroup__[value] = {
+		if not hasattr(modelClass, '__addition_group__') :
+			modelClass.__addition_group__ = {}
+		modelClass.__addition_group__[value] = {
 			'id': value,
 			'label': label,
 			'order': order,

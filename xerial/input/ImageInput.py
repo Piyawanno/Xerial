@@ -1,5 +1,6 @@
 from typing import Dict
 from xerial.Input import Input
+from xerial.InputAttachment import InputAttachment
 
 class ImageInput (Input):
 	def __init__(self,
@@ -16,7 +17,7 @@ class ImageInput (Input):
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
-			attachedGroup:str='',
+			attachedGroup:InputAttachment=None,
 			help:str=None,
 			path:str=None,
 			uploadURL:str=None,

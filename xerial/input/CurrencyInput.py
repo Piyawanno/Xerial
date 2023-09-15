@@ -1,5 +1,6 @@
 from typing import Dict
 from xerial.Input import Input
+from xerial.InputAttachment import InputAttachment
 
 class CurrencyInput (Input):
 	def __init__(self,
@@ -14,7 +15,7 @@ class CurrencyInput (Input):
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
-			attachedGroup:str='',
+			attachedGroup:InputAttachment=None,
 			help:str=None,
 			isNegative:bool=True,
 			isZeroIncluded:bool=True,

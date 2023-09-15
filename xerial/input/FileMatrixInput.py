@@ -1,5 +1,6 @@
 from typing import Dict
 from xerial.Input import Input
+from xerial.InputAttachment import InputAttachment
 
 class FileMatrixInput (Input):
 	def __init__(self,

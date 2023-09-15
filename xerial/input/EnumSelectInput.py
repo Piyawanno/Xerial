@@ -1,4 +1,5 @@
 from xerial.Input import Input
+from xerial.InputAttachment import InputAttachment
 from enum import IntEnum
 from typing import Dict, Type
 
@@ -16,7 +17,7 @@ class EnumSelectInput (Input):
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
-			attachedGroup:str='',
+			attachedGroup:InputAttachment=None,
 			help:str=None,
 			documentPath:str=None,
 			config:Dict=None,

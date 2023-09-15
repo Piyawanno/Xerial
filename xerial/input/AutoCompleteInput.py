@@ -1,6 +1,6 @@
 from typing import Dict
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
-
+from xerial.InputAttachment import InputAttachment
 class AutoCompleteInput (ReferenceSelectInput) :
 	def __init__(self,
 			label:str,
@@ -17,7 +17,7 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
-			attachedGroup:str='',
+			attachedGroup:InputAttachment=None,
 			help:str=None,
 			documentPath:str=None,
 			config:Dict=None,

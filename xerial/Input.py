@@ -1,5 +1,6 @@
 from typing import Dict
 from packaging.version import Version
+from xerial.InputAttachment import InputAttachment
 
 class Input :
 	def __init__(self,
@@ -14,7 +15,7 @@ class Input :
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
-			attachedGroup:str='',
+			attachedGroup:InputAttachment=None,
 			help:str=None,
 			documentPath:str=None,
 			config: Dict=None,
@@ -60,7 +61,7 @@ class Input :
 			'isForm' : self.isForm,
 			'isTableForm' : self.isTableForm,
 			'isAdvanceForm' : self.isAdvanceForm,
-			'attachedGroup': self.attachedGroup,
+			'attachedGroup': self.attachedGroup.toDict() if self.attachedGroup is not None else None,
 			'help' : self.help,
 			'documentPath' : self.documentPath,
 			'typeName' : self.typeName,

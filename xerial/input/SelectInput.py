@@ -1,4 +1,5 @@
 from xerial.Input import Input
+from xerial.InputAttachment import InputAttachment
 
 from typing import Dict, List, Tuple
 
@@ -16,7 +17,7 @@ class SelectInput (Input):
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
-			attachedGroup:str='',
+			attachedGroup:InputAttachment=None,
 			help:str=None,
 			documentPath:str=None,
 			config:Dict=None,
