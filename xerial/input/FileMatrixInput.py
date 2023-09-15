@@ -32,6 +32,7 @@ class FileMatrixInput (Input):
 			isRequired,
 			True,
 			isForm,
+			False,
 			help,
 			documentPath,
 			config,

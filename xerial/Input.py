@@ -12,11 +12,12 @@ class Input :
 			isRequired:bool=False,
 			isEditable:bool=True,
 			isForm:bool=True,
+			isTableForm:bool=False,
 			help:str=None,
 			documentPath:str=None,
 			config: Dict=None,
 			columnType:str='',
-			columnName:str='',			
+			columnName:str='',
 		):
 		self.label = label
 		self.order = order
@@ -27,6 +28,7 @@ class Input :
 		self.isRequired = isRequired
 		self.isEditable = isEditable
 		self.isForm = isForm
+		self.isTableForm = isTableForm
 		self.help = help
 		self.documentPath = documentPath
 		self.config = config
@@ -52,6 +54,7 @@ class Input :
 			'isNumber' : self.isNumber,
 			'isFile' : self.isFile,
 			'isForm' : self.isForm,
+			'isTableForm' : self.isTableForm,
 			'help' : self.help,
 			'documentPath' : self.documentPath,
 			'typeName' : self.typeName,

@@ -11,7 +11,8 @@ class Column :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
-			input=None) :
+			input=None
+		) :
 		
 		from xerial.Input import Input
 		self.length = length
