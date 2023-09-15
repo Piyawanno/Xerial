@@ -9,6 +9,9 @@ Classes
 
     ### Static methods
 
+    `appendGroup(modelClass, label: str, value: int, order: str, inputPerLine: int = 2)`
+    :
+
     `checkBackup(modelClass)`
     :
 
@@ -16,6 +19,9 @@ Classes
     :
 
     `checkTableName(modelClass, prefix: str)`
+    :
+
+    `disableInput(modelClass, columnName: str)`
     :
 
     `enableDefaultBackup()`
@@ -43,6 +49,9 @@ Classes
     :
 
     `parseTime(delta)`
+    :
+
+    `replaceInput(modelClass, columnName: str, input: xerial.Input.Input)`
     :
 
     `setVendor(modelClass, vendor)`

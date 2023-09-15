@@ -1,6 +1,6 @@
 from xerial.Column import Column
 from xerial.Vendor import Vendor
-
+from typing import List
 class FloatColumn (Column) :
 	def __init__(self,
 			isPrimary=False,
@@ -11,6 +11,7 @@ class FloatColumn (Column) :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
+			parentModel:List[type]=[],
 			input=None) :
 			
 		Column.__init__(self,
@@ -21,6 +22,7 @@ class FloatColumn (Column) :
 			foreignKey=foreignKey,
 			isIndex=isIndex,
 			isRepresentative=isRepresentative,
+			parentModel=parentModel,
 			input=input
 		)
 		self.precision = precision

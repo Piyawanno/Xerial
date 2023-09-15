@@ -4,7 +4,7 @@ Module xerial.CurrencyColumn
 Classes
 -------
 
-`CurrencyColumn(isPrimary=False, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, input=None)`
+`CurrencyColumn(isPrimary=False, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, parentModel: List[type] = [], input=None)`
 :   
 
     ### Ancestors (in MRO)

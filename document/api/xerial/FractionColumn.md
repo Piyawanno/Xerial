@@ -4,7 +4,7 @@ Module xerial.FractionColumn
 Classes
 -------
 
-`FractionColumn(isPrimary=False, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, input=None)`
+`FractionColumn(isPrimary=False, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, parentModel: List[type] = [], input=None)`
 :   
 
     ### Ancestors (in MRO)

@@ -13,6 +13,8 @@ class Input :
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
+			isAdvanceFrom:bool=False,
+			attachedGroup:str='',
 			help:str=None,
 			documentPath:str=None,
 			config: Dict=None,
@@ -29,6 +31,8 @@ class Input :
 		self.isEditable = isEditable
 		self.isForm = isForm
 		self.isTableForm = isTableForm
+		self.isAdvanceForm = isAdvanceFrom
+		self.attachedGroup = attachedGroup
 		self.help = help
 		self.documentPath = documentPath
 		self.config = config
@@ -55,6 +59,8 @@ class Input :
 			'isFile' : self.isFile,
 			'isForm' : self.isForm,
 			'isTableForm' : self.isTableForm,
+			'isAdvanceForm' : self.isAdvanceForm,
+			'attachedGroup': self.attachedGroup,
 			'help' : self.help,
 			'documentPath' : self.documentPath,
 			'typeName' : self.typeName,

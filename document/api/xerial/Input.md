@@ -4,7 +4,7 @@ Module xerial.Input
 Classes
 -------
 
-`Input(label: str, order: str = None, group: int = None, isTable: bool = False, isMobile: bool = False, isSearch: bool = False, isRequired: bool = False, isEditable: bool = True, isForm: bool = True, help: str = None, documentPath: str = None, config: Dict[~KT, ~VT] = None, columnType: str = '', columnName: str = '')`
+`Input(label: str, order: str = None, group: int = None, isTable: bool = False, isMobile: bool = False, isSearch: bool = False, isRequired: bool = False, isEditable: bool = True, isForm: bool = True, isTableForm: bool = False, isAdvanceFrom: bool = False, attachedGroup: str = '', help: str = None, documentPath: str = None, config: Dict[~KT, ~VT] = None, columnType: str = '', columnName: str = '')`
 :   
 
     ### Descendants

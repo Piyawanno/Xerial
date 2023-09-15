@@ -1,6 +1,7 @@
 from xerial.ForeignKey import ForeignKey
 from xerial.Vendor import Vendor
 
+from typing import List
 class Column :
 	compatible = set()
 	def __init__(self,
@@ -11,6 +12,7 @@ class Column :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
+			parentModel:List[type]=[],
 			input=None
 		) :
 		
@@ -26,6 +28,7 @@ class Column :
 		self.default = default
 		self.isIndex = isIndex
 		self.isRepresentative = isRepresentative
+		self.parentModel = parentModel
 		self.input:Input = input
 		self.isConvertRaw = False
 	

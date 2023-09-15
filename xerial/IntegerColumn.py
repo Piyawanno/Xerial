@@ -1,5 +1,6 @@
 from xerial.Column import Column
 from xerial.Vendor import Vendor
+from typing import List
 
 import time, math
 
@@ -20,6 +21,7 @@ class IntegerColumn (Column) :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
+			parentModel:List[type]=[],
 			input=None,
 			enum=None,
 		) :
@@ -32,6 +34,7 @@ class IntegerColumn (Column) :
 			foreignKey=foreignKey,
 			isIndex=isIndex,
 			isRepresentative=isRepresentative,
+			parentModel=parentModel,
 			input=input
 		)
 		self.enum = enum

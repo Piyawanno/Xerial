@@ -1,7 +1,7 @@
 # Xerial Documentation
 
 ## Getting Start
-- [Tutorial](tutorial/Start.md)
+- [Tutorial](tutorial/README.md)
 - [Data Structure Modification](tutorial/StructureModification.md)
 - [One-to-One Relation](OneToOneRelation.md)
 - [One-to-Many Relation](OneToManyRelation.md)

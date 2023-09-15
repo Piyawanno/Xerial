@@ -4,7 +4,7 @@ Module xerial.IntegerColumn
 Classes
 -------
 
-`IntegerColumn(isPrimary=False, length=32, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, input=None, enum=None)`
+`IntegerColumn(isPrimary=False, length=32, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, parentModel: List[type] = [], input=None, enum=None)`
 :   
 
     ### Ancestors (in MRO)

@@ -255,7 +255,7 @@ class Record :
 	@staticmethod
 	def extractGroupInput(modelClass, inputGroupMapper, groupedInputList:list=[]) :
 		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
-		group:IntEnum = getattr(modelClass, '__grouplabel__', None)
+		group:IntEnum = getattr(modelClass, '__group_label__', None)
 		additionalGroup = getattr(modelClass, '__additiongroup__', None)
 		if group is None or additionalGroup is None: return
 		groupParsedOrder = []
@@ -430,3 +430,17 @@ class Record :
 			'isGroup': True,
 			'inputPerLine' : inputPerLine,
 		}
+	
+	@staticmethod
+	def disableInput(modelClass, columnName:str) :
+		column = getattr(modelClass, columnName, None)
+		if column is None : return
+		if not hasattr(column, 'input') : return
+		column.input = None
+
+	@staticmethod
+	def replaceInput(modelClass, columnName:str, input:Input) :
+		column = getattr(modelClass, columnName, None)
+		if column is None : return
+		if not hasattr(column, 'input') : return
+		column.input = input

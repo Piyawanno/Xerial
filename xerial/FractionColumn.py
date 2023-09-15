@@ -2,6 +2,7 @@ from xerial.Column import Column
 from xerial.Vendor import Vendor
 
 from fractions import Fraction
+from typing import List
 
 class FractionColumn (Column) :
 	def __init__(self,
@@ -11,6 +12,7 @@ class FractionColumn (Column) :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
+			parentModel:List[type]=[],
 			input=None) :
 		Column.__init__(self,
 			isPrimary=isPrimary,
@@ -20,6 +22,7 @@ class FractionColumn (Column) :
 			foreignKey=foreignKey,
 			isIndex=isIndex,
 			isRepresentative=isRepresentative,
+			parentModel=parentModel,
 			input=input
 		)
 		self.isConvertRaw = True

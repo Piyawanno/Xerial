@@ -4,7 +4,7 @@ Module xerial.Column
 Classes
 -------
 
-`Column(isPrimary=False, length=0, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, input=None)`
+`Column(isPrimary=False, length=0, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, parentModel: List[type] = [], input=None)`
 :   
 
     ### Descendants

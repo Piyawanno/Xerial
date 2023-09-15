@@ -4,7 +4,7 @@ Module xerial.FloatColumn
 Classes
 -------
 
-`FloatColumn(isPrimary=False, length=32, precision=8, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, input=None)`
+`FloatColumn(isPrimary=False, length=32, precision=8, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, parentModel: List[type] = [], input=None)`
 :   
 
     ### Ancestors (in MRO)

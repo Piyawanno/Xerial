@@ -4,7 +4,7 @@ Module xerial.StringColumn
 Classes
 -------
 
-`StringColumn(isPrimary=False, length=255, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, isFixedLength=False, input=None)`
+`StringColumn(isPrimary=False, length=255, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, parentModel: List[type] = [], isFixedLength=False, input=None)`
 :   
 
     ### Ancestors (in MRO)

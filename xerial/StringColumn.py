@@ -1,6 +1,6 @@
 from xerial.Column import Column
 from xerial.Vendor import Vendor
-
+from typing import List
 class StringColumn (Column) :
 	isCLOB = False
 	def __init__(self,
@@ -11,6 +11,7 @@ class StringColumn (Column) :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
+			parentModel:List[type]=[],
 			isFixedLength=False,
 			input=None) :
 			
@@ -22,6 +23,7 @@ class StringColumn (Column) :
 			foreignKey=foreignKey,
 			isIndex=isIndex,
 			isRepresentative=isRepresentative,
+			parentModel=parentModel,
 			input=input
 		)
 		self.isFixedLength = isFixedLength

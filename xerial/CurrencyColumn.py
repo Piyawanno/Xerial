@@ -1,7 +1,7 @@
 from xerial.Column import Column
 from xerial.Vendor import Vendor
 from xerial.CurrencyData import CurrencyData
-
+from typing import List
 
 import json
 
@@ -13,6 +13,7 @@ class CurrencyColumn (Column) :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
+			parentModel:List[type]=[],
 			input=None) :
 		Column.__init__(self,
 			isPrimary=isPrimary,
@@ -22,6 +23,7 @@ class CurrencyColumn (Column) :
 			foreignKey=foreignKey,
 			isIndex=isIndex,
 			isRepresentative=isRepresentative,
+			parentModel=parentModel,
 			input=input
 		)
 		self.isConvertRaw = True

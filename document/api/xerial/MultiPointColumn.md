@@ -4,7 +4,7 @@ Module xerial.MultiPointColumn
 Classes
 -------
 
-`MultiPointColumn(isPrimary=False, length=0, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, input=None)`
+`MultiPointColumn(isPrimary=False, length=0, isNotNull=False, default=None, foreignKey=None, isIndex=False, isRepresentative=False, parentModel: List[type] = [], input=None)`
 :   
 
     ### Ancestors (in MRO)

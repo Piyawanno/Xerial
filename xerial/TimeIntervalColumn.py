@@ -1,6 +1,6 @@
 from xerial.FloatColumn import FloatColumn
 from datetime import timedelta
-
+from typing import List
 
 class TimeIntervalColumn (FloatColumn) :
 	def __init__(self,
@@ -9,6 +9,7 @@ class TimeIntervalColumn (FloatColumn) :
 			foreignKey=None,
 			isIndex=False,
 			isRepresentative=False,
+			parentModel:List[type]=[],
 			input=None) :
 			
 		FloatColumn.__init__(self,
@@ -19,6 +20,7 @@ class TimeIntervalColumn (FloatColumn) :
 			foreignKey=foreignKey,
 			isIndex=isIndex,
 			isRepresentative=isRepresentative,
+			parentModel=parentModel,
 			input=input
 		)
 		self.precision = 8
