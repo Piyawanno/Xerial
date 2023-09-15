@@ -256,8 +256,18 @@ class Record :
 	def extractGroupInput(modelClass, inputGroupMapper, groupedInputList:list=[]) :
 		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
 		group:IntEnum = getattr(modelClass, '__grouplabel__', None)
-		if group is None: return
+		additionalGroup = getattr(modelClass, '__additiongroup__', None)
+		if group is None or additionalGroup is None: return
 		groupParsedOrder = []
+		def groupInput(parsedOrder):
+			if parsedOrder['id'] in inputGroupMapper: 
+				inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
+				parsedOrder['input'] = []
+				for item in inputGroupMapper[parsedOrder['id']]:
+					del item['parsedOrder']
+					parsedOrder['input'].append(item)
+			groupedInputList.append(parsedOrder)
+			groupParsedOrder.append(parsedOrder)
 		for i in group.order: 
 			parsedOrder = {
 				'id': i.value,
@@ -267,14 +277,11 @@ class Record :
 				'inputPerLine': inputPerLine
 			}
 			parsedOrder['parsedOrder'] = Version(group.order[i])
-			if parsedOrder['id'] in inputGroupMapper: 
-				inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
-				parsedOrder['input'] = []
-				for item in inputGroupMapper[parsedOrder['id']]:
-					del item['parsedOrder']
-					parsedOrder['input'].append(item)
-			groupedInputList.append(parsedOrder)
-			groupParsedOrder.append(parsedOrder)
+			groupInput(parsedOrder)
+		for i in additionalGroup.values() :
+			i['parsedOrder'] = Version(i['order'])
+			groupInput(i)
+
 		groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
 		groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
 		modelClass.inputGroup = groupParsedOrder
@@ -411,3 +418,15 @@ class Record :
 		if not modelClass.__backup__ : return
 		modelClass.__insert_time__ = FloatColumn(isIndex=True, default=-1.0)
 		modelClass.__update_time__ = FloatColumn(isIndex=True, default=-1.0)
+	
+	@staticmethod
+	def appendGroup(modelClass, label:str, value:int, order:str, inputPerLine:int=2) :
+		if not hasattr(modelClass, '__additiongroup__') :
+			modelClass.__additiongroup__ = {}
+		modelClass.__additiongroup__[value] = {
+			'id': value,
+			'label': label,
+			'order': order,
+			'isGroup': True,
+			'inputPerLine' : inputPerLine,
+		}

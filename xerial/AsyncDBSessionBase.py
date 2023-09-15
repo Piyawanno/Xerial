@@ -11,7 +11,6 @@ import logging, csv, xlsxwriter, time, os, json
 
 class AsyncDBSessionBase (DBSessionBase) :
 	async def checkModification(self, versionPath:str) :
-		print(versionPath)
 		if os.path.isfile(versionPath) :
 			with open(versionPath) as fd :
 				modelVersion = json.load(fd)
