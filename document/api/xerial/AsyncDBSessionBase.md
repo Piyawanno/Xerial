@@ -75,7 +75,7 @@ Classes
     `resetIDSequence(self, modelClass: type, renewStartID: int)`
     :
 
-    `selectByID(self, modelClass: type, ID: int, isRelated: bool = False, isChildren: bool = False) ‑> xerial.Record.Record`
+    `selectByID(self, modelClass: type, ID: int, isRelated: bool = False, hasChildren: bool = False) ‑> xerial.Record.Record`
     :
 
     `selectCSV(self, descriptor, modelClass: type, clause: str, limit: int, offset: int, parameter: list = None)`
@@ -93,7 +93,7 @@ Classes
     `selectRelated(self, modelClass, recordList)`
     :
 
-    `selectTranspose(self, modelClass: type, clause: str, isRelated: bool = False, isChildren: bool = False, limit: int = None, offset: int = None, parameter: list = None) ‑> dict`
+    `selectTranspose(self, modelClass: type, clause: str, isRelated: bool = False, hasChildren: bool = False, limit: int = None, offset: int = None, parameter: list = None) ‑> dict`
     :
 
     `setFieldByID(self, modelClass: type, fieldMap: Dict[str, Any], id: int)`

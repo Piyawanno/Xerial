@@ -241,14 +241,14 @@ class DBSessionBase :
 			return i[0]
 	
 	# NOTE : Return None if not found.
-	def selectByID(self, modelClass:type, ID:int, isRelated:bool=False, isChildren:bool=False) -> Record :
+	def selectByID(self, modelClass:type, ID:int, isRelated:bool=False, hasChildren:bool=False) -> Record :
 		fetched = self.select(
 			modelClass,
 			f"WHERE {modelClass.primary}=?",
 			parameter = [int(ID)],
 			limit=1,
 			isRelated=isRelated,
-			isChildren=isChildren
+			hasChildren=hasChildren
 		)
 		if len(fetched) : return fetched[0]
 		else : None
@@ -257,7 +257,7 @@ class DBSessionBase :
 			modelClass:type,
 			clause:str,
 			isRelated:bool=False,
-			isChildren:bool=False,
+			hasChildren:bool=False,
 			limit:int=None,
 			offset:int=None,
 			parameter:list=None
@@ -275,7 +275,7 @@ class DBSessionBase :
 		will be selected. Otherwise, the foreignKey column will have
 		the reference value.
 		
-		isChildren: By setting to True, the children records will be selected.
+		hasChildren: By setting to True, the children records will be selected.
 		
 		limit: Maximum number of records to select. If setting to None=no limit.
 		
@@ -301,7 +301,7 @@ class DBSessionBase :
 			result.append(record)
 		if isRelated and len(result) :
 			self.selectRelated(modelClass, result)
-		if isChildren and len(result) :
+		if hasChildren and len(result) :
 			self.selectChildren(modelClass, result)
 		return result
 	
@@ -504,7 +504,7 @@ class DBSessionBase :
 			self.executeWrite(query)
 		
 	def checkLinkingMeta(self, modelClass) :
-		if not modelClass.isChildrenChecked :
+		if not modelClass.hasChildrenChecked :
 			self.checkChildren(modelClass)
 		if not modelClass.isForeignChecked :
 			self.checkForeignKey(modelClass)
@@ -521,7 +521,7 @@ class DBSessionBase :
 					if foreignKey.modelName == modelName :
 						child.parentColumn = foreignKey.name
 						break
-		modelClass.isChildrenChecked = True
+		modelClass.hasChildrenChecked = True
 	
 	def checkForeignKey(self, modelClass) :
 		for foreignKey in modelClass.foreignKey :

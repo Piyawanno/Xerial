@@ -3,11 +3,11 @@
 ## Getting Start
 - [Tutorial](tutorial/README.md)
 - [Data Structure Modification](tutorial/StructureModification.md)
-- [One-to-One Relation](OneToOneRelation.md)
-- [One-to-Many Relation](OneToManyRelation.md)
-- [Many-to-Many Relation](ManyToManyRelation.md)
-- [Data dumping and restore with Xerial](DataDump.md)
-- [Incremental data backup](IncremetalBackup.md)
+- [One-to-One Relation](tutorial/OneToOneRelation.md)
+- [One-to-Many Relation](tutorial/OneToManyRelation.md)
+- [Many-to-Many Relation](tutorial/ManyToManyRelation.md)
+- [Data dumping and restore with Xerial](tutorial/DataDump.md)
+- [Incremental data backup](tutorial/IncremetalBackup.md)
 
 ## Worth Reading
 - [Design and Concept](Concept.md)

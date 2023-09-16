@@ -74,6 +74,10 @@ chief.email = 'garp@navy.mi.onepiece'
 session.update(chief)
 ```
 
+Note that the record `chief` and `operator` will be automatically linked
+to the record `department`. However, the record `department` must
+be firstly inserted before `chief` and `operator`.
+
 By selecting the data, no data will be linked by default. To link
 the data with One-to-One relation, the parameter `isRelated` must
 be set to `True`. Xerial will be automatically link the data with
@@ -94,9 +98,9 @@ From the given code, the result will be:
 	{
 		"id": 1,
 		"department": 1,
-		"firstName": "Kittipong",
-		"lastName": "Piyawanno",
-		"email": "k.piyawanno@gmail.com"
+		"firstName": "Garp",
+		"lastName": "Monkey D.",
+		"email": "monkey.d.garp@navy.mi.onepiece"
 	}
 ]
 ```
@@ -117,12 +121,12 @@ From the given code, the result will be:
 		"id": 1,
 		"department": {
 			"id" : 1,
-			"name": "Computer Engineering",
-			"description": "Computer Engineering by KMUTT"
+			"name": "Production",
+			"description": "This department is responsible to produce the end-product."
 		},
-		"firstName": "Kittipong",
-		"lastName": "Piyawanno",
-		"email": "k.piyawanno@gmail.com"
+		"firstName": "Garp",
+		"lastName": "Monkey D.",
+		"email": "monkey.d.garp@navy.mi.onepiece"
 	}
 ]
 ```

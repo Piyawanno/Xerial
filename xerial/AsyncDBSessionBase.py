@@ -89,19 +89,19 @@ class AsyncDBSessionBase (DBSessionBase) :
 		return fetched
 	
 	# NOTE : Return None if not found.
-	async def selectByID(self, modelClass:type, ID:int, isRelated:bool=False, isChildren:bool=False) -> Record :
+	async def selectByID(self, modelClass:type, ID:int, isRelated:bool=False, hasChildren:bool=False) -> Record :
 		fetched = await self.select(
 			modelClass,
 			f"WHERE {modelClass.primary}=?",
 			parameter = [int(ID)],
 			limit=1,
 			isRelated=isRelated,
-			isChildren=isChildren
+			hasChildren=hasChildren
 		)
 		if len(fetched) : return fetched[0]
 		else : None
 
-	async def select(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
+	async def select(self, modelClass:type, clause:str, isRelated:bool=False, hasChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
@@ -117,12 +117,12 @@ class AsyncDBSessionBase (DBSessionBase) :
 			result.append(record)
 		if isRelated and len(result) :
 			await self.selectRelated(modelClass, result)
-		if isChildren and len(result) :
+		if hasChildren and len(result) :
 			await self.selectChildren(modelClass, result)
 		return result
 	
-	async def selectTranspose(self, modelClass:type, clause:str, isRelated:bool=False, isChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> dict :
-		recordList = await self.select(modelClass, clause, isRelated, isChildren, limit, offset, parameter)
+	async def selectTranspose(self, modelClass:type, clause:str, isRelated:bool=False, hasChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> dict :
+		recordList = await self.select(modelClass, clause, isRelated, hasChildren, limit, offset, parameter)
 		result = {}
 		for name, column in modelClass.meta :
 			result[name] = []

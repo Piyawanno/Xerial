@@ -135,11 +135,11 @@ sqlite> .tables
 Person
 sqlite> .schema Person
 CREATE TABLE Person (
-         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        address TEXT   ,
-        age INT   ,
-        name VARCHAR(64)   ,
-        surname VARCHAR(64)    );
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        address TEXT,
+        age INT,
+        name VARCHAR(64),
+        surname VARCHAR(64));
 sqlite>
 ```
 
@@ -147,8 +147,10 @@ It can be seen that table is automatically created according to
 structure of **Person**. Moreover, Xerial will check the existence
 of table and create table only by necessary. Hence, after implementation,
 you can directly run the code on target environment and database structure
-will be set. However, the modification of table structure is a sophisticated
-topic and will be described in [Data Structure Modification]().
+will be set. Note that the primary key with `id INTEGER PRIMARY KEY AUTOINCREMENT`
+is automatically added to the structure.
+However, the modification of table structure is a sophisticated
+topic and will be described in [Data Structure Modification](StructureModification.md).
 Firstly, for early stage of software development, you could drop a table
 and rerun the code to get a modified structure in database.
 For production stage or development stage with existing test data,

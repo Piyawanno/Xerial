@@ -82,7 +82,7 @@ async def runTest() :
 		await session.insert(poll)
 	print("Insert Each", time.time()- start)
 
-	pollList:List[Poll] = await session.select(Poll, "ORDER BY id DESC", isRelated=True, isChildren=True, limit=1)
+	pollList:List[Poll] = await session.select(Poll, "ORDER BY id DESC", isRelated=True, hasChildren=True, limit=1)
 	poll = pollList[0]
 
 	poll.choices[-1].choice = "Sun is a star not a planet."

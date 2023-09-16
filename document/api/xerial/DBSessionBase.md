@@ -171,7 +171,7 @@ Classes
     `resetIDSequence(self, modelClass: type, renewStartID: int)`
     :
 
-    `select(self, modelClass: type, clause: str, isRelated: bool = False, isChildren: bool = False, limit: int = None, offset: int = None, parameter: list = None) ‑> list`
+    `select(self, modelClass: type, clause: str, isRelated: bool = False, hasChildren: bool = False, limit: int = None, offset: int = None, parameter: list = None) ‑> list`
     :   Select data from database.
         
         Parameters
@@ -184,7 +184,7 @@ Classes
         will be selected. Otherwise, the foreignKey column will have
         the reference value.
         
-        isChildren: By setting to True, the children records will be selected.
+        hasChildren: By setting to True, the children records will be selected.
         
         limit: Maximum number of records to select. If setting to None=no limit.
         
@@ -193,7 +193,7 @@ Classes
         parameter: List of query parameter for the '?' placement
         in the clause parameter.
 
-    `selectByID(self, modelClass: type, ID: int, isRelated: bool = False, isChildren: bool = False) ‑> xerial.Record.Record`
+    `selectByID(self, modelClass: type, ID: int, isRelated: bool = False, hasChildren: bool = False) ‑> xerial.Record.Record`
     :
 
     `selectCSV(self, descriptor, modelClass: type, clause: str, limit: int = None, offset: int = None, parameter: list = None)`

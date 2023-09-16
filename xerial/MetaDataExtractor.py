@@ -21,7 +21,7 @@ class MetaDataExtractor :
 		self.checkDefault()
 		modelClass.representativeMeta = None
 		modelClass.isForeignChecked = False
-		modelClass.isChildrenChecked  = False
+		modelClass.hasChildrenChecked  = False
 		primaryMeta = self.getPrimary()
 		MetaDataExtractor.checkBackup(self.modelClass)
 		self.extractAttribute(primaryMeta)
@@ -52,7 +52,7 @@ class MetaDataExtractor :
 	def extractChildren(self) :
 		modelClass = self.modelClass
 		modelClass.children = []
-		modelClass.isChildrenChecked = False
+		modelClass.hasChildrenChecked = False
 		for i in dir(modelClass) :
 			attribute = getattr(modelClass, i)
 			if isinstance(attribute, Children) :
