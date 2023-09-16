@@ -52,7 +52,7 @@ class DBMigration :
 		await self.session.dropByCondition(model, 'id > 0')
 		await self.session.insertMultiple(recordList, isAutoID=False)
 		primary = model.primary
-		table = model.__fulltablename__
+		table = model.__full_table_name__
 		maxID = max([getattr(i, primary) for i in recordList])
 		query = f"ALTER SEQUENCE {table}_{primary}_seq RESTART {maxID+1};"
 		await self.session.executeWrite(query)

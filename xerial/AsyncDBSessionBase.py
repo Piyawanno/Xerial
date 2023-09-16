@@ -274,14 +274,14 @@ class AsyncDBSessionBase (DBSessionBase) :
 		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM {table} WHERE {child.column}={primary}"
 			await self.executeWrite(query)
 
 	async def dropChildrenByID(self, recordID, modelClass) :
 		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM {table} WHERE {child.column}={recordID}"
 			await self.executeWrite(query)
 

@@ -62,11 +62,11 @@ as primary key column. However, from our practical expertise,
 we strongly recommend to use this default behavior of Xerial.
 The table name of Model is set to the name of Model. In this case,
 the table name will be **Person**. The table name can be customized
-be defining **__tablename__** attribute of the class :
+be defining **__table_name__** attribute of the class :
 
 ```python
 class Person (Record) :
-	__tablename__ = "OtherThanPerson"
+	__table_name__ = "OtherThanPerson"
 ```
 
 This can be useful to avoid reserved words of SQL syntax.

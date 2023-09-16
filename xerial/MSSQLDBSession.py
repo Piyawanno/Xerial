@@ -52,7 +52,7 @@ class MSSQLDBSession (DBSessionBase) :
 
 		return "SELECT %s FROM %s %s %s %s"%(
 			modelClass.__select_column__,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			clause, offsetClause, limitClause
 		)
 
@@ -147,13 +147,13 @@ class MSSQLDBSession (DBSessionBase) :
 		if isinstance(modelClass.primary, list):
 			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
 				', '.join(modelClass.primary),
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				clause
 			)
 		else:
 			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
 				modelClass.primary,
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				clause
 			)
 			
@@ -166,10 +166,10 @@ class MSSQLDBSession (DBSessionBase) :
 		value = self.getRawValue(record, isAutoID)
 		query = self.generateInsert(modelClass)
 		if not isAutoID and modelClass.__is_increment__:
-			self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} ON;")
+			self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__full_table_name__} ON;")
 		cursor = self.executeWrite(query, value)	
 		if not isAutoID and modelClass.__is_increment__ :
-			self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
+			self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__full_table_name__} OFF;")
 		elif not isAutoID :
 			if len(modelClass.children) :
 				self.insertChildren(record, modelClass)
@@ -180,7 +180,7 @@ class MSSQLDBSession (DBSessionBase) :
 				self.insertChildren(record, modelClass)
 			return insertedID
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 	
 	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
@@ -210,11 +210,11 @@ class MSSQLDBSession (DBSessionBase) :
 		query = self.generateInsert(modelClass, isAutoID)
 		try :
 			if not isAutoID and modelClass.__is_increment__ :
-				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} ON;")
+				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__full_table_name__} ON;")
 			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
 			if not isAutoID and modelClass.__is_increment__ :
-				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
+				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__full_table_name__} OFF;")
 		except Exception as error :
 			logging.debug(query)
 			logging.debug(valueList)
@@ -227,11 +227,11 @@ class MSSQLDBSession (DBSessionBase) :
 		query = self.generateInsert(modelClass, isAutoID=False)
 		try :
 			if modelClass.__is_increment__ :
-				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} ON;")
+				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__full_table_name__} ON;")
 			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
 			if modelClass.__is_increment__ :
-				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__fulltablename__} OFF;")
+				self.executeWrite(f"SET IDENTITY_INSERT {modelClass.__full_table_name__} OFF;")
 		except Exception as error :
 			logging.debug(query)
 			logging.debug(valueList)
@@ -244,19 +244,19 @@ class MSSQLDBSession (DBSessionBase) :
 		if isAutoID :
 			if  modelClass.__is_increment__ :
 				return "SET NOCOUNT ON; DECLARE @NEWID TABLE(ID INT); INSERT INTO %s(%s) OUTPUT inserted.id INTO @NEWID(ID) VALUES(%s); SELECT ID FROM @NEWID;"%(
-					modelClass.__fulltablename__,
+					modelClass.__full_table_name__,
 					modelClass.__insert_column__,
 					modelClass.__insert_parameter__
 				)
 			else :
 				return "INSERT INTO %s(%s) VALUES(%s)"%(
-					modelClass.__fulltablename__,
+					modelClass.__full_table_name__,
 					modelClass.__insert_column__,
 					modelClass.__insert_parameter__
 				)
 		else :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				modelClass.__all_column__,
 				modelClass.__all_parameter__
 			)
@@ -279,40 +279,40 @@ class MSSQLDBSession (DBSessionBase) :
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
 		)
 	
 	def generateRawUpdateQuery(self, modelClass, raw) :
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getRawPrimaryClause(modelClass, raw)
 		)
 
 	def drop(self, record) :
 		self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
 		self.dropChildrenByID(ID, modelClass)
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
 		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
 		self.executeWrite(query)
 	
 	def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
-			childTable = child.model.__fulltablename__
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
 			self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
@@ -322,7 +322,7 @@ class MSSQLDBSession (DBSessionBase) :
 		self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__fulltablename__ in self.existingTable :
+			if model.__full_table_name__ in self.existingTable :
 				self.createIndex(model)
 				continue
 			query = self.generateCreateTable(model)
@@ -344,7 +344,7 @@ class MSSQLDBSession (DBSessionBase) :
 				isDefault = hasattr(column, 'default') and column.default is not None
 				default = "DEFAULT %s"%(column.setValueToDB(column.default)) if isDefault else ""
 				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
-		query = [f"CREATE TABLE {model.__fulltablename__} (\n\t"]
+		query = [f"CREATE TABLE {model.__full_table_name__} (\n\t"]
 		if isIncremental :
 			columnList.insert(0, "%s INTEGER IDENTITY(1,1) PRIMARY KEY"%(model.primary))
 		
@@ -357,7 +357,7 @@ class MSSQLDBSession (DBSessionBase) :
 		exisitingIndex = {i[0] for i in result}
 		for name, column in model.meta :
 			if column.isIndex and name not in exisitingIndex :
-				self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__fulltablename__, name, model.__fulltablename__, name))
+				self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__full_table_name__, name, model.__full_table_name__, name))
 	
 	def generateIndexQuery(self, model) :
 		return f"""
@@ -371,7 +371,7 @@ class MSSQLDBSession (DBSessionBase) :
 		WHERE
 			a.is_hypothetical = 0 AND
 			a.is_primary_key != 1 AND
-			a.object_id = OBJECT_ID('{model.__fulltablename__}');
+			a.object_id = OBJECT_ID('{model.__full_table_name__}');
 		"""
 	
 	def getExistingTable(self) :
@@ -380,4 +380,4 @@ class MSSQLDBSession (DBSessionBase) :
 		return self.existingTable
 	
 	def generateResetID(self, modelClass:type) -> str :
-		return f"DBCC CHECKIDENT ('{modelClass.__fulltablename__}', RESEED, ?);"
+		return f"DBCC CHECKIDENT ('{modelClass.__full_table_name__}', RESEED, ?);"

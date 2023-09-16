@@ -90,13 +90,13 @@ class SQLiteDBSession (DBSessionBase) :
 		if isinstance(modelClass.primary, list):
 			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
 				', '.join(modelClass.primary),
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				clause
 			)
 		else:
 			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
 				modelClass.primary,
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				clause
 			)
 		
@@ -105,7 +105,7 @@ class SQLiteDBSession (DBSessionBase) :
 		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
 		return "SELECT %s FROM %s %s %s %s"%(
 			modelClass.__select_column__,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			clause, limitClause, offsetClause
 		)
 	
@@ -135,18 +135,18 @@ class SQLiteDBSession (DBSessionBase) :
 				self.insertChildren(record, modelClass)
 			return cursor.lastrowid
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 
 	def generateInsertQuery(self, modelClass, isAutoID=True) :
 		if isAutoID :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				modelClass.__insert_column__,
 				modelClass.__insert_parameter__
 			)
 		else :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				modelClass.__all_column__,
 				modelClass.__all_parameter__
 			)
@@ -221,40 +221,40 @@ class SQLiteDBSession (DBSessionBase) :
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
 		)
 	
 	def generateRawUpdateQuery(self, modelClass, raw) :
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getRawPrimaryClause(modelClass, raw)
 		)
 
 	def drop(self, record) :
 		self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
 		self.dropChildrenByID(ID, modelClass)
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
 		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
 		self.executeWrite(query)
 	
 	def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
-			childTable = child.model.__fulltablename__
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
 			self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
@@ -264,7 +264,7 @@ class SQLiteDBSession (DBSessionBase) :
 		self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__fulltablename__ in self.existingTable :
+			if model.__full_table_name__ in self.existingTable :
 				self.createIndex(model)
 				continue
 			query = self.generateCreateTable(model)
@@ -286,7 +286,7 @@ class SQLiteDBSession (DBSessionBase) :
 				isDefault = hasattr(column, 'default') and column.default is not None
 				default = "DEFAULT %s"%(column.setValueToDB(column.default)) if isDefault else ""
 				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
-		query = [f"CREATE TABLE IF NOT EXISTS {model.__fulltablename__} (\n\t"]
+		query = [f"CREATE TABLE IF NOT EXISTS {model.__full_table_name__} (\n\t"]
 		if isIncremental :
 			columnList.insert(0, "%s INTEGER PRIMARY KEY AUTOINCREMENT"%(model.primary))
 		
@@ -304,8 +304,8 @@ class SQLiteDBSession (DBSessionBase) :
 	
 	def generateIndexQuery(self, model, columnName) :
 		return "CREATE INDEX IF NOT EXISTS %s_%s ON %s(%s)"%(
-			model.__fulltablename__, columnName,
-			model.__fulltablename__, columnName
+			model.__full_table_name__, columnName,
+			model.__full_table_name__, columnName
 		)
 
 	def getExistingTable(self) :
@@ -317,8 +317,8 @@ class SQLiteDBSession (DBSessionBase) :
 		return 'SELECT name FROM sqlite_master WHERE type = "table"'
 
 	def generateIndexCheckQuery(self, model) :
-		return f'SELECT name FROM sqlite_master WHERE type = "index" AND tbl_name="{model.__fulltablename__}"'
+		return f'SELECT name FROM sqlite_master WHERE type = "index" AND tbl_name="{model.__full_table_name__}"'
 	
 	def generateResetID(self, modelClass:type) -> str :
-		return f"UPDATE SQLITE_SEQUENCE SET SEQ=? WHERE NAME='{modelClass.__fulltablename__}';"
+		return f"UPDATE SQLITE_SEQUENCE SET SEQ=? WHERE NAME='{modelClass.__full_table_name__}';"
 		

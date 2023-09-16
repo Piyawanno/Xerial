@@ -34,6 +34,7 @@ class Input :
 		self.isTableForm = isTableForm
 		self.isAdvanceForm = isAdvanceFrom
 		self.attachedGroup = attachedGroup
+		self.attachedGroupID = None
 		self.help = help
 		self.documentPath = documentPath
 		self.config = config
@@ -43,6 +44,7 @@ class Input :
 		self.columnType = columnType
 		self.isNumber = False
 		self.isFile = False
+		self.attribute = None
 	
 	def toDict(self) -> dict :
 		return {
@@ -61,7 +63,7 @@ class Input :
 			'isForm' : self.isForm,
 			'isTableForm' : self.isTableForm,
 			'isAdvanceForm' : self.isAdvanceForm,
-			'attachedGroup': self.attachedGroup.toDict() if self.attachedGroup is not None else None,
+			'attachedGroupID': self.attachedGroupID,
 			'help' : self.help,
 			'documentPath' : self.documentPath,
 			'typeName' : self.typeName,

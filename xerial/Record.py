@@ -4,6 +4,8 @@ from xerial.Children import Children
 from xerial.Input import Input
 from xerial.Modification import Modification
 from xerial.Vendor import Vendor
+from xerial.InputExtractor import InputExtractor
+from xerial.MetaDataExtractor import MetaDataExtractor
 
 from packaging.version import Version
 from typing import Dict, List, Type, Tuple
@@ -11,28 +13,20 @@ from typing import Dict, List, Type, Tuple
 import inspect, logging, copy
 
 __MAPPED_META__ = {}
-__RESERVED__ = {
-	'meta',
-	'primaryMeta',
-	'primitive',
-	'representativeMeta',
-	'__fulltablename__',
-	'__tablename__',
-}
 __DEFAULT_BACKUP__ = False
 
 def __getParentTableName__(modelClass) :
 	hierarchy = list(inspect.getmro(modelClass))
 	for parent in hierarchy[1:] :
-		if hasattr(parent, '__tablename__') :
-			return parent.__tablename__
+		if hasattr(parent, '__table_name__') :
+			return parent.__table_name__
 	return None
 
 def __getParentFullTableName__(modelClass) :
 	hierarchy = list(inspect.getmro(modelClass))
 	for parent in hierarchy[1:] :
-		if hasattr(parent, '__fulltablename__') :
-			return parent.__fulltablename__
+		if hasattr(parent, '__full_table_name__') :
+			return parent.__full_table_name__
 	return None
 
 class Record :
@@ -156,7 +150,7 @@ class Record :
 			modelClass.__modification__ = []
 		modification = Modification(
 			version,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.meta,
 			modelClass.vendor
 		)
@@ -185,202 +179,26 @@ class Record :
 		return hasMeta
 	
 	@staticmethod
-	def hasParent(modelClass) :
-		hasMeta = hasattr(modelClass, 'meta')
-		if not hasMeta : return False
-		mapped = modelClass in __MAPPED_META__
-		return not mapped
-
-	@staticmethod
 	def setVendor(modelClass, vendor) :
 		modelClass.vendor = vendor
 		for column, meta in modelClass.meta :
 			meta.vendor = vendor
 		
 		if modelClass.vendor == Vendor.POSTGRESQL :
-			modelClass.__tablename__ = modelClass.__tablename__.lower()
-			modelClass.__fulltablename__ = modelClass.__fulltablename__.lower()
+			modelClass.__table_name__ = modelClass.__table_name__.lower()
+			modelClass.__full_table_name__ = modelClass.__full_table_name__.lower()
 
 	@staticmethod
 	def extractInput(modelClass, extendedInput:List[Input]=[]) :
-		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
-		order = 1
-		inputList:List[Dict] = []
-		mergedInput:List[Input] = []
-		groupedInputList = []
-		inputGroupMapper:Dict[int, List[Input]] = {}
-		hasDefaultCallable = False
-		modelClass.fileInput = []
-		for i, attribute in modelClass.meta :
-			if not isinstance(attribute, Column) : continue
-			if attribute.input is None : continue
-			attribute.input.columnType = attribute.__class__.__name__
-			attribute.input.columnName = i
-			mergedInput.append(attribute.input)
-			if getattr(attribute, 'isFile', False) :
-				modelClass.fileInput.append(attribute)
-		mergedInput.extend(extendedInput)
-
-		for i in mergedInput :
-			input:Dict = i.toDict()
-			if not 'order' in input or input['order'] is None:
-				input['order'] = f'{order}.0'
-			input['parsedOrder'] = Version(input['order'])
-			input['isGroup'] = False
-			input['inputPerLine'] = inputPerLine
-			default = getattr(attribute, 'default', None)
-			if not hasDefaultCallable : hasDefaultCallable = callable(default)
-			input['default'] = default
-			inputList.append(input)
-			order += 1
-			if i.group is None: 
-				groupedInputList.append(copy.copy(input))
-				continue
-			if not i.group in inputGroupMapper:
-				inputGroupMapper[i.group] = []
-			inputGroupMapper[i.group].append(input)
-		modelClass.__has_callable_default__ = hasDefaultCallable
-		inputList.sort(key=lambda x : x['parsedOrder'])
-		Record.extractGroupInput(modelClass, inputGroupMapper, groupedInputList)
-		groupedInputList.sort(key=lambda x : x['parsedOrder'])
-		modelClass.input = []
-		for item in groupedInputList:
-			del item['parsedOrder']
-			modelClass.input.append(item)
-		for item in inputList:
-			if 'parsedOrder' in item: del item['parsedOrder']
-		modelClass.inputDict = inputList
-
-	@staticmethod
-	def extractGroupInput(modelClass, inputGroupMapper, groupedInputList:list=[]) :
-		inputPerLine = getattr(modelClass, 'inputPerLine', 2)
-		group:IntEnum = getattr(modelClass, '__group_label__', None)
-		addition = getattr(modelClass, '__addition_group__', None)
-		if group is None and addition is None : return
-		groupParsedOrder = []
-		def groupInput(parsedOrder) :
-			if parsedOrder['id'] in inputGroupMapper:
-				inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
-				parsedOrder['input'] = []
-				for item in inputGroupMapper[parsedOrder['id']]:
-					del item['parsedOrder']
-					parsedOrder['input'].append(item)
-			groupedInputList.append(parsedOrder)
-			groupParsedOrder.append(parsedOrder)
-
-		for i in group.order:
-			parsedOrder = {
-				'id': i.value,
-				'label': i.label[i],
-				'order': group.order[i],
-				'isGroup': True,
-				'inputPerLine': inputPerLine
-			}
-			parsedOrder['parsedOrder'] = Version(group.order[i])
-			groupInput(parsedOrder)
-		
-		if addition is not None :
-			for i in addition.values() :
-				i['parsedOrder'] = Version(i['order'])
-				groupInput(i)
-
-		groupParsedOrder.sort(key=lambda x : x['parsedOrder'])
-		groupParsedOrder = [{'id': i['id'], 'label': i['label'], 'order': i['order']} for i in groupParsedOrder]
-		modelClass.inputGroup = groupParsedOrder
+		extractor = InputExtractor(modelClass, extendedInput)
+		extractor.extract()
 
 	@staticmethod
 	def extractMeta(modelClass) :
-		if not hasattr(modelClass, '__version__') :
-			modelClass.__version__ = '1.0'
-		if not hasattr(modelClass, '__is_mapper__') :
-			modelClass.__is_mapper__ = False
-		if not hasattr(modelClass, '__skip_create__') :
-			modelClass.__skip_create__ = False
-		
-		modelClass.representativeMeta = None
-		modelClass.isForeignChecked = False
-		modelClass.isChildrenChecked  = False
-		if not Record.hasParent(modelClass) :
-			primaryMeta = Record.checkPrimary(modelClass)
-		else :
-			if hasattr(modelClass, '__has_primary__') and modelClass.__has_primary__ :
-				primaryMeta = modelClass.primaryMeta
-				modelClass.meta = [(modelClass.primary, primaryMeta)]
-			else :
-				primaryMeta = None
-		Record.checkBackup(modelClass)
-		Record.extractAttribute(modelClass, primaryMeta)
-		Record.extractChildren(modelClass)
+		extractor = MetaDataExtractor(modelClass)
+		extractor.extract()
 		__MAPPED_META__[modelClass] = modelClass.meta
-
-	@staticmethod
-	def checkPrimary(modelClass) :
-		from xerial.IntegerColumn import IntegerColumn
-		for i in dir(modelClass) :
-			attribute = getattr(modelClass, i)
-			if not isinstance(attribute, Column) : continue
-			if not attribute.isPrimary : continue
-			modelClass.__has_primary__ = True
-		if not hasattr(modelClass, '__has_primary__') :
-			modelClass.__has_primary__ = True
-			modelClass.primary = 'id'
-			primaryMeta = IntegerColumn(isPrimary=True)
-			primaryMeta.name = 'id'
-			modelClass.meta = [('id', primaryMeta)]
-			return primaryMeta
-		elif not modelClass.__has_primary__ :
-			modelClass.meta = []
-			return None
 	
-	@staticmethod
-	def extractAttribute(modelClass, primaryMeta) :
-		modelClass.foreignKey = []
-		parentMetaMap = getattr(modelClass, 'metaMap', {})
-		for i in dir(modelClass) :
-			attribute = getattr(modelClass, i)
-			if i in __RESERVED__ : continue
-			if i in parentMetaMap :
-				modelClass.meta.append((i, parentMetaMap[i]))
-				if isinstance(attribute, Column) and attribute.foreignKey is not None :
-					attribute.foreignKey.name = i
-					modelClass.foreignKey.append(attribute.foreignKey)
-			elif isinstance(attribute, Column) :
-				attribute.name = i
-				if attribute.isRepresentative :
-					if modelClass.representativeMeta is None :
-						modelClass.representativeMeta = attribute
-					else :
-						logging.warning("Multiple representative columns are defined.")
-				if attribute.foreignKey is not None :
-					attribute.foreignKey.name = i
-					modelClass.foreignKey.append(attribute.foreignKey)
-				if attribute.isPrimary :
-					if not hasattr(modelClass, 'primary') :
-						modelClass.primary = i
-						primaryMeta = attribute
-					elif isinstance(modelClass.primary, list) :
-						if i not in modelClass.primary :
-							modelClass.primary.append(i)
-							primaryMeta.append(attribute)
-					elif  modelClass.primary != i :
-						modelClass.primary = [i]
-						primaryMeta = [primaryMeta]
-				modelClass.meta.append((i, attribute))
-				setattr(modelClass, i, attribute.default)
-		modelClass.metaMap = {k:v for k, v in modelClass.meta}
-		if primaryMeta is not None :
-			modelClass.primaryMeta = primaryMeta
-	
-	@staticmethod
-	def extractChildren(modelClass) :
-		modelClass.children = []
-		modelClass.isChildrenChecked = False
-		for i in dir(modelClass) :
-			attribute = getattr(modelClass, i)
-			if isinstance(attribute, Children) :
-				attribute.name = i
-				modelClass.children.append(attribute)
-
 	@staticmethod
 	def parseTime(delta):
 		hours, remainder = divmod(delta.seconds, 3600)
@@ -389,24 +207,24 @@ class Record :
 	
 	@staticmethod
 	def checkTableName(modelClass, prefix:str) :
-		hasTableName = hasattr(modelClass, '__tablename__')
+		hasTableName = hasattr(modelClass, '__table_name__')
 		parentTableName = __getParentTableName__(modelClass)
-		if not hasTableName or parentTableName == modelClass.__tablename__ :
-			modelClass.__tablename__ = f"{prefix}{modelClass.__name__}"
-		tableName = modelClass.__tablename__
+		if not hasTableName or parentTableName == modelClass.__table_name__ :
+			modelClass.__table_name__ = f"{prefix}{modelClass.__name__}"
+		tableName = modelClass.__table_name__
 		if prefix is not None and len(prefix) :
 			if tableName[:len(prefix)] != prefix :
-				modelClass.__tablename__ = f"{prefix}{tableName}"
-		hasFullName = hasattr(modelClass, '__fulltablename__')
+				modelClass.__table_name__ = f"{prefix}{tableName}"
+		hasFullName = hasattr(modelClass, '__full_table_name__')
 		parentFullName = __getParentFullTableName__(modelClass)
-		if not hasFullName or parentFullName == modelClass.__fulltablename__ :
+		if not hasFullName or parentFullName == modelClass.__full_table_name__ :
 			hasPrefix = False
 			if prefix is not None and len(prefix) :
-				if modelClass.__tablename__[:len(prefix)] != prefix :
-					modelClass.__fulltablename__ = f"{prefix}{modelClass.__tablename__}"
+				if modelClass.__table_name__[:len(prefix)] != prefix :
+					modelClass.__full_table_name__ = f"{prefix}{modelClass.__table_name__}"
 					hasPrefix = True
 			if not hasPrefix :
-				modelClass.__fulltablename__ = modelClass.__tablename__
+				modelClass.__full_table_name__ = modelClass.__table_name__
 	
 	@staticmethod
 	def enableDefaultBackup() :
@@ -414,15 +232,7 @@ class Record :
 		__DEFAULT_BACKUP__ = True
 
 	@staticmethod
-	def checkBackup(modelClass) :
-		from xerial.FloatColumn import FloatColumn
-		if not hasattr(modelClass, '__backup__') : modelClass.__backup__ = __DEFAULT_BACKUP__
-		if not modelClass.__backup__ : return
-		modelClass.__insert_time__ = FloatColumn(isIndex=True, default=-1.0)
-		modelClass.__update_time__ = FloatColumn(isIndex=True, default=-1.0)
-	
-	@staticmethod
-	def appendGroup(modelClass, label:str, value:int, order:str, inputPerLine:int=2) :
+	def appendGroup(modelClass, label:str, value:int, order:str, attachedGroup:str=None) :
 		if not hasattr(modelClass, '__addition_group__') :
 			modelClass.__addition_group__ = {}
 		modelClass.__addition_group__[value] = {
@@ -430,7 +240,7 @@ class Record :
 			'label': label,
 			'order': order,
 			'isGroup': True,
-			'inputPerLine' : inputPerLine,
+			'attachedGroup': attachedGroup,
 		}
 	
 	@staticmethod

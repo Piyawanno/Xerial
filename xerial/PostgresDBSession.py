@@ -118,14 +118,14 @@ class PostgresDBSession (DBSessionBase) :
 			return "SELECT COUNT(%s) AS COUNTED FROM %s%s %s"%(
 				', '.join(modelClass.primary),
 				self.schema,
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				clause
 			)
 		else:
 			return "SELECT COUNT(%s) AS COUNTED FROM %s%s %s"%(
 				modelClass.primary,
 				self.schema,
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				clause
 			)
 		
@@ -135,7 +135,7 @@ class PostgresDBSession (DBSessionBase) :
 		return "SELECT %s FROM %s%s %s %s %s"%(
 			modelClass.__select_column__,
 			self.schema,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			clause, limitClause, offsetClause
 		)
 
@@ -168,7 +168,7 @@ class PostgresDBSession (DBSessionBase) :
 					self.insertChildren(record, modelClass)
 				return key
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 	
 	def generateInsertQuery(self, record, isAutoID=True) :
 		modelClass = record.__class__
@@ -176,7 +176,7 @@ class PostgresDBSession (DBSessionBase) :
 			if modelClass.__is_increment__ :
 				return "INSERT INTO %s%s(%s) VALUES(%s) RETURNING %s"%(
 					self.schema,
-					modelClass.__fulltablename__,
+					modelClass.__full_table_name__,
 					modelClass.__insert_column__,
 					modelClass.__insert_parameter__,
 					modelClass.primary
@@ -184,14 +184,14 @@ class PostgresDBSession (DBSessionBase) :
 			else :
 				return "INSERT INTO %s%s(%s) VALUES(%s)"%(
 					self.schema,
-					modelClass.__fulltablename__,
+					modelClass.__full_table_name__,
 					modelClass.__insert_column__,
 					modelClass.__insert_parameter__
 				)
 		else :
 			return "INSERT INTO %s%s(%s) VALUES(%s)"%(
 				self.schema,
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				modelClass.__all_column__,
 				modelClass.__all_parameter__
 			)
@@ -246,9 +246,9 @@ class PostgresDBSession (DBSessionBase) :
 	
 	def generateInsertMultipleQuery(self, modelClass, isAutoID=True) :
 		if isAutoID :
-			return f"INSERT INTO {self.schema}{modelClass.__fulltablename__}({modelClass.__insert_column__}) VALUES %s"
+			return f"INSERT INTO {self.schema}{modelClass.__full_table_name__}({modelClass.__insert_column__}) VALUES %s"
 		else :
-			return f"INSERT INTO {self.schema}{modelClass.__fulltablename__}({modelClass.__all_column__}) VALUES %s"
+			return f"INSERT INTO {self.schema}{modelClass.__full_table_name__}({modelClass.__all_column__}) VALUES %s"
 
 	def update(self, record) :
 		modelClass = record.__class__
@@ -269,7 +269,7 @@ class PostgresDBSession (DBSessionBase) :
 		modelClass = record.__class__
 		return "UPDATE %s%s SET %s WHERE %s"%(
 			self.schema,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
 		)
@@ -277,22 +277,22 @@ class PostgresDBSession (DBSessionBase) :
 	def generateRawUpdateQuery(self, modelClass, raw) :
 		return "UPDATE %s%s SET %s WHERE %s"%(
 			self.schema,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getRawPrimaryClause(modelClass, raw)
 		)
 
 	def drop(self, record) :
 		self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, self.getPrimaryClause(record))
 		self.executeWrite(query)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		self.dropChildrenByID(ID, modelClass)
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
@@ -300,10 +300,10 @@ class PostgresDBSession (DBSessionBase) :
 		self.executeWrite(query)
 	
 	def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {self.schema}{modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
-			childTable = child.model.__fulltablename__
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {self.schema}{childTable} WHERE {child.column} IN ({parentQuery})"
 			self.executeWrite(query)
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, clause)
@@ -313,14 +313,14 @@ class PostgresDBSession (DBSessionBase) :
 		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM {self.schema}{table} WHERE {child.column}={primary}"
 			self.executeWrite(query)
 
 	def dropChildrenByID(self, recordID, modelClass) :
 		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM{self.schema}{table} WHERE {child.column}={recordID}"
 			self.executeWrite(query)
 	
@@ -328,7 +328,7 @@ class PostgresDBSession (DBSessionBase) :
 		self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__fulltablename__ in self.existingTable :
+			if model.__full_table_name__ in self.existingTable :
 				self.createIndex(model)
 				continue
 			query = self.generateCreateTable(model)
@@ -351,7 +351,7 @@ class PostgresDBSession (DBSessionBase) :
 				defaultValue = column.default() if callable(column.default) else column.default
 				default = "DEFAULT %s"%(column.setValueToDB(defaultValue)) if isDefault else ""
 				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
-		query = [f"CREATE TABLE IF NOT EXISTS {self.schema}{model.__fulltablename__} (\n\t"]
+		query = [f"CREATE TABLE IF NOT EXISTS {self.schema}{model.__full_table_name__} (\n\t"]
 		if len(primaryList) :
 			columnList.append("PRIMARY KEY(%s)"%(",".join(primaryList)))
 		if isIncremental :
@@ -372,8 +372,8 @@ class PostgresDBSession (DBSessionBase) :
 	def generateIndexQuery(self, model, columnName) :
 		return "CREATE INDEX IF NOT EXISTS %s%s_%s ON %s%s(%s)"%(
 			f"{self.schema[:-1]}_" if len(self.schema) else "",
-			model.__fulltablename__, columnName,
-			self.schema, model.__fulltablename__, columnName
+			model.__full_table_name__, columnName,
+			self.schema, model.__full_table_name__, columnName
 		)
 
 	def getExistingTable(self) :
@@ -391,11 +391,11 @@ class PostgresDBSession (DBSessionBase) :
 		query.append("FROM pg_class t, pg_class i, pg_index ix, pg_attribute a ")
 		query.append("WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND ")
 		query.append("a.attrelid = t.oid AND a.attnum = ANY(ix.indkey) AND ")
-		query.append(f"t.relkind = 'r' AND t.relname='{self.schema}{model.__fulltablename__}'")
+		query.append(f"t.relkind = 'r' AND t.relname='{self.schema}{model.__full_table_name__}'")
 		return "".join(query)
 	
 	def generateResetID(self, modelClass:type) -> str :
-		return f"ALTER SEQUENCE {self.schema}{modelClass.__fulltablename__} RESTART ?;"
+		return f"ALTER SEQUENCE {self.schema}{modelClass.__full_table_name__} RESTART ?;"
 
 	def generateDropTable(self, modelClass:type) -> str :
-		return f"DROP TABLE {modelClass.__fulltablename__} CASCADE"
+		return f"DROP TABLE {modelClass.__full_table_name__} CASCADE"

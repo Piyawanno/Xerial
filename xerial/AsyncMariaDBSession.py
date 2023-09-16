@@ -141,7 +141,7 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 				await self.insertChildren(record, modelClass)
 			return cursor.lastrowid
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 	
 	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
@@ -214,26 +214,26 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		await self.executeWrite(query)
 	
 	async def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
 		await self.dropChildrenByID(ID, modelClass)
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
 		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
 		await self.executeWrite(query)
 	
 	async def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
-			childTable = child.model.__fulltablename__
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
 			await self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
@@ -243,7 +243,7 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 		await self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__fulltablename__ in self.existingTable :
+			if model.__full_table_name__ in self.existingTable :
 				await self.createIndex(model)
 				continue
 			query = self.generateCreateTable(model)
@@ -251,11 +251,11 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 			await self.createIndex(model)
 	
 	async def createIndex(self, model) :
-		result = await self.executeRead("SHOW INDEX FROM %s"%(model.__fulltablename__))
+		result = await self.executeRead("SHOW INDEX FROM %s"%(model.__full_table_name__))
 		exisitingIndex = {i[4] for i in result}
 		for name, column in model.meta :
 			if column.isIndex and name not in exisitingIndex :
-				await self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__fulltablename__, name, model.__fulltablename__, name))
+				await self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__full_table_name__, name, model.__full_table_name__, name))
 	
 	async def getExistingTable(self) :
 		result = await self.executeRead("SHOW TABLES")

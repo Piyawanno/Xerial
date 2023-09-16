@@ -125,7 +125,7 @@ class DBSessionBase :
 	
 	def dropTable(self, modelClass:type) :
 		existing = {i.lower() for i in self.getExistingTable()}
-		if modelClass.__fulltablename__.lower() in existing :
+		if modelClass.__full_table_name__.lower() in existing :
 			query = self.generateDropTable(modelClass)
 			self.executeWrite(query)
 
@@ -133,14 +133,13 @@ class DBSessionBase :
 		return ""
 	
 	def generateDropTable(self, modelClass:type) -> str :
-		return f"DROP TABLE {modelClass.__fulltablename__}"
+		return f"DROP TABLE {modelClass.__full_table_name__}"
 	
 	def appendModel(self, modelClass) :
 		self.model[modelClass.__name__] = modelClass
 		if Record.hasMeta(modelClass) : return
 		Record.checkTableName(modelClass, self.prefix)
 		Record.extractMeta(modelClass)
-		# Record.extractInput(modelClass)
 		Record.setVendor(modelClass, self.vendor)
 		self.prepareStatement(modelClass)
 		self.getParent(modelClass)
@@ -493,14 +492,14 @@ class DBSessionBase :
 		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM {table} WHERE {child.column}={primary}"
 			self.executeWrite(query)
 
 	def dropChildrenByID(self, recordID, modelClass) :
 		self.checkLinkingMeta(modelClass)
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM {table} WHERE {child.column}={recordID}"
 			self.executeWrite(query)
 		
@@ -538,7 +537,7 @@ class DBSessionBase :
 	def getPrimaryClause(self, record) :
 		modelClass = record.__class__
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be referenced.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be referenced.")
 			return
 		meta = modelClass.primaryMeta
 		if isinstance(meta, list) :
@@ -553,7 +552,7 @@ class DBSessionBase :
 	
 	def getRawPrimaryClause(self, modelClass, raw) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be referenced.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be referenced.")
 			return
 		meta = modelClass.primaryMeta
 		if isinstance(meta, list) :
@@ -570,7 +569,7 @@ class DBSessionBase :
 
 	def generateDropCommand(self) :
 		for model in self.model.values() :
-			print("DROP TABLE IF EXISTS %s;"%(model.__fulltablename__))
+			print("DROP TABLE IF EXISTS %s;"%(model.__full_table_name__))
 	
 	def processClause(self, clause:str, parameter:list) -> str:
 		return clause
@@ -583,7 +582,7 @@ class DBSessionBase :
 			parameter.append(value)
 		parameter.append(id)
 		query = "UPDATE %s SET %s WHERE %s=?"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			",".join(setList),
 			modelClass.primary
 		)
@@ -599,7 +598,7 @@ class DBSessionBase :
 		if len(setList) == 0 : return None, None
 		parameter.extend(ids)
 		query = "UPDATE %s SET %s WHERE %s IN (%s)"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			",".join(setList),
 			modelClass.primary,
 			",".join('?'*len(ids))

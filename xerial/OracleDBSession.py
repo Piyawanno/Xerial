@@ -133,7 +133,7 @@ class OracleDBSession (DBSessionBase) :
 		return self.executeRead(query, parameter)
 
 	def generateCountQuery(self, modelClass, clause) :
-		return 'SELECT COUNT(%s) "COUNTED" FROM %s %s'%(modelClass.primary, modelClass.__fulltablename__, clause)
+		return 'SELECT COUNT(%s) "COUNTED" FROM %s %s'%(modelClass.primary, modelClass.__full_table_name__, clause)
 		
 	def generateSelectQuery(self, modelClass, clause, limit=None, offset=None) :
 		if limit is not None :
@@ -143,7 +143,7 @@ class OracleDBSession (DBSessionBase) :
 			limitClause = ""
 		return "SELECT %s FROM %s %s %s"%(
 			modelClass.__select_column__,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			clause, limitClause
 		)
 	
@@ -180,7 +180,7 @@ class OracleDBSession (DBSessionBase) :
 				self.insertChildren(record, modelClass)
 			return lastRow
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 		
 	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
@@ -232,7 +232,7 @@ class OracleDBSession (DBSessionBase) :
 		if isAutoID :
 			if modelClass.__is_increment__ and not isMultiple:
 				return "INSERT INTO %s(%s) VALUES(%s) RETURNING %s INTO :%d"%(
-					modelClass.__fulltablename__,
+					modelClass.__full_table_name__,
 					modelClass.__insert_column__,
 					modelClass.__insert_parameter__,
 					modelClass.primaryMeta.name,
@@ -240,13 +240,13 @@ class OracleDBSession (DBSessionBase) :
 				)
 			else :
 				return "INSERT INTO %s(%s) VALUES(%s)"%(
-					modelClass.__fulltablename__,
+					modelClass.__full_table_name__,
 					modelClass.__insert_column__,
 					modelClass.__insert_parameter__
 				)
 		else :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				modelClass.__all_column__,
 				modelClass.__all_parameter__
 			)
@@ -268,40 +268,40 @@ class OracleDBSession (DBSessionBase) :
 	def generateUpdate(self, record) :
 		modelClass = record.__class__
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
 		)
 
 	def generateRawUpdate(self, modelClass, raw) :
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getRawPrimaryClause(modelClass, raw)
 		)
 	
 	def drop(self, record) :
 		self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
 		self.dropChildrenByID(ID, modelClass)
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
 		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
 		self.executeWrite(query)
 	
 	def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
-			childTable = child.model.__fulltablename__
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
 			self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
@@ -311,15 +311,15 @@ class OracleDBSession (DBSessionBase) :
 		self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__tablename__.upper() in self.existingTable : continue
+			if model.__table_name__.upper() in self.existingTable : continue
 			query = self.generateCreatTable(model)
-			logging.info(f"Creating Table {model.__tablename__}")
+			logging.info(f"Creating Table {model.__table_name__}")
 			self.executeWrite(query)
 		self.getExistingTable()
 
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__tablename__.upper() in self.existingTable :
+			if model.__table_name__.upper() in self.existingTable :
 				self.createIndex(model)
 	
 	def generateCreatTable(self, model) :
@@ -336,8 +336,8 @@ class OracleDBSession (DBSessionBase) :
 				primaryList.append(name)
 		if len(primaryList) :
 			joined = ",".join(primaryList)
-			columnList.append(f"CONSTRAINT {model.__tablename__}_PK PRIMARY KEY ({joined})")
-		query = [f"CREATE TABLE {model.__tablename__} ( "]
+			columnList.append(f"CONSTRAINT {model.__table_name__}_PK PRIMARY KEY ({joined})")
+		query = [f"CREATE TABLE {model.__table_name__} ( "]
 		if isIncremental :
 			columnList.insert(0, "%s INTEGER GENERATED BY DEFAULT AS IDENTITY (START WITH 1 INCREMENT BY 1)"%(model.primary))
 		query.append(",\n".join(columnList))
@@ -359,10 +359,10 @@ class OracleDBSession (DBSessionBase) :
 			sys.all_ind_columns ind_col ON ind.owner = ind_col.index_owner 
 			AND ind.index_name = ind_col.index_name
 		WHERE ind.owner in ('%s') AND ind.table_name='%s'
-		"""%("', '".join(self.config['owner']), model.__tablename__.upper())
+		"""%("', '".join(self.config['owner']), model.__table_name__.upper())
 	
 	def generateCreateIndex(self, model, columnName) :
-		tableName = model.__tablename__.upper()
+		tableName = model.__table_name__.upper()
 		return "CREATE INDEX %s_%s ON %s(%s)"%(tableName, columnName, tableName, columnName)
 
 	def getExistingTable(self) :
@@ -370,12 +370,12 @@ class OracleDBSession (DBSessionBase) :
 		self.owner = {row[0]:row[1] for row in self.cursor}
 		self.existingTable = list(self.owner.keys())
 		for model in self.model.values() :
-			tableName = model.__tablename__.upper()
+			tableName = model.__table_name__.upper()
 			owner = self.owner.get(tableName)
 			if owner is not None :
-				model.__fulltablename__ = f"{owner}.{tableName}"
+				model.__full_table_name__ = f"{owner}.{tableName}"
 			else :
-				model.__fulltablename__ = tableName
+				model.__full_table_name__ = tableName
 		return self.existingTable
 	
 	def generateCheckTable(self) :
@@ -383,4 +383,4 @@ class OracleDBSession (DBSessionBase) :
 		return f"SELECT table_name, owner  from all_tables WHERE owner IN ('{joined}')"
 
 	def generateResetID(self, modelClass:type) -> str :
-		return f"ALTER TABLE {modelClass.__fulltablename__} MODIFY(ID GENERATED AS IDENTITY (START WITH ?));"
+		return f"ALTER TABLE {modelClass.__full_table_name__} MODIFY(ID GENERATED AS IDENTITY (START WITH ?));"

@@ -107,7 +107,7 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 				await self.insertChildren(record, modelClass)
 			return lastRow
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 	
 	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
@@ -164,26 +164,26 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		await self.executeWrite(query)
 	
 	async def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
 		await self.dropChildrenByID(ID, modelClass)
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
 		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
 		await self.executeWrite(query)
 	
 	async def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
-			childTable = child.model.__fulltablename__
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
 			await self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
@@ -193,16 +193,16 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 		await self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__tablename__.upper() in self.existingTable : continue
+			if model.__table_name__.upper() in self.existingTable : continue
 			self.generateCreatTable(model)
 			query = self.generateCreatTable(model)
-			logging.info(f"Creating Table {model.__tablename__}")
+			logging.info(f"Creating Table {model.__table_name__}")
 			await self.executeWrite(query)
 		await self.getExistingTable()
 
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__tablename__.upper() in self.existingTable :
+			if model.__table_name__.upper() in self.existingTable :
 				await self.createIndex(model)
 	
 	async def createIndex(self, model) :
@@ -218,10 +218,10 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 		self.owner = {row[0]:row[1] for row in result}
 		self.existingTable = list(self.owner.keys())
 		for model in self.model.values() :
-			tableName = model.__tablename__.upper()
+			tableName = model.__table_name__.upper()
 			owner = self.owner.get(tableName)
 			if owner is not None :
-				model.__fulltablename__ = f"{owner}.{tableName}"
+				model.__full_table_name__ = f"{owner}.{tableName}"
 			else :
-				model.__fulltablename__ = tableName
+				model.__full_table_name__ = tableName
 		return self.existingTable

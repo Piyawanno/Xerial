@@ -96,16 +96,16 @@ class MariaDBSession (DBSessionBase) :
 
 	def generateCountQuery(self, modelClass, clause) :
 		if isinstance(modelClass.primary, list):
-			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(', '.join(modelClass.primary), modelClass.__fulltablename__, clause)
+			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(', '.join(modelClass.primary), modelClass.__full_table_name__, clause)
 		else:
-			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(modelClass.primary, modelClass.__fulltablename__, clause)
+			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(modelClass.primary, modelClass.__full_table_name__, clause)
 		
 	def generateSelectQuery(self, modelClass, clause, limit=None, offset=None) :
 		limitClause = "" if limit is None else "LIMIT %d"%(limit)
 		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
 		return "SELECT %s FROM %s %s %s %s"%(
 			modelClass.__select_column__,
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			clause, limitClause, offsetClause
 		)
 
@@ -135,18 +135,18 @@ class MariaDBSession (DBSessionBase) :
 				self.insertChildren(record, modelClass)
 			return cursor.lastrowid
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 	
 	def generateInsert(self, modelClass, isAutoID=True) :
 		if isAutoID :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				modelClass.__insert_column__,
 				modelClass.__insert_parameter__
 			)
 		else :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				modelClass.__all_column__,
 				modelClass.__all_parameter__
 			)
@@ -218,40 +218,40 @@ class MariaDBSession (DBSessionBase) :
 	def generateUpdate(self, record) :
 		modelClass = record.__class__
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
 		)
 	
 	def generateRawUpdate(self, modelClass, raw) :
 		return "UPDATE %s SET %s WHERE %s"%(
-			modelClass.__fulltablename__,
+			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getRawPrimaryClause(modelClass, raw)
 		)
 	
 	def drop(self, record) :
 		self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
 		self.dropChildrenByID(ID, modelClass)
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
 		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
 		self.executeWrite(query)
 	
 	def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
-			childTable = child.model.__fulltablename__
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
 			self.executeWrite(query)
 		query = "DELETE FROM %s WHERE %s"%(table, clause)
@@ -261,7 +261,7 @@ class MariaDBSession (DBSessionBase) :
 		self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__fulltablename__ in self.existingTable :
+			if model.__full_table_name__ in self.existingTable :
 				self.createIndex(model)
 				continue
 			query = self.generateCreateTable(model)
@@ -283,7 +283,7 @@ class MariaDBSession (DBSessionBase) :
 				isDefault = hasattr(column, 'default') and column.default is not None
 				default = "DEFAULT %s"%(column.setValueToDB(column.default)) if isDefault else ""
 				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
-		query = [f"CREATE TABLE {model.__fulltablename__} (\n\t"]
+		query = [f"CREATE TABLE {model.__full_table_name__} (\n\t"]
 		if len(primaryList) :
 			columnList.append("PRIMARY KEY(%s)"%(",".join(primaryList)))
 		if isIncremental :
@@ -294,11 +294,11 @@ class MariaDBSession (DBSessionBase) :
 		return " ".join(query)
 
 	def createIndex(self, model) :
-		result = self.executeRead("SHOW INDEX FROM %s"%(model.__fulltablename__))
+		result = self.executeRead("SHOW INDEX FROM %s"%(model.__full_table_name__))
 		existingIndex = {i[4] for i in result}
 		for name, column in model.meta :
 			if column.isIndex and name not in existingIndex :
-				self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__fulltablename__, name, model.__fulltablename__, name))
+				self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__full_table_name__, name, model.__full_table_name__, name))
 	
 	def getExistingTable(self) :
 		result = self.executeRead("SHOW TABLES")
@@ -306,4 +306,4 @@ class MariaDBSession (DBSessionBase) :
 		return self.existingTable
 	
 	def generateResetID(self, modelClass:type) -> str :
-		return f"ALTER TABLE {modelClass.__fulltablename__} AUTO_INCREMENT=?"
+		return f"ALTER TABLE {modelClass.__full_table_name__} AUTO_INCREMENT=?"

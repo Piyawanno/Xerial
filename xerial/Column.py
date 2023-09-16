@@ -30,6 +30,7 @@ class Column :
 		self.isRepresentative = isRepresentative
 		self.parentModel = parentModel
 		self.input:Input = input
+		if input is not None : input.attribute = self
 		self.isConvertRaw = False
 	
 	def convertRaw(self, value) :

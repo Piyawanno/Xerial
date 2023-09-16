@@ -10,7 +10,7 @@ class {modelName} extends Record{{
 	constructor(){{
 		super();
 		if('__meta__' in this.constructor) return;
-		this.__tablename__ = '{tableName}';
+		this.__table_name__ = '{tableName}';
 		this.__has_primary__ = {hasPrimary};
 
 {attributeList}
@@ -25,7 +25,7 @@ from xerial.Record import Record
 {importList}
 
 class {modelName} (Record) :
-	__tablename__ = '{tableName}'
+	__table_name__ = '{tableName}'
 	__has_primary__ = {hasPrimary}
 	__is_increment__ = {isIncrement}
 

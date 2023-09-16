@@ -160,7 +160,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 					await self.insertChildren(record, modelClass)
 				return key
 		elif len(modelClass) > 0 :
-			logging.warning(f"Primary key of {modelClass.__tablename__} is not auto generated. Children cannot be inserted.")
+			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
 
 	async def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
@@ -190,7 +190,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		try :
 			connection = self.connection.writer if self.isRoundRobin else self.connection
 			await connection.copy_records_to_table(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				records=valueList,
 				columns=modelClass.__insert_column_list__ if isAutoID else modelClass.__all_column_list__,
 				schema_name=self.schema[:-1] if len(self.schema) else "public"
@@ -244,20 +244,20 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 				parameter.append(','.join([f'${j}' for j in range(i, i+m)]))
 				i += m
 			return ''.join([
-				f"INSERT INTO {self.schema}{modelClass.__fulltablename__}",
+				f"INSERT INTO {self.schema}{modelClass.__full_table_name__}",
 				f"({modelClass.__insert_column__}) VALUES (",
 				'),('.join(parameter),
 				f") RETURNING {modelClass.primary}"
 			])
 		else :
-			return f"INSERT INTO {self.schema}{modelClass.__fulltablename__}({modelClass.__all_column__}) VALUES %s"
+			return f"INSERT INTO {self.schema}{modelClass.__full_table_name__}({modelClass.__all_column__}) VALUES %s"
 
 	async def insertMultipleDirect(self, modelClass, rawList) :
 		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
 		try :
 			connection = self.connection.writer if self.isRoundRobin else self.connection
 			await connection.copy_records_to_table(
-				modelClass.__fulltablename__,
+				modelClass.__full_table_name__,
 				records=valueList,
 				columns=modelClass.__all_column_list__,
 				schema_name=self.schema[:-1] if len(self.schema) else "public"
@@ -285,15 +285,15 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)
-		table = record.__fulltablename__
+		table = record.__full_table_name__
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, self.getPrimaryClause(record))
 		await self.executeWrite(query)
 	
 	async def dropByID(self, modelClass, id) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__fulltablename__} has not primary key and cannot be dropped by ID.")
+			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		await self.dropChildrenByID(ID, modelClass)
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(id)
@@ -301,11 +301,11 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		await self.executeWrite(query)
 	
 	async def dropByCondition(self, modelClass, clause) :
-		table = modelClass.__fulltablename__
+		table = modelClass.__full_table_name__
 		parentQuery = f"SELECT {modelClass.primary} FROM {self.schema}{table} {clause}"
 		for child in modelClass.children :
-			if not hasattr(child.model, '__fulltablename__'): continue
-			childTable = child.model.__fulltablename__
+			if not hasattr(child.model, '__full_table_name__'): continue
+			childTable = child.model.__full_table_name__
 			query = f"DELETE FROM {self.schema}{childTable} WHERE {child.column} IN ({parentQuery})"
 			await self.executeWrite(query)
 		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, clause)
@@ -315,14 +315,14 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		self.checkLinkingMeta(modelClass)
 		primary = getattr(record, modelClass.primary)
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM {self.schema}{table} WHERE {child.column}={primary}"
 			await self.executeWrite(query)
 
 	async def dropChildrenByID(self, recordID, modelClass) :
 		self.checkLinkingMeta()
 		for child in modelClass.children :
-			table = child.model.__fulltablename__
+			table = child.model.__full_table_name__
 			query = f"DELETE FROM{self.schema}{table} WHERE {child.column}={recordID}"
 			await self.executeWrite(query)
 	
@@ -330,7 +330,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		await self.getExistingTable()
 		for model in self.model.values() :
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
-			if model.__fulltablename__ in self.existingTable :
+			if model.__full_table_name__ in self.existingTable :
 				await self.createIndex(model)
 				continue
 			query = self.generateCreateTable(model)
