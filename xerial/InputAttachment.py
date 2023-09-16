@@ -1,14 +1,14 @@
 class InputAttachment :
-	def __init__(self, ID:str, label:str, value:int, isEnabled:bool=False) :
+	def __init__(self, ID:str, label:str, order:str, isEnabled:bool=False) :
 		self.ID = ID
 		self.label = label
-		self.value = value
+		self.order = order
 		self.isEnabled = isEnabled
 	
 	def toDict(self) :
 		return {
 			'ID': self.ID,
 			'label': self.label,
-			'value': self.value,
+			'order': self.order,
 			'isEnabled': self.isEnabled,
 		}

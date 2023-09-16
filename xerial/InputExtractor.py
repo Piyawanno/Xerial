@@ -29,7 +29,18 @@ class InputExtractor :
 		self.groupedInputList.sort(key=lambda x : x['parsedOrder'])
 		self.modelClass.input = []
 		self.removeParsedOrder()
+		# self.sortAttachedGroup()
 		self.modelClass.inputDict = self.inputList
+	
+	def sortAttachedGroup(self) :
+		attachedGroup = []
+		for attached in self.modelClass.attachedGroup.values() :
+			attached['parsedOrder'] = Version(attached['order'])
+			attachedGroup.append(attached)
+		attachedGroup.sort(key=lambda x : x['parsedOrder'])
+		for attached in attachedGroup :
+			del attached['parsedOrder']
+		self.modelClass.attachedGroup = attachedGroup
 	
 	def removeParsedOrder(self) :
 		for item in self.groupedInputList:
@@ -79,16 +90,6 @@ class InputExtractor :
 				self.modelClass.fileInput.append(attribute)
 		return inputList
 	
-	def groupInput(self, parsedOrder) :
-		if parsedOrder['id'] in self.inputGroupMapper:
-			self.inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
-			parsedOrder['input'] = []
-			for item in self.inputGroupMapper[parsedOrder['id']]:
-				del item['parsedOrder']
-				parsedOrder['input'].append(item)
-		self.groupedInputList.append(parsedOrder)
-		self.groupParsedOrder.append(parsedOrder)
-	
 	def extractGroupInput(self) :
 		self.groupParsedOrder = []
 		self.extractGroupLabel()
@@ -99,12 +100,24 @@ class InputExtractor :
 		self.modelClass.inputGroup = self.groupParsedOrder
 	
 	def extractAttached(self) :
-		self.modelClass.attachedGroup = []
+		self.modelClass.attachedGroup = {}
 		for i in self.mergedInput :
 			attached = i.attachedGroup
 			if attached is None : continue
 			i.attachedGroupID = attached.ID
-			self.modelClass.attachedGroup.append(attached.toDict())
+			if attached.ID not in self.modelClass.attachedGroup :
+				self.modelClass.attachedGroup[attached.ID] = attached.toDict()
+	
+	def groupInput(self, parsedOrder) :
+		if parsedOrder['id'] in self.inputGroupMapper:
+			self.inputGroupMapper[parsedOrder['id']].sort(key=lambda x : x['parsedOrder'])
+			parsedOrder['input'] = []
+			for item in self.inputGroupMapper[parsedOrder['id']]:
+				del item['parsedOrder']
+				parsedOrder['input'].append(item)
+
+		self.groupedInputList.append(parsedOrder)
+		self.groupParsedOrder.append(parsedOrder)
 	
 	def extractGroupLabel(self) :
 		group:IntEnum = getattr(self.modelClass, '__group_label__', None)
@@ -131,4 +144,3 @@ class InputExtractor :
 			i['parsedOrder'] = Version(i['order'])
 			i['inputPerLine'] = inputPerLine
 			self.groupInput(i)
-	

@@ -46,7 +46,33 @@ method `session.checkModelLinking()` with check the correctness of
 the linking. If the linked column does not exist, Xerial will print
 the warning message to the terminal.
 
-To insert or update data, it is 
+To insert or update data, the referee and the referrer must be independently
+ingested :
+
+```python
+department = Department()
+department.name = 'Production'
+department.description = 'This department is responsible to produce the end-product.'
+
+chief = Personnel()
+chief.department = department
+chief.firstName = 'Garp'
+chief.lastName = 'Monkey D.'
+chief.email = 'monkey.d.garp@navy.mi.onepiece'
+
+operator = Personnel()
+operator.department = department
+operator.firstName = 'Koby'
+operator.lastName = 'The Hero'
+operator.email = 'koby@navy.mi.onepiece'
+
+session.insert(department)
+session.insert(chief)
+session.insert(operator)
+
+chief.email = 'garp@navy.mi.onepiece'
+session.update(chief)
+```
 
 By selecting the data, no data will be linked by default. To link
 the data with One-to-One relation, the parameter `isRelated` must

@@ -23,7 +23,7 @@ class MetaDataExtractor :
 		modelClass.isForeignChecked = False
 		modelClass.isChildrenChecked  = False
 		primaryMeta = self.getPrimary()
-		self.checkBackup()
+		MetaDataExtractor.checkBackup(self.modelClass)
 		self.extractAttribute(primaryMeta)
 		self.extractChildren()
 	
@@ -134,12 +134,13 @@ class MetaDataExtractor :
 			modelClass.meta = []
 			return None
 	
-	def checkBackup(self) :
+	@staticmethod
+	def checkBackup(modelClass) :
 		from xerial.Record import __DEFAULT_BACKUP__
-		modelClass = self.modelClass
 		from xerial.FloatColumn import FloatColumn
 		if not hasattr(modelClass, '__backup__') : modelClass.__backup__ = __DEFAULT_BACKUP__
 		if not modelClass.__backup__ : return
 		modelClass.__insert_time__ = FloatColumn(isIndex=True, default=-1.0)
 		modelClass.__update_time__ = FloatColumn(isIndex=True, default=-1.0)
+	
 	

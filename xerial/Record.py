@@ -1,16 +1,13 @@
-from enum import IntEnum
 from xerial.Column import Column
-from xerial.Children import Children
 from xerial.Input import Input
 from xerial.Modification import Modification
 from xerial.Vendor import Vendor
 from xerial.InputExtractor import InputExtractor
 from xerial.MetaDataExtractor import MetaDataExtractor
 
-from packaging.version import Version
-from typing import Dict, List, Type, Tuple
+from typing import List
 
-import inspect, logging, copy
+import inspect
 
 __MAPPED_META__ = {}
 __DEFAULT_BACKUP__ = False
@@ -177,7 +174,7 @@ class Record :
 		mapped = modelClass in __MAPPED_META__
 		if hasMeta and not mapped : hasMeta = False
 		return hasMeta
-	
+
 	@staticmethod
 	def setVendor(modelClass, vendor) :
 		modelClass.vendor = vendor
@@ -242,6 +239,13 @@ class Record :
 			'isGroup': True,
 			'attachedGroup': attachedGroup,
 		}
+
+	@staticmethod
+	def mergeGroup(modelClass, group, attachedGroup:str=None) :
+		if not hasattr(modelClass, '__addition_group__') :
+			modelClass.__addition_group__ = {}
+		for i in group :
+			Record.appendGroup(modelClass, group.label[i], i, group.order[i], attachedGroup)
 	
 	@staticmethod
 	def disableInput(modelClass, columnName:str) :
