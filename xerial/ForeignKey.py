@@ -14,8 +14,7 @@ class ForeignKey :
 		self.representativeColumn = -1
 	
 	def fromDict(self, data:dict) :
-		if self.modelRecord is None :
-			self.modelRecord = self.model()
+		self.modelRecord = self.model()
 		return self.modelRecord.fromDict(data)
 
 	def processEnumLabel(self) :

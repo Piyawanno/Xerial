@@ -122,3 +122,12 @@ From the given code, the result will be:
 	},
 ]
 ```
+
+Like the other part of Xerial, the query for selecting data with the
+link between the referee and the referrer is optimized. In the given
+example 2 queries will be executed to retrieve the result. Note that
+in normal case, Xerial will link Models in maximum 2 vertical layers and no more
+to prevent the circular linkage. From the best practice, the relation
+over 2 layers can complicate the data management and should be avoided.
+If it is necessary, we recommend manually lik between Models in different layers.
+Many-to-Many is the exception to this rule.

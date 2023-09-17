@@ -7,6 +7,8 @@ from xerial.Children import Children
 
 from enum import IntEnum
 
+import json
+
 class WarehouseType (IntEnum) :
 	SUPPLIER = 1
 	PRODUCTION = 2
@@ -67,6 +69,7 @@ summonSeal.warehouse = [
 	ProductWareHouseMapper().fromDict({"warehouseID" : warehouseList[1].toDict()})
 ]
 
+
 shuriken = ProductType()
 shuriken.name = "Shuriken"
 shuriken.description = "A concealed weapon that was used as a hidden dagger or metsubushi to distract or misdirect."
@@ -80,13 +83,13 @@ session.insert(shuriken)
 
 session.selectExcel("ProductWareHouseMapper.xlsx", ProductWareHouseMapper, "")
 
-fetchedWarehouse = session.select(WareHouse, "", isRelated=True)
+fetchedWarehouse = session.select(WareHouse, "", isRelated=True, hasChildren=True)
 for i in fetchedWarehouse :
 	print(f"Warehouse {i.name}")
 	for j in i.productType :
 		print(j)
 
-print([i.toDict() for i in fetchedWarehouse])
+print(json.dumps([i.toDict() for i in fetchedWarehouse], indent=4))
 
 fetchedProduct = session.select(ProductType, "", isRelated=True)
 for i in fetchedProduct :
