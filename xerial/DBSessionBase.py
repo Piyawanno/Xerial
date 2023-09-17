@@ -157,12 +157,14 @@ class DBSessionBase :
 	
 	def checkModelLinking(self) :
 		from xerial.Children import Children
+		from xerial.MetaDataExtractor import MetaDataExtractor
 		for modelClass in self.model.values() :
 			additionalChildren = self.parentMap.get(modelClass.__name__, None)
 			if additionalChildren is None : continue
 			for attribute, child in additionalChildren :
 				setattr(modelClass, attribute, Children(child))
-			Record.extractChildren(modelClass)
+			extractor = MetaDataExtractor(modelClass)
+			extractor.extractChildren()
 
 		for modelClass in self.model.values() :
 			self.checkLinkingMeta(modelClass)
