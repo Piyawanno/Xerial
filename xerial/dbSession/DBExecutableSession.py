@@ -1,4 +1,4 @@
-from xerial.DBSessionBase import DBSessionBase
+from xerial.dbSession.DBSessionBase import DBSessionBase
 
 import logging
 

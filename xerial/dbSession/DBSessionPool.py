@@ -1,4 +1,4 @@
-from xerial.DBSessionBase import DBSessionBase
+from xerial.dbSession.DBSessionBase import DBSessionBase
 from xerial.RoundRobinConnector import RoundRobinConnector
 from xerial.Vendor import Vendor
 from xerial.Record import Record
@@ -19,19 +19,19 @@ class DBSessionPool :
 		self.connection = []
 		self.vendor = config["vendor"]
 		if self.vendor == Vendor.MARIADB :
-			from xerial.MariaDBSession import MariaDBSession
+			from xerial.dbSession.MariaDBSession import MariaDBSession
 			self.sessionInstance = MariaDBSession
 		elif self.vendor == Vendor.ORACLE :
-			from xerial.OracleDBSession import OracleDBSession
+			from xerial.dbSession.OracleDBSession import OracleDBSession
 			self.sessionInstance = OracleDBSession
 		elif self.vendor == Vendor.POSTGRESQL :
-			from xerial.PostgresDBSession import PostgresDBSession
+			from xerial.dbSession.PostgresDBSession import PostgresDBSession
 			self.sessionInstance = PostgresDBSession
 		elif self.vendor == Vendor.SQLITE :
-			from xerial.SQLiteDBSession import SQLiteDBSession
+			from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
 			self.sessionInstance = SQLiteDBSession
 		elif self.vendor == Vendor.MSSQL :
-			from xerial.MSSQLDBSession import MSSQLDBSession
+			from xerial.dbSession.MSSQLDBSession import MSSQLDBSession
 			self.sessionInstance = MSSQLDBSession
 	
 	def setSchema(self, schema:str) :

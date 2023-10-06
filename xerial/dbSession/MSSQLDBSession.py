@@ -1,5 +1,5 @@
-from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
-from xerial.IntegerColumn import IntegerColumn
+from xerial.dbSession.DBSessionBase import DBSessionBase
+from xerial.column.IntegerColumn import IntegerColumn
 
 import logging, time
 

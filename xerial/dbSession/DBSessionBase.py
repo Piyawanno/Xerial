@@ -1,10 +1,8 @@
-import json
-from xerial.Column import Column
-from xerial.CurrencyColumn import CurrencyColumn
+from xerial.column.Column import Column
+from xerial.column.CurrencyColumn import CurrencyColumn
 from xerial.CurrencyData import CurrencyData
 from xerial.Record import Record
-from xerial.IntegerColumn import IntegerColumn
-from xerial.StringColumn import StringColumn
+from xerial.column.StringColumn import StringColumn
 from xerial.RoundRobinConnector import RoundRobinConnector
 from xerial.ExcelWriter import ExcelWriter
 from enum import Enum
@@ -290,8 +288,7 @@ class DBSessionBase :
 			clause = self.processClause(clause, parameter)
 		
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
-		import time
-		cursor = self.executeRead(query, parameter)
+        cursor = self.executeRead(query, parameter)
 		result = []
 		for row in cursor :
 			record = modelClass.__new__(modelClass)

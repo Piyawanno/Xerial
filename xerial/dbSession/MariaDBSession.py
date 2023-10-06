@@ -1,12 +1,22 @@
-from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
-from xerial.IntegerColumn import IntegerColumn
-from typing import Dict, Any, List
+from xerial.dbSession.DBSessionBase import DBSessionBase
+from xerial.column.IntegerColumn import IntegerColumn
 
-import logging, sqlite3, traceback, time
+import logging, time
 
-class SQLiteDBSession (DBSessionBase) :
+try :
+	import mariadb
+except :
+	logging.warning("Module mariadb cannot be imported.")
+
+class MariaDBSession (DBSessionBase) :
 	def createConnection(self):
-		self.connection = sqlite3.connect(self.config["database"], isolation_level=None, check_same_thread=False)
+		self.connection = mariadb.connect(
+			user=self.config["user"],
+			password=self.config["password"],
+			host=self.config["host"],
+			port=self.config["port"],
+			database=self.config["database"]
+		)
 		self.cursor = self.connection.cursor()
 	
 	def closeConnection(self) :
@@ -75,10 +85,8 @@ class SQLiteDBSession (DBSessionBase) :
 				self.cursor.execute(query, parameter)
 			return self.cursor
 		except Exception as error :
-			print(query)
-			print(parameter)
-			logging.debug(query)
-			logging.debug(parameter)
+			logging.error(query)
+			logging.error(parameter)
 			self.closeConnection()
 			self.connect()
 			raise error
@@ -88,17 +96,9 @@ class SQLiteDBSession (DBSessionBase) :
 
 	def generateCountQuery(self, modelClass, clause) :
 		if isinstance(modelClass.primary, list):
-			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
-				', '.join(modelClass.primary),
-				modelClass.__full_table_name__,
-				clause
-			)
+			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(', '.join(modelClass.primary), modelClass.__full_table_name__, clause)
 		else:
-			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
-				modelClass.primary,
-				modelClass.__full_table_name__,
-				clause
-			)
+			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(modelClass.primary, modelClass.__full_table_name__, clause)
 		
 	def generateSelectQuery(self, modelClass, clause, limit=None, offset=None) :
 		limitClause = "" if limit is None else "LIMIT %d"%(limit)
@@ -108,7 +108,7 @@ class SQLiteDBSession (DBSessionBase) :
 			modelClass.__full_table_name__,
 			clause, limitClause, offsetClause
 		)
-	
+
 	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
 		limitClause = "" if limit is None else "LIMIT %d"%(limit)
 		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
@@ -116,15 +116,15 @@ class SQLiteDBSession (DBSessionBase) :
 			tableName,
 			clause, limitClause, offsetClause
 		)
-
+	
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
-		query = self.generateInsertQuery(modelClass, isAutoID)
 		if modelClass.__backup__ :
 			now = time.time()
 			record.__insert_time__ = now
 			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
+		query = self.generateInsert(modelClass)
 		cursor = self.executeWrite(query, value)
 		if not isAutoID :
 			if len(modelClass.children) :
@@ -136,8 +136,8 @@ class SQLiteDBSession (DBSessionBase) :
 			return cursor.lastrowid
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
-
-	def generateInsertQuery(self, modelClass, isAutoID=True) :
+	
+	def generateInsert(self, modelClass, isAutoID=True) :
 		if isAutoID :
 			return "INSERT INTO %s(%s) VALUES(%s)"%(
 				modelClass.__full_table_name__,
@@ -150,7 +150,7 @@ class SQLiteDBSession (DBSessionBase) :
 				modelClass.__all_column__,
 				modelClass.__all_parameter__
 			)
-
+	
 	def insertMultiple(self, recordList, isAutoID=True, isReturningID=False) :
 		if len(recordList) == 0 : return
 		if isAutoID and isReturningID :
@@ -170,55 +170,52 @@ class SQLiteDBSession (DBSessionBase) :
 				record.__insert_time__ = now
 				record.__update_time__ = -1.0
 			valueList.append(self.getRawValue(record, isAutoID))
-			
+
 		if hasChildren :
 			for record in recordList :
 				self.insert(record)
 			return
-		query = self.generateInsertQuery(modelClass, isAutoID)
+		
+		query = self.generateInsert(modelClass, isAutoID)
 		try :
-			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
+			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
 		except Exception as error :
-			print(query)
-			print(valueList)
-			logging.error(query)
-			logging.error(valueList)
+			logging.debug(query)
+			logging.debug(valueList)
 			self.closeConnection()
 			self.connect()
 			raise error
 	
 	def insertMultipleDirect(self, modelClass, rawList) :
 		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
-		query = self.generateInsertQuery(modelClass, isAutoID=False)
+		query = self.generateInsert(modelClass, isAutoID=False)
 		try :
-			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
+			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
 			cursor.executemany(query, valueList)
 		except Exception as error :
-			print(query)
-			print(valueList)
-			logging.error(query)
-			logging.error(valueList)
+			logging.debug(query)
+			logging.debug(valueList)
 			self.closeConnection()
 			self.connect()
 			raise error
-	
+
 	def update(self, record) :
 		modelClass = record.__class__
 		if modelClass.__backup__ :
 			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
-		query = self.generateUpdateQuery(record)
+		query = self.generateUpdate(record)
 		self.executeWrite(query, value)
 		if len(modelClass.children) :
 			self.updateChildren(record, modelClass)
 	
 	def updateDirect(self, modelClass, raw) :
 		value = self.toTuple(modelClass, raw)
-		query = self.generateRawUpdateQuery(modelClass, raw)
+		query = self.generateRawUpdate(modelClass, raw)
 		self.executeWrite(query, value)
 
-	def generateUpdateQuery(self, record) :
+	def generateUpdate(self, record) :
 		modelClass = record.__class__
 		return "UPDATE %s SET %s WHERE %s"%(
 			modelClass.__full_table_name__,
@@ -226,13 +223,13 @@ class SQLiteDBSession (DBSessionBase) :
 			self.getPrimaryClause(record)
 		)
 	
-	def generateRawUpdateQuery(self, modelClass, raw) :
+	def generateRawUpdate(self, modelClass, raw) :
 		return "UPDATE %s SET %s WHERE %s"%(
 			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getRawPrimaryClause(modelClass, raw)
 		)
-
+	
 	def drop(self, record) :
 		self.dropChildren(record, record.__class__)
 		table = record.__full_table_name__
@@ -286,39 +283,27 @@ class SQLiteDBSession (DBSessionBase) :
 				isDefault = hasattr(column, 'default') and column.default is not None
 				default = "DEFAULT %s"%(column.setValueToDB(column.default)) if isDefault else ""
 				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
-		query = [f"CREATE TABLE IF NOT EXISTS {model.__full_table_name__} (\n\t"]
+		query = [f"CREATE TABLE {model.__full_table_name__} (\n\t"]
+		if len(primaryList) :
+			columnList.append("PRIMARY KEY(%s)"%(",".join(primaryList)))
 		if isIncremental :
-			columnList.insert(0, "%s INTEGER PRIMARY KEY AUTOINCREMENT"%(model.primary))
+			columnList.insert(0, "%s INTEGER PRIMARY KEY NOT NULL AUTO_INCREMENT"%(model.primary))
 		
 		query.append(",\n\t".join(columnList))
-		query.append(")")
+		query.append(") ENGINE=MyISAM;")
 		return " ".join(query)
 
 	def createIndex(self, model) :
-		query = self.generateIndexCheckQuery(model)
-		cursor = self.executeWrite(query)
-		exisitingIndex = {i[0] for i in cursor}
+		result = self.executeRead("SHOW INDEX FROM %s"%(model.__full_table_name__))
+		existingIndex = {i[4] for i in result}
 		for name, column in model.meta :
-			if column.isIndex and name not in exisitingIndex :
-				self.executeWrite(self.generateIndexQuery(model, name))
+			if column.isIndex and name not in existingIndex :
+				self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__full_table_name__, name, model.__full_table_name__, name))
 	
-	def generateIndexQuery(self, model, columnName) :
-		return "CREATE INDEX IF NOT EXISTS %s_%s ON %s(%s)"%(
-			model.__full_table_name__, columnName,
-			model.__full_table_name__, columnName
-		)
-
 	def getExistingTable(self) :
-		result = self.executeRead(self.generateTableQuery())
+		result = self.executeRead("SHOW TABLES")
 		self.existingTable = {row[0] for row in result}
 		return self.existingTable
-
-	def generateTableQuery(self) :
-		return 'SELECT name FROM sqlite_master WHERE type = "table"'
-
-	def generateIndexCheckQuery(self, model) :
-		return f'SELECT name FROM sqlite_master WHERE type = "index" AND tbl_name="{model.__full_table_name__}"'
 	
 	def generateResetID(self, modelClass:type) -> str :
-		return f"UPDATE SQLITE_SEQUENCE SET SEQ=? WHERE NAME='{modelClass.__full_table_name__}';"
-		
+		return f"ALTER TABLE {modelClass.__full_table_name__} AUTO_INCREMENT=?"

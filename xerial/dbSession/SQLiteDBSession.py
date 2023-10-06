@@ -1,46 +1,16 @@
-from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
-from xerial.IntegerColumn import IntegerColumn
+from xerial.dbSession.DBSessionBase import DBSessionBase
+from xerial.column.IntegerColumn import IntegerColumn
 
-import logging, time
+import logging, sqlite3, time
 
-try :
-	import psycopg2
-	import psycopg2.extras
-except :
-	logging.warning("Module psycopg2 cannot be imported.")
-
-class PostgresDBSession (DBSessionBase) :
-	def __init__(self, config) :
-		DBSessionBase.__init__(self, config)
-		self.schema = ""
-	
-	def setSchema(self, schema) :
-		self.schema = f"{schema.lower()}."
-	
-	def createSchema(self, schema) :
-		query = self.generateCreateSchema(schema)
-		self.executeWrite(query)
-	
-	def generateCreateSchema(self, schema) :
-		return f"CREATE SCHEMA IF NOT EXISTS {schema.lower()}"
-	
+class SQLiteDBSession (DBSessionBase) :
 	def createConnection(self):
-		self.connection = psycopg2.connect(
-			user=self.config["user"],
-			password=self.config["password"],
-			host=self.config["host"],
-			port=self.config["port"],
-			database=self.config["database"]
-		)
-		self.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+		self.connection = sqlite3.connect(self.config["database"], isolation_level=None, check_same_thread=False)
 		self.cursor = self.connection.cursor()
 	
 	def closeConnection(self) :
 		self.connection.close()
 	
-	def processClause(self, clause: str, parameter: list) -> str:
-		return clause.replace("?", "%s")
-
 	def prepareStatement(self, modelClass) :
 		if hasattr(modelClass, 'primaryMeta') :
 			primary = modelClass.primaryMeta
@@ -53,11 +23,11 @@ class PostgresDBSession (DBSessionBase) :
 		else :
 			meta = modelClass.meta
 		modelClass.__select_column__ = ", ".join([i[0] for i in modelClass.meta])
-		modelClass.__insert_column__ = ", ".join([i[0] for i in meta])
-		modelClass.__insert_parameter__ = ", ".join(['%s']*len(meta))
+		modelClass.__insert_column__ = ", ".join([i[0] for i in meta ])
+		modelClass.__insert_parameter__ = ", ".join(["?"]*len(meta))
 		modelClass.__all_column__ = ", ".join([i[0] for i in modelClass.meta])
-		modelClass.__all_parameter__ = ", ".join(['%s']*len(modelClass.meta))
-		modelClass.__update_set_parameter__  = ", ".join(["%s=%%s"%(m[0]) for i, m in enumerate(meta)])
+		modelClass.__all_parameter__ = ", ".join(["?"]*len(modelClass.meta))
+		modelClass.__update_set_parameter__  = ", ".join(["%s=?"%(m[0]) for m in meta])
 		if modelClass.__is_increment__ :
 			modelClass.insertMeta = [i for i in modelClass.meta if i[1] != primary]
 		else :
@@ -73,8 +43,8 @@ class PostgresDBSession (DBSessionBase) :
 				cursor.execute(query, parameter)
 			return cursor
 		except Exception as error :
-			logging.error(query)
-			logging.error(parameter)
+			logging.debug(query)
+			logging.debug(parameter)
 			self.closeConnection()
 			self.connect()
 			raise error
@@ -89,8 +59,8 @@ class PostgresDBSession (DBSessionBase) :
 				cursor.execute(query, parameter)
 			return cursor
 		except Exception as error :
-			logging.error(query)
-			logging.error(parameter)
+			logging.debug(query)
+			logging.debug(parameter)
 			self.closeConnection()
 			self.connect()
 			raise error
@@ -104,8 +74,10 @@ class PostgresDBSession (DBSessionBase) :
 				self.cursor.execute(query, parameter)
 			return self.cursor
 		except Exception as error :
-			logging.error(query)
-			logging.error(parameter)
+			print(query)
+			print(parameter)
+			logging.debug(query)
+			logging.debug(parameter)
 			self.closeConnection()
 			self.connect()
 			raise error
@@ -115,16 +87,14 @@ class PostgresDBSession (DBSessionBase) :
 
 	def generateCountQuery(self, modelClass, clause) :
 		if isinstance(modelClass.primary, list):
-			return "SELECT COUNT(%s) AS COUNTED FROM %s%s %s"%(
+			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
 				', '.join(modelClass.primary),
-				self.schema,
 				modelClass.__full_table_name__,
 				clause
 			)
 		else:
-			return "SELECT COUNT(%s) AS COUNTED FROM %s%s %s"%(
+			return "SELECT COUNT(%s) AS COUNTED FROM %s %s"%(
 				modelClass.primary,
-				self.schema,
 				modelClass.__full_table_name__,
 				clause
 			)
@@ -132,13 +102,12 @@ class PostgresDBSession (DBSessionBase) :
 	def generateSelectQuery(self, modelClass, clause, limit=None, offset=None) :
 		limitClause = "" if limit is None else "LIMIT %d"%(limit)
 		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
-		return "SELECT %s FROM %s%s %s %s %s"%(
+		return "SELECT %s FROM %s %s %s %s"%(
 			modelClass.__select_column__,
-			self.schema,
 			modelClass.__full_table_name__,
 			clause, limitClause, offsetClause
 		)
-
+	
 	def generateRawSelectQuery(self, tableName, clause, limit=None, offset=None) :
 		limitClause = "" if limit is None else "LIMIT %d"%(limit)
 		offsetClause = "" if offset is None else "OFFSET %d"%(offset)
@@ -146,51 +115,36 @@ class PostgresDBSession (DBSessionBase) :
 			tableName,
 			clause, limitClause, offsetClause
 		)
-	
+
 	def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
-		query = self.generateInsertQuery(record, isAutoID)
+		query = self.generateInsertQuery(modelClass, isAutoID)
 		if modelClass.__backup__ :
 			now = time.time()
 			record.__insert_time__ = now
 			record.__update_time__ = -1.0
 		value = self.getRawValue(record, isAutoID)
-		self.executeWrite(query, value)
+		cursor = self.executeWrite(query, value)
 		if not isAutoID :
 			if len(modelClass.children) :
 				self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
-			result = self.cursor.fetchall()
-			if len(result) :
-				key = result[0][0]
-				setattr(record, modelClass.primary, key)
-				if len(modelClass.children) :
-					self.insertChildren(record, modelClass)
-				return key
+			setattr(record, modelClass.primary, self.cursor.lastrowid)
+			if len(modelClass.children) :
+				self.insertChildren(record, modelClass)
+			return cursor.lastrowid
 		elif len(modelClass) > 0 :
 			logging.warning(f"Primary key of {modelClass.__table_name__} is not auto generated. Children cannot be inserted.")
-	
-	def generateInsertQuery(self, record, isAutoID=True) :
-		modelClass = record.__class__
+
+	def generateInsertQuery(self, modelClass, isAutoID=True) :
 		if isAutoID :
-			if modelClass.__is_increment__ :
-				return "INSERT INTO %s%s(%s) VALUES(%s) RETURNING %s"%(
-					self.schema,
-					modelClass.__full_table_name__,
-					modelClass.__insert_column__,
-					modelClass.__insert_parameter__,
-					modelClass.primary
-				)
-			else :
-				return "INSERT INTO %s%s(%s) VALUES(%s)"%(
-					self.schema,
-					modelClass.__full_table_name__,
-					modelClass.__insert_column__,
-					modelClass.__insert_parameter__
-				)
+			return "INSERT INTO %s(%s) VALUES(%s)"%(
+				modelClass.__full_table_name__,
+				modelClass.__insert_column__,
+				modelClass.__insert_parameter__
+			)
 		else :
-			return "INSERT INTO %s%s(%s) VALUES(%s)"%(
-				self.schema,
+			return "INSERT INTO %s(%s) VALUES(%s)"%(
 				modelClass.__full_table_name__,
 				modelClass.__all_column__,
 				modelClass.__all_parameter__
@@ -220,11 +174,13 @@ class PostgresDBSession (DBSessionBase) :
 			for record in recordList :
 				self.insert(record)
 			return
-		query = self.generateInsertMultipleQuery(modelClass, isAutoID)
+		query = self.generateInsertQuery(modelClass, isAutoID)
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
-			psycopg2.extras.execute_values(cursor, query, valueList)
+			cursor.executemany(query, valueList)
 		except Exception as error :
+			print(query)
+			print(valueList)
 			logging.error(query)
 			logging.error(valueList)
 			self.closeConnection()
@@ -233,23 +189,19 @@ class PostgresDBSession (DBSessionBase) :
 	
 	def insertMultipleDirect(self, modelClass, rawList) :
 		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
-		query = self.generateInsertMultipleQuery(modelClass, isAutoID=False)
+		query = self.generateInsertQuery(modelClass, isAutoID=False)
 		try :
 			cursor = self.connection.writerCursor if self.isRoundRobin else self.cursor
-			psycopg2.extras.execute_values(cursor, query, valueList)
+			cursor.executemany(query, valueList)
 		except Exception as error :
+			print(query)
+			print(valueList)
 			logging.error(query)
 			logging.error(valueList)
 			self.closeConnection()
 			self.connect()
 			raise error
 	
-	def generateInsertMultipleQuery(self, modelClass, isAutoID=True) :
-		if isAutoID :
-			return f"INSERT INTO {self.schema}{modelClass.__full_table_name__}({modelClass.__insert_column__}) VALUES %s"
-		else :
-			return f"INSERT INTO {self.schema}{modelClass.__full_table_name__}({modelClass.__all_column__}) VALUES %s"
-
 	def update(self, record) :
 		modelClass = record.__class__
 		if modelClass.__backup__ :
@@ -267,16 +219,14 @@ class PostgresDBSession (DBSessionBase) :
 
 	def generateUpdateQuery(self, record) :
 		modelClass = record.__class__
-		return "UPDATE %s%s SET %s WHERE %s"%(
-			self.schema,
+		return "UPDATE %s SET %s WHERE %s"%(
 			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getPrimaryClause(record)
 		)
 	
 	def generateRawUpdateQuery(self, modelClass, raw) :
-		return "UPDATE %s%s SET %s WHERE %s"%(
-			self.schema,
+		return "UPDATE %s SET %s WHERE %s"%(
 			modelClass.__full_table_name__,
 			modelClass.__update_set_parameter__,
 			self.getRawPrimaryClause(modelClass, raw)
@@ -285,44 +235,29 @@ class PostgresDBSession (DBSessionBase) :
 	def drop(self, record) :
 		self.dropChildren(record, record.__class__)
 		table = record.__full_table_name__
-		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, self.getPrimaryClause(record))
+		query = "DELETE FROM %s WHERE %s"%(table, self.getPrimaryClause(record))
 		self.executeWrite(query)
 	
 	def dropByID(self, modelClass, ID) :
 		if not hasattr(modelClass, 'primaryMeta') :
 			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be dropped by ID.")
 			return
-		table = modelClass.__full_table_name__
 		self.dropChildrenByID(ID, modelClass)
+		table = modelClass.__full_table_name__
 		meta = modelClass.primaryMeta
 		ID = meta.setValueToDB(ID)
-		query = "DELETE FROM %s%s WHERE %s=%s"%(self.schema, table, modelClass.primary, ID)
+		query = "DELETE FROM %s WHERE %s=%s"%(table, modelClass.primary, ID)
 		self.executeWrite(query)
 	
 	def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__full_table_name__
-		parentQuery = f"SELECT {self.schema}{modelClass.primary} FROM {table} {clause}"
+		parentQuery = f"SELECT {modelClass.primary} FROM {table} {clause}"
 		for child in modelClass.children :
 			childTable = child.model.__full_table_name__
-			query = f"DELETE FROM {self.schema}{childTable} WHERE {child.column} IN ({parentQuery})"
+			query = f"DELETE FROM {childTable} WHERE {child.column} IN ({parentQuery})"
 			self.executeWrite(query)
-		query = "DELETE FROM %s%s WHERE %s"%(self.schema, table, clause)
+		query = "DELETE FROM %s WHERE %s"%(table, clause)
 		self.executeWrite(query)
-	
-	def dropChildren(self, record, modelClass) :
-		self.checkLinkingMeta(modelClass)
-		primary = getattr(record, modelClass.primary)
-		for child in modelClass.children :
-			table = child.model.__full_table_name__
-			query = f"DELETE FROM {self.schema}{table} WHERE {child.column}={primary}"
-			self.executeWrite(query)
-
-	def dropChildrenByID(self, recordID, modelClass) :
-		self.checkLinkingMeta(modelClass)
-		for child in modelClass.children :
-			table = child.model.__full_table_name__
-			query = f"DELETE FROM{self.schema}{table} WHERE {child.column}={recordID}"
-			self.executeWrite(query)
 	
 	def createTable(self) :
 		self.getExistingTable()
@@ -348,14 +283,11 @@ class PostgresDBSession (DBSessionBase) :
 					else : primary = "PRIMARY KEY"
 				notNull = "NOT NULL" if column.isNotNull else ""
 				isDefault = hasattr(column, 'default') and column.default is not None
-				defaultValue = column.default() if callable(column.default) else column.default
-				default = "DEFAULT %s"%(column.setValueToDB(defaultValue)) if isDefault else ""
+				default = "DEFAULT %s"%(column.setValueToDB(column.default)) if isDefault else ""
 				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
-		query = [f"CREATE TABLE IF NOT EXISTS {self.schema}{model.__full_table_name__} (\n\t"]
-		if len(primaryList) :
-			columnList.append("PRIMARY KEY(%s)"%(",".join(primaryList)))
+		query = [f"CREATE TABLE IF NOT EXISTS {model.__full_table_name__} (\n\t"]
 		if isIncremental :
-			columnList.insert(0, "%s BIGSERIAL"%(model.primary))
+			columnList.insert(0, "%s INTEGER PRIMARY KEY AUTOINCREMENT"%(model.primary))
 		
 		query.append(",\n\t".join(columnList))
 		query.append(")")
@@ -363,39 +295,29 @@ class PostgresDBSession (DBSessionBase) :
 
 	def createIndex(self, model) :
 		query = self.generateIndexCheckQuery(model)
-		self.cursor.execute("".join(query))
-		existingIndex = {i[0] for i in self.cursor}
+		cursor = self.executeWrite(query)
+		exisitingIndex = {i[0] for i in cursor}
 		for name, column in model.meta :
-			if column.isIndex and name not in existingIndex :
+			if column.isIndex and name not in exisitingIndex :
 				self.executeWrite(self.generateIndexQuery(model, name))
 	
 	def generateIndexQuery(self, model, columnName) :
-		return "CREATE INDEX IF NOT EXISTS %s%s_%s ON %s%s(%s)"%(
-			f"{self.schema[:-1]}_" if len(self.schema) else "",
+		return "CREATE INDEX IF NOT EXISTS %s_%s ON %s(%s)"%(
 			model.__full_table_name__, columnName,
-			self.schema, model.__full_table_name__, columnName
+			model.__full_table_name__, columnName
 		)
 
 	def getExistingTable(self) :
-		self.cursor.execute(self.generateTableQuery())
-		self.existingTable = {row[0] for row in self.cursor}
+		result = self.executeRead(self.generateTableQuery())
+		self.existingTable = {row[0] for row in result}
 		return self.existingTable
 
 	def generateTableQuery(self) :
-		return "SELECT table_name FROM information_schema.tables WHERE table_schema='%s'"%(
-			self.schema[:-1] if len(self.schema) else "public"
-		)
+		return 'SELECT name FROM sqlite_master WHERE type = "table"'
 
 	def generateIndexCheckQuery(self, model) :
-		query  = ["SELECT a.attname as column "]
-		query.append("FROM pg_class t, pg_class i, pg_index ix, pg_attribute a ")
-		query.append("WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND ")
-		query.append("a.attrelid = t.oid AND a.attnum = ANY(ix.indkey) AND ")
-		query.append(f"t.relkind = 'r' AND t.relname='{self.schema}{model.__full_table_name__}'")
-		return "".join(query)
+		return f'SELECT name FROM sqlite_master WHERE type = "index" AND tbl_name="{model.__full_table_name__}"'
 	
 	def generateResetID(self, modelClass:type) -> str :
-		return f"ALTER SEQUENCE {self.schema}{modelClass.__full_table_name__} RESTART ?;"
-
-	def generateDropTable(self, modelClass:type) -> str :
-		return f"DROP TABLE {modelClass.__full_table_name__} CASCADE"
+		return f"UPDATE SQLITE_SEQUENCE SET SEQ=? WHERE NAME='{modelClass.__full_table_name__}';"
+		
