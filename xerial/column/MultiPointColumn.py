@@ -1,4 +1,4 @@
-from xerial.Column import Column
+from xerial.column.Column import Column
 
 import shapely.wkt, traceback, logging
 

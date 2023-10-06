@@ -1,4 +1,4 @@
-from xerial.Column import Column
+from xerial.column.Column import Column
 from xerial.Vendor import Vendor
 from typing import List
 class StringColumn (Column) :

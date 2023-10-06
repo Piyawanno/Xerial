@@ -1,4 +1,4 @@
-from xerial.Column import Column
+from xerial.column.Column import Column
 from xerial.Record import Record
 from xerial.Vendor import Vendor
 

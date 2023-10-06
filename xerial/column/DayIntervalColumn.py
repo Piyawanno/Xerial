@@ -1,4 +1,4 @@
-from xerial.TimeColumn import TimeColumn, TIME_FORMAT
+from xerial.column.TimeColumn import TimeColumn
 from xerial.Vendor import Vendor
 
 class DayIntervalColumn (TimeColumn) :

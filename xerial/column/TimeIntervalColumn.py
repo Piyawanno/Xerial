@@ -1,4 +1,4 @@
-from xerial.FloatColumn import FloatColumn
+from xerial.column.FloatColumn import FloatColumn
 from datetime import timedelta
 from typing import List
 
