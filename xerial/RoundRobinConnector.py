@@ -1,5 +1,3 @@
-import logging
-
 """
 NOTE
 
@@ -17,7 +15,7 @@ class RoundRobinConnector :
 		self.writerCursor = None
 	
 	def connect(self, hasCursor=True) :
-		from xerial.DBSessionPool import DBSessionPool
+		from xerial.dbSession.DBSessionPool import DBSessionPool
 		self.reader = []
 		self.writer = None
 		self.readerCursor = []

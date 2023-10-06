@@ -1,5 +1,5 @@
-from xerial.AsyncDBSessionPool import AsyncDBSessionPool
-from xerial.AsyncDBSessionBase import AsyncDBSessionBase
+from xerial.asyncDBSession.AsyncDBSessionPool import AsyncDBSessionPool
+from xerial.asyncDBSession.AsyncDBSessionBase import AsyncDBSessionBase
 
 from typing import List, Dict, Callable
 

@@ -1,6 +1,6 @@
 from xerial.PrimitiveStructure import PrimitiveStructure
 from xerial.ForeignKey import ForeignKey
-from xerial.StringColumn import StringColumn
+from xerial.column.StringColumn import StringColumn
 
 from xlsxwriter import Workbook
 

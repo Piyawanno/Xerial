@@ -1,6 +1,6 @@
 from xerial.Record import Record
-from xerial.Column import Column
-from xerial.ColumnType import ColumnType
+from xerial.column.Column import Column
+from xerial.column.ColumnType import ColumnType
 from xerial.input.InputType import InputType
 
 from typing import Dict, List

@@ -1,4 +1,4 @@
-from xerial.Column import Column
+from xerial.column.Column import Column
 from xerial.Children import Children
 
 import logging
@@ -117,7 +117,7 @@ class MetaDataExtractor :
 	
 	def extractPrimary(self) :
 		modelClass = self.modelClass
-		from xerial.IntegerColumn import IntegerColumn
+		from xerial.column.IntegerColumn import IntegerColumn
 		for i in dir(modelClass) :
 			attribute = getattr(modelClass, i)
 			if not isinstance(attribute, Column) : continue
@@ -137,7 +137,7 @@ class MetaDataExtractor :
 	@staticmethod
 	def checkBackup(modelClass) :
 		from xerial.Record import __DEFAULT_BACKUP__
-		from xerial.FloatColumn import FloatColumn
+		from xerial.column.FloatColumn import FloatColumn
 		if not hasattr(modelClass, '__backup__') : modelClass.__backup__ = __DEFAULT_BACKUP__
 		if not modelClass.__backup__ : return
 		modelClass.__insert_time__ = FloatColumn(isIndex=True, default=-1.0)
