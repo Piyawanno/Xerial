@@ -7,20 +7,23 @@ the **referee** and the **referrer** knows each other.
 ```python
 
 from xerial.Record import Record
-from xerial.IntegerColumn import IntegerColumn
-from xerial.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
+from xerial.column.StringColumn import StringColumn
 from xerial.Children import Children
 
-class Department (Record) :
-	name = StringColumn(length=128)
-	description = StringColumn(length=-1)
-	personnel = Children('Personnel.id')
 
-class Personnel (Record) :
-	department = IntegerColumn(foreignKey='Department.id')
-	firstName = StringColumn(length=128)
-	lastName = StringColumn(length=128)
-	email = StringColumn(length=64)
+class Department(Record):
+    name = StringColumn(length=128)
+    description = StringColumn(length=-1)
+    personnel = Children('Personnel.id')
+
+
+class Personnel(Record):
+    department = IntegerColumn(foreignKey='Department.id')
+    firstName = StringColumn(length=128)
+    lastName = StringColumn(length=128)
+    email = StringColumn(length=64)
+
 
 session = PostgresDBSession(config)
 session.connect()

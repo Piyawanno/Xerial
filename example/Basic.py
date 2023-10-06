@@ -1,17 +1,17 @@
-from xerial.SQLiteDBSession import SQLiteDBSession
+from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
 from xerial.Vendor import Vendor
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-from xerial.IntegerColumn import IntegerColumn
-from xerial.DateTimeColumn import DateTimeColumn
-from xerial.FractionColumn import FractionColumn
-from xerial.CurrencyColumn import CurrencyColumn
+from xerial.column.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
+from xerial.column.DateTimeColumn import DateTimeColumn
+from xerial.column.FractionColumn import FractionColumn
+from xerial.column.CurrencyColumn import CurrencyColumn
 from xerial.CurrencyData import CurrencyData
 from fractions import Fraction
 from enum import IntEnum
 from datetime import datetime
 
-import io, time
+import time
 
 class Gender (IntEnum) :
 	MALE = 1

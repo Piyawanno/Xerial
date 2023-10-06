@@ -1,9 +1,9 @@
-from xerial.SQLiteDBSession import SQLiteDBSession
+from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
 from xerial.Vendor import Vendor
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-from xerial.IntegerColumn import IntegerColumn
-from xerial.DateColumn import DateColumn
+from xerial.column.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
+from xerial.column.DateColumn import DateColumn
 from xerial.Children import Children
 
 from datetime import datetime

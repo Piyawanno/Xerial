@@ -13,23 +13,26 @@ the second model **referrer**. The visibility is a key point of this relation,
 where the referrer knows the referee but not vise versa. 
 
 In the followed example, the model `Department` is the referee and the
-model `Personnel` is the referrer. 
+model `Personnel` is the referrer.
 
 ```python
 
 from xerial.Record import Record
-from xerial.IntegerColumn import IntegerColumn
-from xerial.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
+from xerial.column.StringColumn import StringColumn
 
-class Department (Record) :
-	name = StringColumn(length=128)
-	description = StringColumn(length=-1)
 
-class Personnel (Record) :
-	department = IntegerColumn(foreignKey='Department.id')
-	firstName = StringColumn(length=128)
-	lastName = StringColumn(length=128)
-	email = StringColumn(length=64)
+class Department(Record):
+    name = StringColumn(length=128)
+    description = StringColumn(length=-1)
+
+
+class Personnel(Record):
+    department = IntegerColumn(foreignKey='Department.id')
+    firstName = StringColumn(length=128)
+    lastName = StringColumn(length=128)
+    email = StringColumn(length=64)
+
 
 session = PostgresDBSession(config)
 session.connect()

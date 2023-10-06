@@ -5,43 +5,47 @@ Xerial uses the **mapper** pattern for the implementation. The mapper
 is an extra Model/table, which links between 2 Models/tables.
 
 ```python
-from xerial.SQLiteDBSession import SQLiteDBSession
+from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-from xerial.IntegerColumn import IntegerColumn
+from xerial.column.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
 from xerial.Children import Children
 from enum import IntEnum
 
 
-class WarehouseType (IntEnum) :
-	SUPPLIER = 1
-	PRODUCTION = 2
-	CUSTOMER = 3
+class WarehouseType(IntEnum):
+    SUPPLIER = 1
+    PRODUCTION = 2
+    CUSTOMER = 3
 
-class ProductType (Record) :
-	name = StringColumn(length=32, isRepresentative=True)
-	description = StringColumn(length=-1)
-	warehouse = Children("ProductWareHouseMapper.productTypeID")
 
-	def __repr__(self) -> str:
-		return f"<ProductType {self.id}, {self.name}, {self.description}, {self.warehouse}>"
+class ProductType(Record):
+    name = StringColumn(length=32, isRepresentative=True)
+    description = StringColumn(length=-1)
+    warehouse = Children("ProductWareHouseMapper.productTypeID")
 
-class WareHouse (Record) :
-	name = StringColumn(length=32, isRepresentative=True)
-	location = StringColumn(length=255)
-	type = IntegerColumn(enum=WarehouseType)
-	productType = Children("ProductWareHouseMapper.warehouseID")
+    def __repr__(self) -> str:
+        return f"<ProductType {self.id}, {self.name}, {self.description}, {self.warehouse}>"
 
-	def __repr__(self) -> str:
-		return f"<WareHouse {self.id}, {self.name} {self.location}, {self.productType}>"
 
-class ProductWareHouseMapper (Record) :
-	__is_mapper__ = True
-	productTypeID = IntegerColumn(foreignKey="ProductType.id")
-	warehouseID = IntegerColumn(foreignKey="WareHouse.id")
+class WareHouse(Record):
+    name = StringColumn(length=32, isRepresentative=True)
+    location = StringColumn(length=255)
+    type = IntegerColumn(enum=WarehouseType)
+    productType = Children("ProductWareHouseMapper.warehouseID")
 
-	def __repr__(self) -> str:
-		return f"<ProductWareHouseMapper {self.id} P={self.productTypeID} W={self.warehouseID}>"
+    def __repr__(self) -> str:
+        return f"<WareHouse {self.id}, {self.name} {self.location}, {self.productType}>"
+
+
+class ProductWareHouseMapper(Record):
+    __is_mapper__ = True
+    productTypeID = IntegerColumn(foreignKey="ProductType.id")
+    warehouseID = IntegerColumn(foreignKey="WareHouse.id")
+
+    def __repr__(self) -> str:
+        return f"<ProductWareHouseMapper {self.id} P={self.productTypeID} W={self.warehouseID}>"
+
 
 session = SQLiteDBSession(config)
 session.connect()

@@ -16,12 +16,12 @@ to make the application independent from database vendor.
 To connect to SQLite :
 
 ```python
-from xerial.SQLiteDBSession import SQLiteDBSession
+from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
 from xerial.Vendor import Vendor
 
 config = {
-	"vendor" : Vendor.SQLITE,
-	"database" : "./example.sqlite.bin"
+    "vendor": Vendor.SQLITE,
+    "database": "./example.sqlite.bin"
 }
 
 session = SQLiteDBSession(config)
@@ -41,16 +41,17 @@ and table attributes.
 
 ```python
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-from xerial.IntegerColumn import IntegerColumn
+from xerial.column.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
 
-class Person (Record) :
-	# For StringColumn recommended length < 255
-	name = StringColumn(length=64)
-	surname = StringColumn(length=64)
-	# StringColumn with length == -1 : LongText data type.
-	address = StringColumn(length=-1)
-	age = IntegerColumn(default=15)
+
+class Person(Record):
+    # For StringColumn recommended length < 255
+    name = StringColumn(length=64)
+    surname = StringColumn(length=64)
+    # StringColumn with length == -1 : LongText data type.
+    address = StringColumn(length=-1)
+    age = IntegerColumn(default=15)
 ```
 
 Model is an inheritance of **Record** and consists of **Columns**.
@@ -98,23 +99,25 @@ After connecting database and creating model, the Model must be mapped
 into database :
 
 ```python
-from xerial.SQLiteDBSession import SQLiteDBSession
+from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
 from xerial.Vendor import Vendor
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-from xerial.IntegerColumn import IntegerColumn
+from xerial.column.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
 
-class Person (Record) :
-	# For StringColumn recommended length < 255
-	name = StringColumn(length=64)
-	surname = StringColumn(length=64)
-	# StringColumn with length == -1 : LongText data type.
-	address = StringColumn(length=-1)
-	age = IntegerColumn(default=15)
+
+class Person(Record):
+    # For StringColumn recommended length < 255
+    name = StringColumn(length=64)
+    surname = StringColumn(length=64)
+    # StringColumn with length == -1 : LongText data type.
+    address = StringColumn(length=-1)
+    age = IntegerColumn(default=15)
+
 
 config = {
-	"vendor" : Vendor.SQLITE,
-	"database" : "./example.sqlite.bin"
+    "vendor": Vendor.SQLITE,
+    "database": "./example.sqlite.bin"
 }
 
 session = SQLiteDBSession(config)

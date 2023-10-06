@@ -14,11 +14,12 @@ To solve this problem, Xerial provides automatic data structure modification int
 ```python
 
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
+from xerial.column.StringColumn import StringColumn
 
-class Book (Record) :
-	name = StringColumn(length=64)
-	author = StringColumn(length=-1)
+
+class Book(Record):
+    name = StringColumn(length=64)
+    author = StringColumn(length=-1)
 ```
 
 This code snippet is defined as the `version 1.0` of the Book Model.
@@ -31,16 +32,17 @@ if the new structure must be defined and with the structure modification.
 ```python
 
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
+from xerial.column.StringColumn import StringColumn
 
-class Book (Record) :
-	name = StringColumn(length=64)
-	author = StringColumn(length=-1)
-	publisher = StringColumn(length=64)
 
-	def modify(self) :
-		modification = self.createModification('1.1')
-		modification.add('publisher', StringColumn(length=64))
+class Book(Record):
+    name = StringColumn(length=64)
+    author = StringColumn(length=-1)
+    publisher = StringColumn(length=64)
+
+    def modify(self):
+        modification = self.createModification('1.1')
+        modification.add('publisher', StringColumn(length=64))
 
 ```
 
@@ -62,20 +64,22 @@ be automatically executed. Followed is the example :
 ```python
 
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
+from xerial.column.StringColumn import StringColumn
 
-class Book (Record) :
-	name = StringColumn(length=64)
-	author = StringColumn(length=-1)
-	publisher = StringColumn(length=64)
 
-	def modify(self) :
-		modification = self.createModification('1.1')
-		modification.add('publisher', StringColumn(length=64))
+class Book(Record):
+    name = StringColumn(length=64)
+    author = StringColumn(length=-1)
+    publisher = StringColumn(length=64)
+
+    def modify(self):
+        modification = self.createModification('1.1')
+        modification.add('publisher', StringColumn(length=64))
+
 
 config = {
-	"vendor" : Vendor.SQLITE,
-	"database" : "./example.sqlite.bin"
+    "vendor": Vendor.SQLITE,
+    "database": "./example.sqlite.bin"
 }
 
 session = SQLiteDBSession(config)
@@ -94,20 +98,21 @@ code for multiple modification.
 ```python
 
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-from xerial.IntegerColumn import IntegerColumn
+from xerial.column.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
 
-class Book (Record) :
-	name = StringColumn(length=128)
-	author = StringColumn(length=-1)
-	publisher = StringColumn(length=64)
-	edition = IntegerColumn(length=64)
 
-	def modify(self) :
-		modification = self.createModification('1.1')
-		modification.add('publisher', StringColumn(length=64))
-		modification = self.createModification('2.0')
-		modification.changeLength('name', 128)
-		modification.add('edition', IntegerColumn())
+class Book(Record):
+    name = StringColumn(length=128)
+    author = StringColumn(length=-1)
+    publisher = StringColumn(length=64)
+    edition = IntegerColumn(length=64)
+
+    def modify(self):
+        modification = self.createModification('1.1')
+        modification.add('publisher', StringColumn(length=64))
+        modification = self.createModification('2.0')
+        modification.changeLength('name', 128)
+        modification.add('edition', IntegerColumn())
 
 ```

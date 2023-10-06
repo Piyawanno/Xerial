@@ -1,5 +1,5 @@
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
+from xerial.column.StringColumn import StringColumn
 
 class WorkerStructure (Record) :
 	division = StringColumn(length=64)

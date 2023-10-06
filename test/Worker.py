@@ -1,8 +1,7 @@
-import struct
 from xerial.Record import Record
-from xerial.IntegerColumn import IntegerColumn
-from xerial.FloatColumn import FloatColumn
-from xerial.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
+from xerial.column.FloatColumn import FloatColumn
+from xerial.column.StringColumn import StringColumn
 
 class Worker (Record) :
 	workerID = IntegerColumn(isPrimary=True)
