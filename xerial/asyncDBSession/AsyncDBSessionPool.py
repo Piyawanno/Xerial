@@ -1,5 +1,5 @@
-from xerial.DBSessionPool import DBSessionPool
-from xerial.AsyncDBSessionBase import AsyncDBSessionBase
+from xerial.dbSession.DBSessionPool import DBSessionPool
+from xerial.asyncDBSession.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.Vendor import Vendor
 from xerial.Record import Record
@@ -14,19 +14,19 @@ class AsyncDBSessionPool (DBSessionPool) :
 		if self.isRoundRobin : self.callConnector = AsyncDBSessionPool.connectRoundRobin
 		else : self.callConnector = AsyncDBSessionPool.connect
 		if self.vendor == Vendor.POSTGRESQL :
-			from xerial.AsyncPostgresDBSession import AsyncPostgresDBSession
+			from xerial.asyncDBSession.AsyncPostgresDBSession import AsyncPostgresDBSession
 			self.sessionInstance = AsyncPostgresDBSession
 		elif self.vendor == Vendor.MARIADB or self.vendor == Vendor.MYSQL :
-			from xerial.AsyncMariaDBSession import AsyncMariaDBSession
+			from xerial.asyncDBSession.AsyncMariaDBSession import AsyncMariaDBSession
 			self.sessionInstance = AsyncMariaDBSession
 		elif self.vendor == Vendor.ORACLE :
-			from xerial.AsyncOracleDBSession import AsyncOracleDBSession
+			from xerial.asyncDBSession.AsyncOracleDBSession import AsyncOracleDBSession
 			self.sessionInstance = AsyncOracleDBSession
 		elif self.vendor == Vendor.SQLITE :
-			from xerial.AsyncSQLiteDBSession import AsyncSQLiteDBSession
+			from xerial.asyncDBSession.AsyncSQLiteDBSession import AsyncSQLiteDBSession
 			self.sessionInstance = AsyncSQLiteDBSession
 		elif self.vendor == Vendor.MSSQL :
-			from xerial.AsyncMSSQLDBSession import AsyncMSSQLDBSession
+			from xerial.asyncDBSession.AsyncMSSQLDBSession import AsyncMSSQLDBSession
 			self.sessionInstance = AsyncMSSQLDBSession
 		self.maxConnectionTime = config.get('maxConnectionTime', 60*60*6)
 		self.lastConnectionTime = -1.0

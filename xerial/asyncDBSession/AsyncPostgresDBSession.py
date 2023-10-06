@@ -1,10 +1,9 @@
-from xerial.PostgresDBSession import PostgresDBSession
-from xerial.AsyncDBSessionBase import AsyncDBSessionBase
-from xerial.IntegerColumn import IntegerColumn
+from xerial.dbSession.PostgresDBSession import PostgresDBSession
+from xerial.asyncDBSession.AsyncDBSessionBase import AsyncDBSessionBase
+from xerial.column.IntegerColumn import IntegerColumn
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
-from typing import List, Dict, Any
 
-import logging, asyncio, time
+import logging, time
 
 try :
 	import asyncpg

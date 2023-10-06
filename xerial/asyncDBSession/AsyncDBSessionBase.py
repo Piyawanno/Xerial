@@ -1,6 +1,6 @@
-from xerial.DBSessionBase import DBSessionBase
+from xerial.dbSession.DBSessionBase import DBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
-from xerial.StringColumn import StringColumn
+from xerial.column.StringColumn import StringColumn
 from xerial.ExcelWriter import ExcelWriter
 from xerial.Record import Record
 from typing import Dict, List, Any

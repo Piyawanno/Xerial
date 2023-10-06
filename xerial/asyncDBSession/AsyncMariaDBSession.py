@@ -1,36 +1,66 @@
-from multiprocessing import connection
-from xerial.SQLiteDBSession import SQLiteDBSession
-from xerial.AsyncDBSessionBase import AsyncDBSessionBase
-from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
-from xerial.IntegerColumn import IntegerColumn
+from xerial.dbSession.MariaDBSession import MariaDBSession
+from xerial.asyncDBSession.AsyncDBSessionBase import AsyncDBSessionBase
+from xerial.column.IntegerColumn import IntegerColumn
+from typing import List, Dict, Any
 
-import logging, traceback, time
+import logging, time
 
 try :
-	import aiosqlite
+	import aiomysql
 except :
 	logging.warning("Module aiomysql cannot be imported.")
 
-class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
+class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 	async def createConnection(self):
-		self.connection = await aiosqlite.connect(
-			self.config["database"],
-			isolation_level=None,
-			check_same_thread=False
+		self.connection = await aiomysql.connect(
+			host=self.config['host'],
+			port=self.config['port'],
+			user=self.config['user'],
+			password=self.config['password'],
+			db=self.config['database'],
 		)
-	
-	async def closeConnection(self) :
-		await self.connection.close()
-	
+		self.cursor = await self.connection.cursor()
 
+	async def closeConnection(self) :
+		try :
+			await self.cursor.close()
+			self.connection.close()
+		except :
+			print(">>> Error by closing MariaDB connection.")
+	
+	def processClause(self, clause: str, parameter: list) -> str:
+		return clause.replace("?", "%s")
+	
+	def prepareStatement(self, modelClass) :
+		if hasattr(modelClass, 'primaryMeta') :
+			primary = modelClass.primaryMeta
+			if not hasattr(modelClass, '__is_increment__') :
+				modelClass.__is_increment__ = isinstance(primary, IntegerColumn)
+		else :
+			modelClass.__is_increment__ = False
+		if modelClass.__is_increment__ :
+			meta = [i for i in modelClass.meta if i[1] != primary]
+		else :
+			meta = modelClass.meta
+		modelClass.__select_column__ = ", ".join([i[0] for i in modelClass.meta])
+		modelClass.__insert_column__ = ", ".join([i[0] for i in meta])
+		modelClass.__insert_parameter__ = ", ".join(['%s']*len(meta))
+		modelClass.__all_column__ = ", ".join([i[0] for i in modelClass.meta])
+		modelClass.__all_parameter__ = ", ".join(['%s']*len(modelClass.meta))
+		modelClass.__update_set_parameter__  = ", ".join(["%s=%%s"%(m[0]) for i, m in enumerate(meta)])
+		if modelClass.__is_increment__ :
+			modelClass.insertMeta = [i for i in modelClass.meta if i[1] != primary]
+		else :
+			modelClass.insertMeta = modelClass.meta
+	
 	async def executeRoundRobinRead(self, query, parameter=None) :
 		self.queryCount += 1
-		connection = self.connection.getNextRead()
+		cursor = self.connection.getNextReadCursor()
 		try :
 			if parameter is None :
-				cursor = await connection.execute(query)
+				await cursor.execute(query)
 			else :
-				cursor = await connection.execute(query, parameter)
+				await cursor.execute(query, parameter)
 			return await cursor.fetchall()
 		except Exception as error :
 			logging.debug(query)
@@ -41,13 +71,13 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 	
 	async def executeRoundRobinWrite(self, query, parameter=None) :
 		self.queryCount += 1
-		connection = self.connection.writer
+		cursor = self.connection.writerCursor
 		try :
 			if parameter is None :
-				cursor = await connection.execute(query)
+				await cursor.execute(query)
 			else :
-				cursor = await connection.execute(query, parameter)
-			return cursor
+				await cursor.execute(query, parameter)
+			return await cursor.fetchall()
 		except Exception as error :
 			logging.debug(query)
 			logging.debug(parameter)
@@ -59,13 +89,13 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		self.queryCount += 1
 		try :
 			if parameter is None :
-				cursor = await self.connection.execute(query)
+				await self.cursor.execute(query)
 			else :
-				cursor = await self.connection.execute(query, parameter)
-			return await cursor.fetchall()
+				await self.cursor.execute(query, parameter)
+			return await self.cursor.fetchall()
 		except Exception as error :
-			logging.debug(query)
-			logging.debug(parameter)
+			logging.error(query)
+			logging.error(parameter)
 			await self.closeConnection()
 			await self.connect()
 			raise error
@@ -74,31 +104,37 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		self.queryCount += 1
 		try :
 			if parameter is None :
-				cursor = await self.connection.execute(query)
+				await self.cursor.execute(query)
 			else :
-				cursor = await self.connection.execute(query, parameter)
-			return cursor
+				await self.cursor.execute(query, parameter)
+			return self.cursor
 		except Exception as error :
-			logging.debug(query)
-			logging.debug(parameter)
+			logging.error(query)
+			logging.error(parameter)
 			await self.closeConnection()
 			await self.connect()
 			raise error
+	
+	async def selectRaw(self, query:str) -> List[Dict[str, Any]] :
+		cursor = await self.connection.cursor(aiomysql.DictCursor)
+		await cursor.execute(query)
+		fetched = await cursor.fetchall()
+		return self.convertRaw(fetched)
 
 	async def insert(self, record, isAutoID=True):
 		modelClass = record.__class__
-		query = self.generateInsertQuery(record, isAutoID)
 		if modelClass.__backup__ :
 			now = time.time()
 			record.__insert_time__ = now
 			record.__update_time__ = now
 		value = self.getRawValue(record, isAutoID)
+		query = self.generateInsert(modelClass)
 		cursor = await self.executeWrite(query, value)
 		if not isAutoID :
 			if len(modelClass.children) :
 				await self.insertChildren(record, modelClass)
 		elif modelClass.__is_increment__ :
-			setattr(record, modelClass.primary, cursor.lastrowid)
+			setattr(record, modelClass.primary, self.cursor.lastrowid)
 			if len(modelClass.children) :
 				await self.insertChildren(record, modelClass)
 			return cursor.lastrowid
@@ -115,11 +151,11 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		valueList = []
 		modelClass = None
 		hasChildren = False
-		now = time.time()
 		for record in recordList :
 			if modelClass is None :
 				modelClass = record.__class__
 				isBackup = modelClass.__backup__
+				now = time.time()
 				if len(modelClass.children) :
 					hasChildren = True
 					break
@@ -132,29 +168,31 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 			for record in recordList :
 				await self.insert(record)
 			return
-
-		query = self.generateInsertQuery(modelClass, isAutoID)
+		
+		query = self.generateInsert(modelClass, isAutoID)
 		try :
-			connection = self.connection.writer if self.isRoundRobin else self.connection
-			await connection.executemany(query, valueList)
+			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
+			await cursor.executemany(query, valueList)
 		except Exception as error :
+			print(query)
 			logging.debug(query)
 			logging.debug(valueList)
-			self.closeConnection()
-			self.connect()
+			await self.closeConnection()
+			await self.connect()
 			raise error
 	
 	async def insertMultipleDirect(self, modelClass, rawList) :
 		valueList = [self.toTuple(modelClass, raw) for raw in rawList]
-		query = self.generateInsertQuery(modelClass, isAutoID=False)
+		query = self.generateInsert(modelClass, isAutoID=False)
 		try :
-			connection = self.connection.writer if self.isRoundRobin else self.connection
-			await connection.executemany(query, valueList)
+			cursor = self.connection.writeCursor if self.isRoundRobin else self.cursor
+			await cursor.executemany(query, valueList)
 		except Exception as error :
+			print(query)
 			logging.debug(query)
 			logging.debug(valueList)
-			self.closeConnection()
-			self.connect()
+			await self.closeConnection()
+			await self.connect()
 			raise error
 	
 	async def update(self, record) :
@@ -162,16 +200,16 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		if modelClass.__backup__ :
 			record.__update_time__ = time.time()
 		value = self.getRawValue(record)
-		query = self.generateUpdateQuery(record)
+		query = self.generateUpdate(record)
 		await self.executeWrite(query, value)
 		if len(modelClass.children) :
 			await self.updateChildren(record, modelClass)
 	
 	async def updateDirect(self, modelClass, raw) :
 		value = self.toTuple(modelClass, raw)
-		query = self.generateRawUpdateQuery(modelClass, raw)
+		query = self.generateRawUpdate(modelClass, raw)
 		await self.executeWrite(query, value)
-
+	
 	async def drop(self, record) :
 		await self.dropChildren(record, record.__class__)
 		table = record.__full_table_name__
@@ -211,15 +249,14 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 			await self.createIndex(model)
 	
 	async def createIndex(self, model) :
-		query = self.generateIndexCheckQuery(model)
-		cursor = await self.executeRead(query)
-		exisitingIndex = {i[0] for i in cursor}
+		result = await self.executeRead("SHOW INDEX FROM %s"%(model.__full_table_name__))
+		exisitingIndex = {i[4] for i in result}
 		for name, column in model.meta :
 			if column.isIndex and name not in exisitingIndex :
-				await self.executeWrite(self.generateIndexQuery(model, name))
+				await self.executeWrite("CREATE INDEX %s_%s ON %s(%s)"%(model.__full_table_name__, name, model.__full_table_name__, name))
 	
 	async def getExistingTable(self) :
-		result = await self.executeRead(self.generateTableQuery())
+		result = await self.executeRead("SHOW TABLES")
 		self.existingTable = {row[0] for row in result}
 		return self.existingTable
 	

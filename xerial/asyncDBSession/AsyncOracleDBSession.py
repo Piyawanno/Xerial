@@ -1,8 +1,7 @@
-from xerial.OracleDBSession import OracleDBSession
-from xerial.AsyncDBSessionBase import AsyncDBSessionBase
-from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
+from xerial.dbSession.OracleDBSession import OracleDBSession
+from xerial.asyncDBSession.AsyncDBSessionBase import AsyncDBSessionBase
 
-import logging, traceback, time
+import logging, time
 
 try :
 	import cx_Oracle_async

@@ -2,7 +2,7 @@ from xerial.RoundRobinConnector import RoundRobinConnector
 
 class AsyncRoundRobinConnector (RoundRobinConnector) :
 	async def connect(self, hasCursor=True) :
-		from xerial.AsyncDBSessionPool import AsyncDBSessionPool
+		from xerial.asyncDBSession.AsyncDBSessionPool import AsyncDBSessionPool
 		self.reader = []
 		self.writer = None
 		self.readerCursor = []

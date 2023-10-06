@@ -1,8 +1,8 @@
-from xerial.AsyncSQLiteDBSession import AsyncSQLiteDBSession
+from xerial.asyncDBSession.AsyncSQLiteDBSession import AsyncSQLiteDBSession
 from xerial.Vendor import Vendor
 from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-from xerial.IntegerColumn import IntegerColumn
+from xerial.column.StringColumn import StringColumn
+from xerial.column.IntegerColumn import IntegerColumn
 from xerial.Children import Children
 from enum import IntEnum
 
