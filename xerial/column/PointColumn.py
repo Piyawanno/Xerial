@@ -1,5 +1,5 @@
 from xerial.column.Column import Column
-from xerial.Vendor import Vendor
+from xerial.constant.Vendor import Vendor
 
 
 # NOTE : Due to data in DB from Absolute Co.,Ltd. x and y are confound.

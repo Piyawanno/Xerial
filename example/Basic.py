@@ -1,5 +1,5 @@
-from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
-from xerial.Vendor import Vendor
+from xerial.session.synchronous.SQLiteDBSession import SQLiteDBSession
+from xerial.constant.Vendor import Vendor
 from xerial.Record import Record
 from xerial.column.StringColumn import StringColumn
 from xerial.column.IntegerColumn import IntegerColumn

@@ -16,8 +16,8 @@ to make the application independent from database vendor.
 To connect to SQLite :
 
 ```python
-from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
-from xerial.Vendor import Vendor
+from xerial.session.synchronous.SQLiteDBSession import SQLiteDBSession
+from xerial.constant.Vendor import Vendor
 
 config = {
     "vendor": Vendor.SQLITE,
@@ -99,8 +99,8 @@ After connecting database and creating model, the Model must be mapped
 into database :
 
 ```python
-from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
-from xerial.Vendor import Vendor
+from xerial.session.synchronous.SQLiteDBSession import SQLiteDBSession
+from xerial.constant.Vendor import Vendor
 from xerial.Record import Record
 from xerial.column.StringColumn import StringColumn
 from xerial.column.IntegerColumn import IntegerColumn

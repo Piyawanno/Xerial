@@ -1,5 +1,5 @@
 from xerial.input.EnumSelectInput import EnumSelectInput
-from xerial.InputAttachment import InputAttachment
+from xerial.helper.InputAttachment import InputAttachment
 from enum import IntEnum
 from typing import Dict, Type
 

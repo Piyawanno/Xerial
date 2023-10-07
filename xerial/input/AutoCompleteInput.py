@@ -1,6 +1,6 @@
 from typing import Dict
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
-from xerial.InputAttachment import InputAttachment
+from xerial.helper.InputAttachment import InputAttachment
 class AutoCompleteInput (ReferenceSelectInput) :
 	def __init__(self,
 			label:str,

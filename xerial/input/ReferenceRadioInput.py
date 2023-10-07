@@ -1,5 +1,5 @@
 from typing import Dict
-from xerial.InputAttachment import InputAttachment
+from xerial.helper.InputAttachment import InputAttachment
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 
 class ReferenceRadioInput (ReferenceSelectInput) :

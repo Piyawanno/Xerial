@@ -1,9 +1,9 @@
 from xerial.column.Column import Column
-from xerial.Input import Input
-from xerial.Modification import Modification
-from xerial.Vendor import Vendor
-from xerial.InputExtractor import InputExtractor
-from xerial.MetaDataExtractor import MetaDataExtractor
+from xerial.input.Input import Input
+from xerial.modification.Modification import Modification
+from xerial.constant.Vendor import Vendor
+from xerial.helper.InputExtractor import InputExtractor
+from xerial.helper.MetaDataExtractor import MetaDataExtractor
 
 from typing import List
 

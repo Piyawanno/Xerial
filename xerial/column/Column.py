@@ -1,5 +1,5 @@
 from xerial.ForeignKey import ForeignKey
-from xerial.Vendor import Vendor
+from xerial.constant.Vendor import Vendor
 
 from typing import List
 class Column :
@@ -16,7 +16,7 @@ class Column :
 			input=None
 		) :
 		
-		from xerial.Input import Input
+		from xerial.input.Input import Input
 		self.length = length
 		if foreignKey is not None :
 			self.foreignKey = ForeignKey(foreignKey, self)

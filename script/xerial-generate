@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from xerial.Vendor import Vendor
+from xerial.constant.Vendor import Vendor
 
 import json
 
@@ -11,7 +11,7 @@ vendor = config['vendor']
 generator = None
 
 if vendor == Vendor.ORACLE :
-	from xerial.OracleModelGenerator import OracleModelGenerator
+	from xerial.model_generator.OracleModelGenerator import OracleModelGenerator
 	generator = OracleModelGenerator(config)
 
 if generator is not None :

@@ -1,5 +1,5 @@
 from xerial.column.Column import Column
-from xerial.Vendor import Vendor
+from xerial.constant.Vendor import Vendor
 
 from fractions import Fraction
 from typing import List

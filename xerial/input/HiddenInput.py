@@ -1,7 +1,7 @@
-from typing import Dict, Type
-from xerial.Input import Input
-from xerial.InputAttachment import InputAttachment
-from enum import IntEnum
+from typing import Dict
+from xerial.input.Input import Input
+from xerial.helper.InputAttachment import InputAttachment
+
 
 class HiddenInput (Input):
 	def __init__(self,

@@ -1,6 +1,6 @@
 from xerial.column.Column import Column
 from xerial.Record import Record
-from xerial.Vendor import Vendor
+from xerial.constant.Vendor import Vendor
 
 from datetime import timedelta, datetime, time
 

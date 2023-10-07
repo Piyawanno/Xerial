@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from xerial.dbSession.DBSessionPool import DBSessionPool
+from xerial.session.pool.DBSessionPool import DBSessionPool
 
 from Worker import Worker
 from WorkerStructure import WorkerStructure

@@ -1,5 +1,5 @@
 from xerial.column.TimeColumn import TimeColumn
-from xerial.Vendor import Vendor
+from xerial.constant.Vendor import Vendor
 
 class DayIntervalColumn (TimeColumn) :
 	def getDBDataType(self) :

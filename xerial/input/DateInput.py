@@ -1,6 +1,6 @@
 from typing import Dict
-from xerial.Input import Input
-from xerial.InputAttachment import InputAttachment
+from xerial.input.Input import Input
+from xerial.helper.InputAttachment import InputAttachment
 
 class DateInput (Input):
 	def __init__(self,

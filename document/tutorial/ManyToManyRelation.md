@@ -5,7 +5,7 @@ Xerial uses the **mapper** pattern for the implementation. The mapper
 is an extra Model/table, which links between 2 Models/tables.
 
 ```python
-from xerial.dbSession.SQLiteDBSession import SQLiteDBSession
+from xerial.session.synchronous.SQLiteDBSession import SQLiteDBSession
 from xerial.Record import Record
 from xerial.column.StringColumn import StringColumn
 from xerial.column.IntegerColumn import IntegerColumn
