@@ -1,0 +1,6 @@
+{
+	"dataPath" : "/PATH/TO/DATA",
+	"model" : [
+		"gaimonerp.stock"
+	]
+}
