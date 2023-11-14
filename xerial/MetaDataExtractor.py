@@ -123,6 +123,9 @@ class MetaDataExtractor :
 			if not isinstance(attribute, Column) : continue
 			if not attribute.isPrimary : continue
 			modelClass.__has_primary__ = True
+			modelClass.primary = i
+			modelClass.meta = []
+			return
 		if not hasattr(modelClass, '__has_primary__') :
 			modelClass.__has_primary__ = True
 			modelClass.primary = 'id'
