@@ -6,7 +6,7 @@ from xerial.Record import Record
 import traceback, importlib, os, logging, time
 
 class DBSessionPool :
-	def __init__(self, config):
+	def __init__(self, config, model:dict=None):
 		self.config = config
 		self.isRoundRobin = config.get("isRoundRobin", False)
 		if self.isRoundRobin : self.callConnector = DBSessionPool.connectRoundRobin
@@ -14,7 +14,7 @@ class DBSessionPool :
 		self.pool = []
 		self.connectionCount = 0
 		self.connectionNumber = config.get("connectionNumber", 8)
-		self.model = None
+		self.model = model
 		self.schema = None
 		self.connection = []
 		self.vendor = config["vendor"]

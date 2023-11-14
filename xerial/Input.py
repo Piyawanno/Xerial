@@ -16,6 +16,8 @@ class Input :
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
 			attachedGroup:InputAttachment=None,
+			isLink:bool=False,
+			linkColumn:str='',
 			help:str=None,
 			documentPath:str=None,
 			config: Dict=None,
@@ -42,6 +44,10 @@ class Input :
 		self.typeName = ''
 		self.columnName = columnName
 		self.columnType = columnType
+		self.isLink = isLink
+		self.linkColumn = linkColumn
+		self.foreignModelName = None
+		self.foreignColumn = None
 		self.isNumber = False
 		self.isFile = False
 		self.attribute = None
@@ -67,5 +73,9 @@ class Input :
 			'help' : self.help,
 			'documentPath' : self.documentPath,
 			'typeName' : self.typeName,
+			'foreignModelName' : self.foreignModelName,
+			'foreignColumn' : self.foreignColumn,
+			'isLink' : self.isLink,
+			'linkColumn' : self.linkColumn,
 		}
 	

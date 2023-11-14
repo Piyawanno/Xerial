@@ -49,6 +49,7 @@ class XerialSetup :
 			'xerial-raw-dump',
 			'xerial-generate',
 			'xerial-load',
+			'xerial-model-extract',
 		]
 
 		self.configList = [

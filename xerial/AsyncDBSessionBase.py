@@ -21,6 +21,8 @@ class AsyncDBSessionBase (DBSessionBase) :
 			current = modelVersion.get(name, '1.0')
 			last = await self.checkModelModification(model, current)
 			modelVersion[name] = str(last)
+			#query = f"ALTER TABLE {model.__fulltablename__} OWNER TO gaimonuser;"
+			#print(query)
 
 		with open(versionPath, 'wt') as fd:
 			raw = json.dump(modelVersion, fd, indent=4)

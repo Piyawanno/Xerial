@@ -19,6 +19,8 @@ class PrerequisiteReferenceSelectInput (Input):
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
 			attachedGroup:InputAttachment=None,
+			isLink:bool=False,
+			linkColumn:str='',
 			help:str=None,
 			documentPath:str=None,
 			config:Dict=None,
@@ -39,6 +41,8 @@ class PrerequisiteReferenceSelectInput (Input):
 			isTableForm,
 			isAdvanceFrom,
 			attachedGroup,
+			isLink,
+			linkColumn,
 			help,
 			documentPath,
 			config,
@@ -48,6 +52,7 @@ class PrerequisiteReferenceSelectInput (Input):
 		self.url = url
 		self.tableURL = tableURL
 		self.prerequisite = prerequisite
+		self.isLink = isLink
 		self.typeName = 'PrerequisiteReferenceSelect'
 	
 	def toDict(self) -> dict:

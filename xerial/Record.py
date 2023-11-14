@@ -133,6 +133,7 @@ class Record :
 		for column, meta in self.meta :
 			if hasattr(other, column) :
 				setattr(self, column, getattr(other, column))
+		return self
 	
 	def createModification(self, version:str) :
 		"""

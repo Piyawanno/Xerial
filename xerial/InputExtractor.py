@@ -85,6 +85,13 @@ class InputExtractor :
 			if attribute.input is None : continue
 			attribute.input.columnType = attribute.__class__.__name__
 			attribute.input.columnName = i
+			if attribute.isRepresentative:
+				attribute.input.isLink = True
+				attribute.input.linkColumn = 'id'
+			if not attribute.foreignKey is None:
+				attribute.input.foreignModelName = attribute.foreignKey.modelName
+				attribute.input.foreignColumn = attribute.foreignKey.column
+			
 			inputList.append(attribute.input)
 			if getattr(attribute, 'isFile', False) :
 				self.modelClass.fileInput.append(attribute)

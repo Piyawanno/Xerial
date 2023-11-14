@@ -18,6 +18,8 @@ class ReferenceSelectInput (Input):
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
 			attachedGroup:InputAttachment=None,
+			isLink:bool=False,
+			linkColumn:str='',
 			help:str=None,
 			documentPath:str=None,
 			config:Dict=None,
@@ -38,6 +40,8 @@ class ReferenceSelectInput (Input):
 			isTableForm,
 			isAdvanceFrom,
 			attachedGroup,
+			isLink,
+			linkColumn,
 			help,
 			documentPath,
 			config,
@@ -52,4 +56,5 @@ class ReferenceSelectInput (Input):
 		result = super().toDict()
 		result['url'] = self.url
 		result['tableURL'] = self.tableURL
+		result['isLink'] = self.isLink
 		return result

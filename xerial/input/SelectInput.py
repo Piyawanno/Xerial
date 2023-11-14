@@ -18,6 +18,8 @@ class SelectInput (Input):
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
 			attachedGroup:InputAttachment=None,
+			isLink:bool=False,
+			linkColumn:str='',
 			help:str=None,
 			documentPath:str=None,
 			config:Dict=None,
@@ -38,6 +40,8 @@ class SelectInput (Input):
 			isTableForm,
 			isAdvanceFrom,
 			attachedGroup,
+			isLink,
+			linkColumn,
 			help,
 			documentPath,
 			config,
@@ -45,9 +49,11 @@ class SelectInput (Input):
 			columnName,
 		)
 		self.option = [list(i) for i in option]
+		self.isLink = isLink
 		self.typeName = 'Select'
 	
 	def toDict(self) -> dict:
 		result = super().toDict()
 		result['option'] = self.option
+		result['isLink'] = self.isLink
 		return result

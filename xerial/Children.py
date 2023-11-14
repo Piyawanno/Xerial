@@ -1,5 +1,5 @@
 class Children :
-	def __init__(self, reference:str, isTableForm:bool=True) :
+	def __init__(self, reference:str, isTableForm:bool=False) :
 		self.reference = reference
 		splitted = reference.split(".")
 		self.modelName = splitted[0]

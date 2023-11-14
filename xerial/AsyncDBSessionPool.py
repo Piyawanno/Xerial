@@ -9,8 +9,8 @@ import logging, traceback, os, importlib, asyncio, time
 MAX_WAIT = 10_000
 WAIT_TIME = 0.0001
 class AsyncDBSessionPool (DBSessionPool) :
-	def __init__(self, config):
-		super().__init__(config)
+	def __init__(self, config, model:dict=None):
+		super().__init__(config, model)
 		if self.isRoundRobin : self.callConnector = AsyncDBSessionPool.connectRoundRobin
 		else : self.callConnector = AsyncDBSessionPool.connect
 		if self.vendor == Vendor.POSTGRESQL :
@@ -98,7 +98,6 @@ class AsyncDBSessionPool (DBSessionPool) :
 						try :
 							module = importlib.import_module('%s.%s.%s'%(baseName,i, name))
 							modelClass = getattr(module, name)
-							print(f">>> Append Model {name}")
 							if issubclass(modelClass, Record) :
 								session.appendModel(modelClass)
 						except Exception as error :
