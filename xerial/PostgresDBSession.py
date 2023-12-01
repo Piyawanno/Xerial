@@ -17,6 +17,9 @@ class PostgresDBSession (DBSessionBase) :
 	def setSchema(self, schema) :
 		self.schema = f"{schema.lower()}."
 	
+	def unsetSchema(self) :
+		self.schema = ""
+	
 	def createSchema(self, schema) :
 		query = self.generateCreateSchema(schema)
 		self.executeWrite(query)
