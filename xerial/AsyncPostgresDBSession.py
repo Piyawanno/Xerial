@@ -16,6 +16,13 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 		AsyncDBSessionBase.__init__(self, config)
 		self.schema = ""
 	
+	async def checkSchema(self, schema) :
+		query = self.generateCheckSchema(schema)
+		cursor = await self.executeRead(query, None)
+		for i in cursor :
+			return True
+		return False
+	
 	async def createSchema(self, schema) :
 		query = self.generateCreateSchema(schema)
 		await self.executeWrite(query)

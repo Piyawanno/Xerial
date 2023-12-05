@@ -20,12 +20,22 @@ class PostgresDBSession (DBSessionBase) :
 	def unsetSchema(self) :
 		self.schema = ""
 	
+	def checkSchema(self, schema) :
+		query = self.generateCheckSchema(schema)
+		cursor = self.executeRead(query, None)
+		for i in cursor :
+			return True
+		return False
+	
 	def createSchema(self, schema) :
 		query = self.generateCreateSchema(schema)
 		self.executeWrite(query)
 	
 	def generateCreateSchema(self, schema) :
 		return f"CREATE SCHEMA IF NOT EXISTS {schema.lower()}"
+	
+	def generateCheckSchema(self, schema) :
+		return f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{schema}';"
 	
 	def createConnection(self):
 		self.connection = psycopg2.connect(

@@ -1,5 +1,6 @@
 from xerial.DBSessionBase import DBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
+from xerial.ForeignKey import ForeignKey
 from xerial.StringColumn import StringColumn
 from xerial.ExcelWriter import ExcelWriter
 from xerial.Record import Record
@@ -226,6 +227,9 @@ class AsyncDBSessionBase (DBSessionBase) :
 			if not child.model.__is_mapper__ : continue
 			childRecordList = childrenFlattedMap[child.name]
 			for foreignKey in child.model.foreignKey :
+				foreignKey: ForeignKey
+				if foreignKey.model is None:
+					foreignKey.model = self.model.get(foreignKey.modelName, None)
 				if foreignKey.model == modelClass : continue
 				if isinstance(foreignKey.columnMeta, StringColumn) :
 					keyList = {f"'{getattr(i, foreignKey.name)}'" for i in childRecordList}

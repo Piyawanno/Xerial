@@ -70,6 +70,7 @@ class Record :
 				result[column] = None
 			elif meta != self :
 				result[column] = meta.toDict(attribute() if callable(attribute) else attribute)
+		result['__avatar__'] = getattr(modelClass, '__avatar__', None)
 		return result
 	
 	def toRawDict(self) -> dict :
