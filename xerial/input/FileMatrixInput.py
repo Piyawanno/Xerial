@@ -16,6 +16,7 @@ class FileMatrixInput (Input):
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
+			isShare:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -27,6 +28,8 @@ class FileMatrixInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -49,9 +52,12 @@ class FileMatrixInput (Input):
 			config,
 			columnType,
 			columnName,
+			isEnabled=isEnabled,
+			isSpreadSheet=isSpreadSheet,
 		)
 		self.typeName = 'FileMatrix',
 		self.isPreview = isPreview
+		self.isShare = isShare
 		self.path = path
 		self.uploadURL = uploadURL
 		self.url = url
@@ -64,4 +70,5 @@ class FileMatrixInput (Input):
 		data['uploadURL'] = self.uploadURL
 		data['url'] = self.url
 		data['isFile'] = True
+		data['isShare'] = self.isShare
 		return data

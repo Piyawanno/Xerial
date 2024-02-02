@@ -22,10 +22,12 @@ class AsyncOracleDBSession (OracleDBSession, AsyncDBSessionBase) :
 		self.connection = await self.pool.acquire()
 		self.connection.autocommit = True
 		self.cursor = await self.connection.cursor()
+		self.isOpened = True
 
 	async def closeConnection(self) :
 		del self.cursor
 		del self.connection
+		self.isOpened = False
 
 	async def executeRoundRobinRead(self, query, parameter=None) :
 		self.queryCount += 1

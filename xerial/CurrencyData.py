@@ -25,11 +25,53 @@ class CurrencyData :
 	def __repr__(self) -> str:
 		return f"{self.origin} {self.originCurrency}"
 
+	def __ne__(self, other) -> bool:
+		other:CurrencyData = other
+		if not isinstance(other, CurrencyData):
+			raise TypeError(f"'!=' not supported between instances of {type(self)} and {type(other)}")
+		return self.origin != other.origin
+
+	def __eq__(self, other) -> bool:
+		other:CurrencyData = other
+		if not isinstance(other, CurrencyData):
+			raise TypeError(f"'==' not supported between instances of {type(self)} and {type(other)}")
+		return self.origin == other.origin
+
+	def __ge__(self, other) -> bool:
+		other:CurrencyData = other
+		if not isinstance(other, CurrencyData):
+			raise TypeError(f"'>=' not supported between instances of {type(self)} and {type(other)}")
+		return self.origin >= other.origin
+
+	def __gt__(self, other) -> bool:
+		other:CurrencyData = other
+		if not isinstance(other, CurrencyData):
+			raise TypeError(f"'>' not supported between instances of {type(self)} and {type(other)}")
+		return self.origin > other.origin
+
+	def __lt__(self, other) -> bool:
+		other:CurrencyData = other
+		if not isinstance(other, CurrencyData):
+			raise TypeError(f"'<' not supported between instances of {type(self)} and {type(other)}")
+		return self.origin < other.origin
+
+	def __le__(self, other) -> bool:
+		other:CurrencyData = other
+		if not isinstance(other, CurrencyData):
+			raise TypeError(f"'<=' not supported between instances of {type(self)} and {type(other)}")
+		return self.origin <= other.origin
+
 	def exchange(self, rate:Union[float, str], currency:str) :
 		self.rate = Fraction(rate)
 		self.exchanged = self.origin*self.rate
 		self.exchangedCurrency = COMMON_CURRENCY_MAP.get(currency, None)
 		self.exchangeDate = datetime.now()
+	
+	def copy(self) :
+		raw = self.toDict()
+		copyCurrency = CurrencyData()
+		copyCurrency.fromDict(raw)
+		return copyCurrency
 
 	def fromDict(self, raw) :
 		self.origin = Fraction(raw["originString"])

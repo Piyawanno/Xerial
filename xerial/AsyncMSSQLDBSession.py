@@ -22,10 +22,12 @@ class AsyncMSSQLDBSession (MSSQLDBSession, AsyncDBSessionBase) :
 			TrustServerCertificate=yes;
 		""", autocommit=True)
 		self.cursor = await self.connection.cursor()
+		self.isOpened = True
 	
 	async def closeConnection(self) :
 		await self.cursor.close()
 		await self.connection.close()
+		self.isOpened = False
 
 	async def executeRoundRobinRead(self, query, parameter=None) :
 		self.queryCount += 1

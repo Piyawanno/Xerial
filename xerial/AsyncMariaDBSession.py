@@ -22,11 +22,13 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 			db=self.config['database'],
 		)
 		self.cursor = await self.connection.cursor()
+		self.isOpened = True
 
 	async def closeConnection(self) :
 		try :
 			await self.cursor.close()
 			self.connection.close()
+			self.isOpened = False
 		except :
 			print(">>> Error by closing MariaDB connection.")
 	
@@ -44,7 +46,8 @@ class AsyncMariaDBSession (MariaDBSession, AsyncDBSessionBase) :
 			meta = [i for i in modelClass.meta if i[1] != primary]
 		else :
 			meta = modelClass.meta
-		modelClass.__select_column__ = ", ".join([i[0] for i in modelClass.meta])
+		table = modelClass.__full_table_name__.lower()
+		modelClass.__select_column__ = ", ".join([f'{table}.{i[0]}' for i in modelClass.meta])
 		modelClass.__insert_column__ = ", ".join([i[0] for i in meta])
 		modelClass.__insert_parameter__ = ", ".join(['%s']*len(meta))
 		modelClass.__all_column__ = ", ".join([i[0] for i in modelClass.meta])

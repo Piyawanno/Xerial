@@ -22,7 +22,6 @@ def __conform__(path) :
 		if path[-1] == "/": result = result + os.sep
 		return result
 	result = "/"+("/".join([i for i in splited if len(i)]))
-	if isRootPath: result = '/' + result
 	if path[-1] == "/": result = result + "/"
 	return result
 

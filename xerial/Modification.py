@@ -96,6 +96,13 @@ class Modification :
 		self.vendor = vendor
 		self.column = []
 		self.generator = __GENERATOR__[vendor]
+		self.schema = None
+	
+	def setSchema(self, schema):
+		if schema is not None and len(schema): self.schema = schema
+	
+	def resetSchema(self):
+		self.schema = None
 	
 	def add(self, name:str, column:Column) :
 		"""
@@ -203,11 +210,16 @@ class Modification :
 		"""
 		if name not in self.meta :
 			raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
-		self.column.append((ModificationType.DROP_INDEX, name))
+		self.column.append((ModificationType.DROP_INDEX, self.table, name))
 	
 	def generateQuery(self) -> List[str] :
 		generated = []
 		for column in self.column :
 			if len(column) > 3 and isinstance(column[3], Children) : continue
-			generated.append(self.generator[column[0]](*column[1:]))
+			if self.schema is not None :
+				parameter = list(column)
+				parameter[1] = f'{self.schema}{self.table}'
+				generated.append(self.generator[parameter[0]](*parameter[1:]))
+			else :
+				generated.append(self.generator[column[0]](*column[1:]))
 		return generated

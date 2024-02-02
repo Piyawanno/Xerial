@@ -25,8 +25,11 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		ReferenceSelectInput.__init__(
+			self,
 			label,
 			url,
 			tableURL,
@@ -48,5 +51,7 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			config,
 			columnType,
 			columnName,
+			isEnabled=isEnabled,
+			isSpreadSheet=isSpreadSheet,
 		)
 		self.typeName = 'ReferenceCheckBox'

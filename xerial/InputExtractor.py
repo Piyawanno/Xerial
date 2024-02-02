@@ -15,12 +15,12 @@ class InputExtractor :
 	def extract(self) :
 		self.inputPerLine = getattr(self.modelClass, 'inputPerLine', 2)
 		self.inputList:List[Dict] = []
+		self.modelClass.__file_input__ = []
 		self.mergedInput:List[Input] = self.extractBase()
 		self.mergedInput.extend(self.extendedInput)
 		self.extractAttached()
 		self.groupedInputList = []
 		self.inputGroupMapper:Dict[int, List[Input]] = {}
-		self.modelClass.fileInput = []
 		self.checkOrder()
 		self.checkGroup()
 		self.modelClass.__has_callable_default__ = self.checkDefault()
@@ -83,6 +83,7 @@ class InputExtractor :
 		for i, attribute in self.modelClass.meta :
 			if not isinstance(attribute, Column) : continue
 			if attribute.input is None : continue
+			if not attribute.input.isEnabled: continue
 			attribute.input.columnType = attribute.__class__.__name__
 			attribute.input.columnName = i
 			if attribute.isRepresentative:
@@ -93,8 +94,8 @@ class InputExtractor :
 				attribute.input.foreignColumn = attribute.foreignKey.column
 			
 			inputList.append(attribute.input)
-			if getattr(attribute, 'isFile', False) :
-				self.modelClass.fileInput.append(attribute)
+			if getattr(attribute.input, 'isFile', False) :
+				self.modelClass.__file_input__.append(attribute.input)
 		return inputList
 	
 	def extractGroupInput(self) :

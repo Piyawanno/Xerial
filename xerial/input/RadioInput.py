@@ -26,6 +26,8 @@ class RadioInput (SelectInput):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		SelectInput.__init__(
 			self,
@@ -49,6 +51,8 @@ class RadioInput (SelectInput):
 			config,
 			columnType,
 			columnName,
+			isEnabled=isEnabled,
+			isSpreadSheet=isSpreadSheet,
 		)
 		self.typeName = 'Radio'
 

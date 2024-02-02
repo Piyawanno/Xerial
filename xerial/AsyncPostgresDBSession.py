@@ -4,7 +4,7 @@ from xerial.IntegerColumn import IntegerColumn
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from typing import List, Dict, Any
 
-import logging, asyncio, time
+import logging, asyncio, time, traceback
 
 try :
 	import asyncpg
@@ -25,6 +25,10 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 	
 	async def createSchema(self, schema) :
 		query = self.generateCreateSchema(schema)
+		await self.executeWrite(query)
+
+	async def dropSchema(self, schema) :
+		query = self.generateDropSchema(schema)
 		await self.executeWrite(query)
 	
 	def processClause(self, clause: str, parameter:list) -> str:
@@ -56,7 +60,8 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			meta = [i for i in modelClass.meta if i[1] != primary]
 		else :
 			meta = modelClass.meta
-		modelClass.__select_column__ = ", ".join([i[0].lower() for i in modelClass.meta])
+		table = modelClass.__full_table_name__.lower()
+		modelClass.__select_column__ = ", ".join([f'{table}.{i[0].lower()}' for i in modelClass.meta])
 		modelClass.__insert_column__ = ", ".join([i[0].lower() for i in meta ])
 		modelClass.__insert_record_column__ = ", ".join([f"r.{i[0].lower()}" for i in meta ])
 		modelClass.__insert_column_list__ = [i[0].lower() for i in meta ]
@@ -91,10 +96,12 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			database=self.config["database"]
 		)
 		self.isRoundRobin = False
+		self.isOpened = True
 		return self.connection
 	
 	async def closeConnection(self) :
 		await self.connection.close()
+		self.isOpened = False
 	
 	async def executeRoundRobinRead(self, query, parameter=None) :
 		self.queryCount += 1
@@ -334,9 +341,12 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			await self.executeWrite(query)
 	
 	async def createTable(self) :
+		if not self.checkCreateTable(): return
 		await self.getExistingTable()
 		for model in self.model.values() :
-			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
+			if not self.checkCreateEachTable(model): continue
+			self.appendCreatedTable(model)
+			if hasattr(model, '__skip_create__') and model.__skip_create__ : continue
 			if model.__full_table_name__ in self.existingTable :
 				await self.createIndex(model)
 				continue
@@ -345,12 +355,20 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 			await self.createIndex(model)
 	
 	async def createIndex(self, model) :
+		if not self.checkCreateIndex(model): return
 		query = self.generateIndexCheckQuery(model)
 		result = await self.executeRead("".join(query))
 		existingIndex = {i[0] for i in result}
 		for name, column in model.meta :
 			if column.isIndex and name.lower() not in existingIndex :
-				await self.executeWrite(self.generateIndexQuery(model, name))
+				query = self.generateIndexQuery(model, name)
+				self.appendCreatedIndex(model, name)
+				try :
+					await self.executeWrite(query)
+				except :
+					print(f"*** ERROR BY: {query}")
+
+			model.__generated_index__.add(name)
 
 	async def getExistingTable(self) :
 		query = self.generateTableQuery()

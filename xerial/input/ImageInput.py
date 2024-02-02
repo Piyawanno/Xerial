@@ -19,6 +19,7 @@ class ImageInput (Input):
 			isAdvanceFrom:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
+			isShare:bool=False,
 			linkColumn:str='',
 			help:str=None,
 			path:str=None,
@@ -28,6 +29,9 @@ class ImageInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -50,10 +54,15 @@ class ImageInput (Input):
 			config,
 			columnType,
 			columnName,
+			sideIcon,
+			isEnabled,
+			isSpreadSheet,
 		)
+		if len(url) and url[-1] != '/': url = url+'/'
 		self.url = url
 		self.typeName = 'Image',
 		self.isPreview = isPreview
+		self.isShare = isShare
 		self.path = path
 		self.uploadURL = uploadURL
 		self.hasCrop = hasCrop
@@ -66,5 +75,6 @@ class ImageInput (Input):
 		data['uploadURL'] = self.uploadURL
 		data['url'] = self.url
 		data['hasCrop'] = self.hasCrop
+		data['isShare'] = self.isShare
 		data['isFile'] = True
 		return data

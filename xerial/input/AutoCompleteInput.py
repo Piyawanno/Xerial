@@ -25,6 +25,9 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		ReferenceSelectInput.__init__(
 			self,
@@ -49,6 +52,9 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			config,
 			columnType,
 			columnName,
+			sideIcon,
+			isEnabled,
+			isSpreadSheet,
 		)
 		self.template = template
 		self.typeName = 'AutoComplete'

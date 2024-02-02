@@ -25,6 +25,9 @@ class EnumSelectInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -47,6 +50,9 @@ class EnumSelectInput (Input):
 			config,
 			columnType,
 			columnName,
+			sideIcon,
+			isEnabled,
+			isSpreadSheet,
 		)
 		self.enum = enum
 		self.typeName = 'EnumSelect'

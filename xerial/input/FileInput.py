@@ -16,6 +16,7 @@ class FileInput (Input):
 			isForm:bool=True,
 			isTableForm:bool=False,
 			isAdvanceFrom:bool=False,
+			isShare:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -27,6 +28,9 @@ class FileInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -49,9 +53,13 @@ class FileInput (Input):
 			config,
 			columnType,
 			columnName,
+			sideIcon,
+			isEnabled,
+			isSpreadSheet,
 		)
 		self.typeName = 'File'
 		self.isPreview = isPreview
+		self.isShare = isShare
 		self.path = path
 		self.uploadURL = uploadURL
 		self.url = url
@@ -64,4 +72,5 @@ class FileInput (Input):
 		data['uploadURL'] = self.uploadURL
 		data['url'] = self.url
 		data['isFile'] = True
+		data['isShare'] = True
 		return data

@@ -10,6 +10,8 @@ __RESERVED__ = {
 	'representativeMeta',
 	'__full_table_name__',
 	'__table_name__',
+	'__generated_index__',
+	'__is_created__',
 }
 
 class MetaDataExtractor :
@@ -49,7 +51,7 @@ class MetaDataExtractor :
 			modelClass.__skip_create__ = False
 		
 
-	def extractChildren(self) :
+	def extractChildren(self):
 		modelClass = self.modelClass
 		modelClass.children = []
 		modelClass.hasChildrenChecked = False
@@ -58,14 +60,13 @@ class MetaDataExtractor :
 			if isinstance(attribute, Children) :
 				attribute.name = i
 				modelClass.children.append(attribute)
-
 	
-	def extractForeign(self, parentMetaMap, attribute, name) :
+	def extractParentForeign(self, parentMetaMap, attribute, name):
 		modelClass = self.modelClass
-		modelClass.meta.append((name, parentMetaMap[name]))
-		if isinstance(attribute, Column) and attribute.foreignKey is not None :
-			attribute.foreignKey.name = name
-			modelClass.foreignKey.append(attribute.foreignKey)
+		parentAttribute: Column = parentMetaMap[name]
+		modelClass.meta.append((name, parentAttribute))
+		if isinstance(parentAttribute, Column) and parentAttribute.foreignKey is not None :
+			modelClass.foreignKey.append(parentAttribute.foreignKey)
 	
 	def extractColumn(self, attribute) :
 		modelClass = self.modelClass
@@ -99,7 +100,7 @@ class MetaDataExtractor :
 			attribute = getattr(modelClass, i)
 			if i in __RESERVED__ : continue
 			if i in parentMetaMap :
-				self.extractForeign(parentMetaMap, attribute, i)
+				self.extractParentForeign(parentMetaMap, attribute, i)
 			elif isinstance(attribute, Column) :
 				attribute.name = i
 				self.extractColumn(attribute)

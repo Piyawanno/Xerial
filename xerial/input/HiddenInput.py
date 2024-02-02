@@ -24,6 +24,8 @@ class HiddenInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -46,5 +48,7 @@ class HiddenInput (Input):
 			config,
 			columnType,
 			columnName,
+			isEnabled=isEnabled,
+			isSpreadSheet=isSpreadSheet,
 		)
 		self.typeName = 'Hidden'

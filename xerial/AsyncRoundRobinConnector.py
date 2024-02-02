@@ -21,7 +21,9 @@ class AsyncRoundRobinConnector (RoundRobinConnector) :
 			raise ValueError("No write connector is defined.")
 		self.i = 0
 		self.n = len(self.reader)
+		self.isOpened = True
 	
 	async def close(self) :
 		for i in self.reader :
 			await i.close()
+		self.isOpened = False

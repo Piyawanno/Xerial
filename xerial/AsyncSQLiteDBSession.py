@@ -20,9 +20,11 @@ class AsyncSQLiteDBSession (SQLiteDBSession, AsyncDBSessionBase) :
 		)
 		await self.connection.execute("PRAGMA synchronous = OFF")
 		await self.connection.execute("PRAGMA journal_mode = MEMORY")
+		self.isOpened = True
 	
 	async def closeConnection(self) :
 		await self.connection.close()
+		self.isOpened = False
 	
 	async def executeRoundRobinRead(self, query, parameter=None) :
 		self.queryCount += 1

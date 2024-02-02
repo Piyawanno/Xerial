@@ -54,13 +54,14 @@ class AsyncDBSessionPool (DBSessionPool) :
 			if len(self.pool) == 0 :
 				if wait >= MAX_WAIT :
 					logging.warning("*** Warning no Session left, create new session.")
-					session = await self.reconnectDB()
+					session: AsyncDBSessionBase = await self.reconnectDB()
 					session.queryCount = 0
 					return session
 				else :
 					await asyncio.sleep(WAIT_TIME)
 			else :
-				session = self.pool.pop()
+				session: AsyncDBSessionBase = self.pool.pop()
+				if not session.isOpened : continue
 				if now - session.lastConnectionTime > self.maxConnectionTime :
 					logging.info(">>> Reconnect Session")
 					await session.closeConnection()
@@ -70,7 +71,7 @@ class AsyncDBSessionPool (DBSessionPool) :
 				return session
 			wait = wait + 1
 	
-	async def release(self, session) :
+	async def release(self, session: AsyncDBSessionBase) :
 		if len(self.pool) < self.connectionNumber :
 			self.pool.append(session)
 		else :
@@ -104,7 +105,8 @@ class AsyncDBSessionPool (DBSessionPool) :
 							logging.error(traceback.format_exc())
 							raise error
 
-			elif i[-3:] != '.py' or i == "__init__.py" or os.path.isdir("%s/%s"%(path, i)) : continue
+			elif i[-3:] != '.py' or i == "__init__.py" or os.path.isdir("%s/%s"%(path, i)) :
+				continue
 			else:
 				name = i[:-3]
 				try :

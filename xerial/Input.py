@@ -23,6 +23,9 @@ class Input :
 			config: Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		):
 		self.label = label
 		self.order = order
@@ -46,11 +49,14 @@ class Input :
 		self.columnType = columnType
 		self.isLink = isLink
 		self.linkColumn = linkColumn
+		self.sideIcon = sideIcon
 		self.foreignModelName = None
 		self.foreignColumn = None
 		self.isNumber = False
 		self.isFile = False
 		self.attribute = None
+		self.isEnabled = isEnabled
+		self.isSpreadSheet = isSpreadSheet
 	
 	def toDict(self) -> dict :
 		return {
@@ -77,5 +83,6 @@ class Input :
 			'foreignColumn' : self.foreignColumn,
 			'isLink' : self.isLink,
 			'linkColumn' : self.linkColumn,
+			'sideIcon': self.sideIcon,
 		}
 	

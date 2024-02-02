@@ -1,5 +1,7 @@
 from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
 from xerial.IntegerColumn import IntegerColumn
+from packaging.version import Version
+from typing import Set
 
 import logging, time
 
@@ -9,13 +11,21 @@ try :
 except :
 	logging.warning("Module psycopg2 cannot be imported.")
 
+# NOTE Since PostgreSQL can use schema, if the cached state is stored
+# in the model class, error can occurs. Hence, the the cached state
+# will explicitly stored.
+__SCHEMA_TABLE_CHECK__ = {}
+__SCHEMA_INDEX_CHECK__ = {}
+
 class PostgresDBSession (DBSessionBase) :
 	def __init__(self, config) :
 		DBSessionBase.__init__(self, config)
 		self.schema = ""
+		self.schemaName = ""
 	
 	def setSchema(self, schema) :
 		self.schema = f"{schema.lower()}."
+		self.schemaName = schema
 	
 	def unsetSchema(self) :
 		self.schema = ""
@@ -34,6 +44,13 @@ class PostgresDBSession (DBSessionBase) :
 	def generateCreateSchema(self, schema) :
 		return f"CREATE SCHEMA IF NOT EXISTS {schema.lower()}"
 	
+	def dropSchema(self, schema):
+		query = self.generateDropSchema(schema)
+		self.executeWrite(query)
+	
+	def generateDropSchema(self, schema) :
+		return f"DROP SCHEMA IF EXISTS {schema.lower()} CASCADE"
+	
 	def generateCheckSchema(self, schema) :
 		return f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{schema}';"
 	
@@ -47,9 +64,11 @@ class PostgresDBSession (DBSessionBase) :
 		)
 		self.connection.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
 		self.cursor = self.connection.cursor()
+		self.isOpened = True
 	
 	def closeConnection(self) :
 		self.connection.close()
+		self.isOpened = False
 	
 	def processClause(self, clause: str, parameter: list) -> str:
 		return clause.replace("?", "%s")
@@ -65,7 +84,9 @@ class PostgresDBSession (DBSessionBase) :
 			meta = [i for i in modelClass.meta if i[1] != primary]
 		else :
 			meta = modelClass.meta
-		modelClass.__select_column__ = ", ".join([i[0] for i in modelClass.meta])
+		table = modelClass.__full_table_name__.lower()
+		print(modelClass)
+		modelClass.__select_column__ = ", ".join([f'{table}{i[0]}' for i in modelClass.meta])
 		modelClass.__insert_column__ = ", ".join([i[0] for i in meta])
 		modelClass.__insert_parameter__ = ", ".join(['%s']*len(meta))
 		modelClass.__all_column__ = ", ".join([i[0] for i in modelClass.meta])
@@ -338,8 +359,11 @@ class PostgresDBSession (DBSessionBase) :
 			self.executeWrite(query)
 	
 	def createTable(self) :
+		if not self.checkCreateTable(): return
 		self.getExistingTable()
 		for model in self.model.values() :
+			if not self.checkCreateEachTable(model) : continue
+			self.appendCreatedTable(model)
 			if hasattr(model, '__skip_create__') and getattr(model, '__skip_create__') : continue
 			if model.__full_table_name__ in self.existingTable :
 				self.createIndex(model)
@@ -347,6 +371,18 @@ class PostgresDBSession (DBSessionBase) :
 			query = self.generateCreateTable(model)
 			self.executeWrite(query)
 			self.createIndex(model)
+	
+	def generateModification(self, modelClass, currentVersion) :
+		currentVersion = Version(currentVersion)
+		queryList = []
+		record = modelClass.__new__(modelClass)
+		record.modify()
+		if not hasattr(modelClass, '__modification__') : return queryList
+		for i in modelClass.__modification__ :
+			if i.version > currentVersion :
+				i.setSchema(self.schema)
+				queryList.append((i.version, i.generateQuery()))
+		return queryList
 	
 	def generateCreateTable(self, model) :
 		columnList = []
@@ -375,12 +411,19 @@ class PostgresDBSession (DBSessionBase) :
 		return " ".join(query)
 
 	def createIndex(self, model) :
+		if not self.checkCreateIndex(model): return
 		query = self.generateIndexCheckQuery(model)
 		self.cursor.execute("".join(query))
 		existingIndex = {i[0] for i in self.cursor}
 		for name, column in model.meta :
 			if column.isIndex and name not in existingIndex :
-				self.executeWrite(self.generateIndexQuery(model, name))
+				self.appendCreatedIndex(model, name)
+				query = self.generateIndexQuery(model, name)
+				try:
+					self.executeWrite(query)
+				except:
+					print(f"*** ERROR BY: {query}")
+				
 	
 	def generateIndexQuery(self, model, columnName) :
 		return "CREATE INDEX IF NOT EXISTS %s%s_%s ON %s%s(%s)"%(
@@ -412,3 +455,55 @@ class PostgresDBSession (DBSessionBase) :
 
 	def generateDropTable(self, modelClass:type) -> str :
 		return f"DROP TABLE {modelClass.__full_table_name__} CASCADE"
+	
+	def checkCreateTable(self) -> bool:
+		if self.schema is None or len(self.schema) == 0:
+			return DBSessionBase.checkCreateTable(self)
+		createdSet: Set[str] = __SCHEMA_TABLE_CHECK__.get(self.schema, set())
+		if len(createdSet) == 0: __SCHEMA_TABLE_CHECK__[self.schema] = createdSet
+		toCreate = False
+		for model in self.model.values() :
+			if model.__name__ not in createdSet:
+				createdSet.add(model.__name__)
+				toCreate = True
+		return toCreate
+	
+	def checkCreateEachTable(self, model: type) -> bool:
+		if self.schema is None or len(self.schema) == 0:
+			return not (hasattr(model, '__is_created__') and model.__is_created__ and model.__full_table_name__ in self.existingTable)
+		createdSet: Set[str] = __SCHEMA_TABLE_CHECK__.get(self.schema, set())
+		if len(createdSet) == 0: __SCHEMA_TABLE_CHECK__[self.schema] = createdSet
+		return model.__name__ in createdSet
+	
+	def appendCreatedTable(self, model: type):
+		if self.schema is None or len(self.schema) == 0: return
+		createdSet: Set[str] = __SCHEMA_TABLE_CHECK__.get(self.schema, set())
+		if len(createdSet) == 0: __SCHEMA_TABLE_CHECK__[self.schema] = createdSet
+		createdSet.add(model.__name__)
+
+	def resetCheckTable(self) :
+		pass
+	
+	def checkCreateIndex(self, model: type) -> bool:
+		if self.schema is None or len(self.schema) == 0:
+			return DBSessionBase.checkCreateIndex(self, model)
+		indexSet = self.getIndexSet(model)
+		for name, column in model.meta:
+			if name not in indexSet: return False
+		return True
+
+	def appendCreatedIndex(self, model: type, columnName: str):
+		if self.schema is None or len(self.schema) == 0: return
+		indexSet = self.getIndexSet(model)
+		indexSet.add(columnName)
+	
+	def getIndexSet(self, model: type) -> Set[str] :
+		tableMap = __SCHEMA_INDEX_CHECK__.get(self.schema, {})
+		if len(tableMap) == 0: __SCHEMA_INDEX_CHECK__[self.schema] = tableMap
+		indexSet = tableMap.get(model.__name__, None)
+		# NOTE It cannot check length, some table has no index.
+		# Otherwise, length will be checked by every call.
+		if indexSet is None:
+			indexSet = set()
+			tableMap[model.__name__] = indexSet
+		return indexSet

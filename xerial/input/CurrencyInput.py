@@ -27,6 +27,9 @@ class CurrencyInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -49,6 +52,9 @@ class CurrencyInput (Input):
 			config,
 			columnType,
 			columnName,
+			sideIcon,
+			isEnabled,
+			isSpreadSheet,
 		)
 		self.typeName = 'Currency'
 		self.isNegative = isNegative

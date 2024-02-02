@@ -25,7 +25,9 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
-		) :
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
+		):
 		EnumSelectInput.__init__(
 			self,
 			label,
@@ -48,5 +50,7 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			config,
 			columnType,
 			columnName,
+			isEnabled=isEnabled,
+			isSpreadSheet=isSpreadSheet,
 		)
 		self.typeName = 'EnumCheckBox'

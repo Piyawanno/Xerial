@@ -25,6 +25,9 @@ class SelectInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -47,6 +50,9 @@ class SelectInput (Input):
 			config,
 			columnType,
 			columnName,
+			sideIcon,
+			isEnabled,
+			isSpreadSheet,
 		)
 		self.option = [list(i) for i in option]
 		self.isLink = isLink

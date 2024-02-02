@@ -26,6 +26,9 @@ class PrerequisiteReferenceSelectInput (Input):
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			sideIcon:str=None,
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		Input.__init__(
 			self,
@@ -48,6 +51,9 @@ class PrerequisiteReferenceSelectInput (Input):
 			config,
 			columnType,
 			columnName,
+			sideIcon,
+			isEnabled,
+			isSpreadSheet,
 		)
 		self.url = url
 		self.tableURL = tableURL

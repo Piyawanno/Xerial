@@ -27,6 +27,7 @@ class DBSessionBase :
 		self.queryCount = 0
 		self.lastConnectionTime = -1.0
 		self.parentMap = {}
+		self.isOpened = False
 	
 	def resetCount(self) :
 		self.queryCount = 0
@@ -136,6 +137,10 @@ class DBSessionBase :
 		return f"DROP TABLE {modelClass.__full_table_name__}"
 	
 	def appendModel(self, modelClass) :
+		for parentClass in modelClass.__bases__ :
+			if parentClass == Record: continue
+			if not issubclass(parentClass, Record): continue
+			self.appendModel(parentClass)
 		self.model[modelClass.__name__] = modelClass
 		if Record.hasMeta(modelClass) : return
 		Record.checkTableName(modelClass, self.prefix)
@@ -181,25 +186,43 @@ class DBSessionBase :
 		if os.path.isfile(versionPath) :
 			with open(versionPath) as fd :
 				modelVersion = json.load(fd)
+			
+			for name, model in self.model.items():
+				current = modelVersion.get(name, None)
+				if current is not None :
+					last = self.checkModelModification(model, current)
+				else :
+					last = self.getLastVersion(model)
+				modelVersion[name] = str(last)
 		else :
 			modelVersion = {}
-
-		for name, model in self.model.items():
-			current = modelVersion.get(name, '1.0')
-			last = self.checkModelModification(model, current)
-			modelVersion[name] = str(last)
+			for name, model in self.model.items():
+				last = self.getLastVersion(model)
+				modelVersion[name] = str(last)
 
 		with open(versionPath, 'wt') as fd:
 			raw = json.dumps(modelVersion, indent=4)
 			fd.write(raw)
 	
+	def getLastVersion(self, modelClass) :
+		if not hasattr(modelClass, '__modification__') :
+			record = modelClass.__new__(modelClass)
+			record.modify()
+		if not hasattr(modelClass, '__modification__') :
+			return '1.0'
+		modification = modelClass.__modification__[-1]
+		return str(modification.version)
+		
 	def checkModelModification(self, modelClass, currentVersion) :
 		modificationList = self.generateModification(modelClass, currentVersion)
 		lastVersion = currentVersion
 		for v, queryList in modificationList :
 			lastVersion = v
 			for query in queryList :
-				self.executeWrite(query)
+				try :
+					self.executeWrite(query)
+				except :
+					logging.error(f"Error by modify {modelClass.__name__} {query}")
 		return str(lastVersion)
 
 	def generateModification(self, modelClass, currentVersion) :
@@ -519,6 +542,7 @@ class DBSessionBase :
 				if childModelClass is None :
 					logging.warning(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
 				child.model = childModelClass
+				if childModelClass is None: continue
 				for foreignKey in childModelClass.foreignKey :
 					if foreignKey.modelName == modelName :
 						child.parentColumn = foreignKey.name
@@ -606,3 +630,29 @@ class DBSessionBase :
 			",".join('?'*len(ids))
 		)
 		return query, parameter
+
+	def resetModification(self) :
+		for model in self.model.values() :
+			if not hasattr(model, '__modification__'): continue
+			for i in model.__modification__:
+				i.resetSchema()
+	
+	def checkCreateTable(self) -> bool:
+		for model in self.model.values() :
+			if not hasattr(model, '__is_created__'): model.__is_created__ = False
+			if hasattr(model, '__is_created__') and not model.__is_created__: continue
+			return False
+		return True
+	
+	def resetCheckTable(self) :
+		for model in self.model.values() :
+			model.__is_created__ = False
+			model.__generated_index__ = set()
+	
+	def checkCreateIndex(self, model: type) -> bool:
+		if not hasattr(model, '__generated_index__'):
+			model.__generated_index__ = set()
+		for name, column in model.meta:
+			if name not in model.__generated_index__:
+				return False
+		return True

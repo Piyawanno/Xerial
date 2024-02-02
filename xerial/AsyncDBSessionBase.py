@@ -15,15 +15,18 @@ class AsyncDBSessionBase (DBSessionBase) :
 		if os.path.isfile(versionPath) :
 			with open(versionPath) as fd :
 				modelVersion = json.load(fd)
+			for name, model in self.model.items():
+				current = modelVersion.get(name, None)
+				if current is not None :
+					last = await self.checkModelModification(model, current)
+				else :
+					last = self.getLastVersion(model)
+				modelVersion[name] = str(last)
 		else :
 			modelVersion = {}
-
-		for name, model in self.model.items():
-			current = modelVersion.get(name, '1.0')
-			last = await self.checkModelModification(model, current)
-			modelVersion[name] = str(last)
-			#query = f"ALTER TABLE {model.__fulltablename__} OWNER TO gaimonuser;"
-			#print(query)
+			for name, model in self.model.items():
+				last = self.getLastVersion(model)
+				modelVersion[name] = str(last)
 
 		with open(versionPath, 'wt') as fd:
 			raw = json.dump(modelVersion, fd, indent=4)

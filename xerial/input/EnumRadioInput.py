@@ -25,6 +25,8 @@ class EnumRadioInput (EnumSelectInput) :
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
+			isEnabled:bool=True,
+			isSpreadSheet:bool=True,
 		) :
 		EnumSelectInput.__init__(
 			self,
@@ -48,5 +50,7 @@ class EnumRadioInput (EnumSelectInput) :
 			config,
 			columnType,
 			columnName,
+			isEnabled=isEnabled,
+			isSpreadSheet=isSpreadSheet,
 		)
 		self.typeName = 'EnumRadio'
