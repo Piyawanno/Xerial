@@ -52,10 +52,11 @@ class IntegerColumn (Column) :
 			return None
 		else :
 			result = self.default
-			if type(raw) is str and '.' in raw:
-				result = int(float(raw))
-			else:
+			raw = float(raw)
+			if raw.is_integer() :
 				result = int(raw)
+			else :
+				result = raw
 
 			if self.isBigInt :
 				if result > __BIG_INT_ULIMIT__ or result < __BIG_INT_LLIMIT__ :
@@ -75,9 +76,13 @@ class IntegerColumn (Column) :
 	def setValueToDB(self, attribute) :
 		return str(attribute)
 	
-	def parseValue(self, value) :
+	def parseValue(self, value) -> int or float:
 		if value == "": return self.default
-		return int(value)
+		else:
+			value = float(value)
+			if value.is_integer():
+				return int(value)
+			return value
 
 	def getDBDataType(self) :
 		if self.vendor == Vendor.ORACLE :
@@ -91,6 +96,8 @@ class IntegerColumn (Column) :
 				return "BIGINT(%d)"%(self.length)
 			else :
 				return "INT(%d)"%(self.length)
+		elif self.vendor == Vendor.POSTGRESQL:
+			return "DOUBLE PRECISION"
 		elif self.vendor == Vendor.POSTGRESQL or self.vendor == Vendor.SQLITE or self.vendor == Vendor.MSSQL :
 			if self.length > 32 :
 				return "BIGINT"
