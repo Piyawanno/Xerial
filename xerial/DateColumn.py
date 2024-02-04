@@ -1,7 +1,10 @@
 from xerial.Column import Column
 from datetime import datetime, date, timedelta
 
+from xerial.Vendor import Vendor
+
 DATE_FORMAT = '%Y-%m-%d'
+DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 class DateColumn (Column) :
 	@staticmethod
@@ -57,16 +60,20 @@ class DateColumn (Column) :
 		return attribute.strftime(DATE_FORMAT)
 		
 	def setValueToDB(self, attribute) :
-		if type(attribute) is str:
-			return  "'%s'"%attribute
-		else:
-			return "'%s'"%(attribute.strftime(DATE_FORMAT))
+		if not callable(attribute) :
+			if type(attribute) is str:
+				return  "'%s'"%attribute
+			return "'%s'"%(attribute.strftime(DATETIME_FORMAT))
+		else :
+			return 'NULL'
 	
 	def parseValue(self, value) :
 		if isinstance(value, str) : return value
 		return datetime.strptime(value, DATE_FORMAT)
 
 	def getDBDataType(self) :
+		if self.vendor == Vendor.POSTGRESQL:
+			return "TIMESTAMP"
 		return "DATE"
 
 	@staticmethod
