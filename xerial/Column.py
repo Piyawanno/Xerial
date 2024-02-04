@@ -15,7 +15,8 @@ class Column :
 			parentModel:List[type]=[],
 			input=None
 		) :
-		
+
+		self.vendor: Vendor
 		from xerial.Input import Input
 		self.length = length
 		if foreignKey is not None :
