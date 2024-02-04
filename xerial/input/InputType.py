@@ -28,7 +28,7 @@ from xerial.input.CheckBoxInput import CheckBoxInput
 from xerial.input.RichTextInput import RichTextInput
 from xerial.input.CurrencyInput import CurrencyInput
 from xerial.input.FractionInput import FractionInput
-from xerial.input.SliderInput import SliderInput
+# from xerial.input.SliderInput import SliderInput
 
 from enum import IntEnum
 
@@ -96,5 +96,5 @@ InputType.mapped = {
 	InputType.POSITION: PositionInput,
 	InputType.CURRENCY: CurrencyInput,
 	InputType.FRACTION: FractionInput,
-	InputType.SLIDER: SliderInput,
+	# InputType.SLIDER: SliderInput,
 }
