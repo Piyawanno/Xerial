@@ -12,6 +12,9 @@ import inspect
 __MAPPED_META__ = {}
 __DEFAULT_BACKUP__ = False
 
+from xerial.exception.ModificationException import ModificationException
+
+
 def __getParentTableName__(modelClass) :
 	hierarchy = list(inspect.getmro(modelClass))
 	for parent in hierarchy[1:] :
@@ -156,14 +159,27 @@ class Record :
 		modelClass.__modification__.append(modification)
 		return modification
 
-	def createCheckout(self, destination: str) -> None:
+	def getScopedModification(self, destination: str) -> List[Modification]:
 		modifications = reversed(getattr(self.__class__, '__modification__', []))
-		modifications_to_reverse: List[Modification] = [
-			modification for modification in modifications
+		return [
+			modification
+			for modification
+			in modifications
 			if modification.version > destination
 		]
 
-		for existing_modification in modifications_to_reverse:
+	def analyzeModifications(self, modifications: List[Modification]) -> List[ModificationException]:
+		modification_exceptions: List[ModificationException] = []
+		for modification in modifications:
+			try:
+				modification.analyze()
+			except ModificationException as e:
+				modification_exceptions.append(e)
+
+		return modification_exceptions
+
+	def createCheckout(self, destination: str) -> None:
+		for existing_modification in self.getScopedModification(destination):
 			reversed_modification = self.createModification(f'{existing_modification.version.__str__()}_reverse')
 			for column in existing_modification.column:
 				reversed_modification.reverse(column)

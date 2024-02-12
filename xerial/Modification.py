@@ -12,6 +12,10 @@ from xerial.Vendor import Vendor
 from typing import List
 from packaging.version import Version
 
+from xerial.exception.FloatToIntException import FloatToIntException
+from xerial.exception.ModificationException import ModificationException
+from xerial.exception.TypeIncompatibleException import TypeIncompatibleException
+
 StringColumn.compatible = {JSONColumn}
 JSONColumn.compatible = {StringColumn}
 DateColumn.compatible = {DateTimeColumn}
@@ -240,3 +244,18 @@ class Modification :
 			raise ValueError(f'Unknown modification type {t[0]}')
 
 		modification(*t[2:])
+
+	@staticmethod
+	def analyze(self, modification: tuple) -> None:
+		if modification[0] == ModificationType.CHANGE_TYPE:
+			name = modification[2]
+			new_column = modification[3].__class__
+			existing_column = self.meta.get(name, None)
+
+			if new_column not in existing_column.compatible:
+				raise TypeIncompatibleException(name, existing_column.__class__.__name__, new_column.__name__)
+
+			if new_column == IntegerColumn and existing_column.__class__ == FloatColumn:
+				raise FloatToIntException(name)
+
+		return None
