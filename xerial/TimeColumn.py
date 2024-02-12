@@ -1,5 +1,4 @@
 from xerial.Column import Column
-from xerial.Record import Record
 from xerial.Vendor import Vendor
 
 from datetime import timedelta, datetime, time
@@ -18,13 +17,13 @@ class TimeColumn (Column) :
 
 	def toDict(self, attribute):
 		if isinstance(attribute, timedelta) :
-			return Record.parseTime(attribute)
+			return self.parseTime(attribute)
 		elif isinstance(attribute, time) :
 			return attribute.strftime(TIME_FORMAT)
 
 	def setValueToDB(self, attribute) :
 		if isinstance(attribute, timedelta) :
-			return "'%s'"%(Record.parseTime(attribute))
+			return "'%s'"%(self.parseTime(attribute))
 		else :
 			return "'%s'"%(attribute.strftime(TIME_FORMAT))
 	
@@ -45,3 +44,9 @@ class TimeColumn (Column) :
 			return 3600*data.hour + 60*data.minute + data.second
 		else :
 			raise TypeError
+
+	@staticmethod
+	def parseTime(delta):
+		hours, remainder = divmod(delta.seconds, 3600)
+		minutes, seconds = divmod(remainder, 60)
+		return "%02d:%02d:%02d" % (hours, minutes, seconds)

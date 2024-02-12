@@ -274,7 +274,7 @@ class DBSessionBase :
 			if i.version > currentVersion :
 				queryList.append((i.version, i.generateQuery()))
 		return queryList
-	
+
 	def prepareStatement(self, modelClass) :
 		pass
 

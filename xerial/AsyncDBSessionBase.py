@@ -36,7 +36,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 
 		with open(versionPath, 'wt') as fd:
 			raw = json.dump(modelVersion, fd, indent=4)
-	
+
 	async def init(self, modificationPath: str=None) -> Self:
 		modelList = DBSessionBase.REGISTERED_MODEL[:]
 		DBSessionBase.REGISTERED_MODEL = []
@@ -49,7 +49,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 		await self.createTable()
 		self.checkModelLinking()
 		return self
-	
+
 	async def injectModel(self):
 		for name, model in self.model.items():
 			injected = Record.getInjectedColumn(name)
@@ -167,21 +167,6 @@ class AsyncDBSessionBase (DBSessionBase) :
 			data = record.toDict()
 			for name, column in modelClass.meta :
 				result[name].append(data[name])
-		return result
-	
-	async def selectRaw(self, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) -> dict :
-		if parameter is not None :
-			clause = self.processClause(clause, parameter)
-		query = self.generateSelectQuery(modelClass, clause, limit, offset)
-		cursor = await self.executeRead(query, parameter)
-		result = []
-		for row in cursor :
-			data = {}
-			i = 0
-			for columnName, column in modelClass.meta :
-				data[columnName] = column.toDict(row[i])
-				i += 1
-			result.append(data)
 		return result
 
 	# NOTE
