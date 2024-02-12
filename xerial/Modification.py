@@ -31,7 +31,7 @@ def generateColumn(column, hasDefault=True) :
 
 __POSTGRESQL_GERNARATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
-	ModificationType.DROP : lambda t, n : f'ALTER TABLE {t} DROP COLUMN {n}',
+	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} TYPE {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} TYPE {generateColumn(c, False)}",
@@ -41,7 +41,7 @@ __POSTGRESQL_GERNARATOR__ = {
 
 __ORACLE_GERNARATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
-	ModificationType.DROP : lambda t, n : f'ALTER TABLE {t} DROP COLUMN {n}',
+	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
@@ -51,7 +51,7 @@ __ORACLE_GERNARATOR__ = {
 
 __MARIADB_GERNARATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
-	ModificationType.DROP : lambda t, n : f'ALTER TABLE {t} DROP COLUMN {n}',
+	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
@@ -61,7 +61,7 @@ __MARIADB_GERNARATOR__ = {
 
 __SQLITE_GERNARATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
-	ModificationType.DROP : lambda t, n : f'ALTER TABLE {t} DROP COLUMN {n}',
+	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
@@ -71,7 +71,7 @@ __SQLITE_GERNARATOR__ = {
 
 __MSSQL_GERNARATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
-	ModificationType.DROP : lambda t, n : f'ALTER TABLE {t} DROP COLUMN {n}',
+	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
