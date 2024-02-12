@@ -2,6 +2,7 @@ import json
 from xerial.Column import Column
 from xerial.CurrencyColumn import CurrencyColumn
 from xerial.CurrencyData import CurrencyData
+from xerial.Modification import Modification
 from xerial.Record import Record
 from xerial.IntegerColumn import IntegerColumn
 from xerial.StringColumn import StringColumn
@@ -235,7 +236,16 @@ class DBSessionBase :
 			if i.version > currentVersion :
 				queryList.append((i.version, i.generateQuery()))
 		return queryList
-	
+
+	def getAllModification(self) -> List[Modification]:
+		modifications = []
+		for model in self.model.values():
+			if not hasattr(model, '__modification__'):
+				continue
+			for modification in model.__modification__:
+				modifications.append(modification)
+		return modifications
+
 	def prepareStatement(self, modelClass) :
 		pass
 
