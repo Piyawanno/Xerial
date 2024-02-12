@@ -13,7 +13,6 @@ from typing import List
 from packaging.version import Version
 
 from xerial.exception.FloatToIntException import FloatToIntException
-from xerial.exception.ModificationException import ModificationException
 from xerial.exception.TypeIncompatibleException import TypeIncompatibleException
 
 StringColumn.compatible = {JSONColumn}
