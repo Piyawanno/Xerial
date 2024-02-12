@@ -32,7 +32,7 @@ def generateColumn(column, hasDefault=True) :
 __POSTGRESQL_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
-	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
+	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} TYPE {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} TYPE {generateColumn(c, False)}",
 	ModificationType.ADD_INDEX : lambda t, n : f"CREATE INDEX IF NOT EXISTS {t}_{n} ON {t}({n})",
@@ -42,7 +42,7 @@ __POSTGRESQL_GENERATOR__ = {
 __ORACLE_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
-	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
+	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
 	ModificationType.ADD_INDEX : lambda t, n : f"CREATE INDEX IF NOT EXISTS {t}_{n} ON {t}({n})",
@@ -52,7 +52,7 @@ __ORACLE_GENERATOR__ = {
 __MARIADB_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
-	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
+	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
 	ModificationType.ADD_INDEX : lambda t, n : f"CREATE INDEX IF NOT EXISTS {t}_{n} ON {t}({n})",
@@ -62,7 +62,7 @@ __MARIADB_GENERATOR__ = {
 __SQLITE_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
-	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
+	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
 	ModificationType.ADD_INDEX : lambda t, n : f"CREATE INDEX IF NOT EXISTS {t}_{n} ON {t}({n})",
@@ -72,7 +72,7 @@ __SQLITE_GENERATOR__ = {
 __MSSQL_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
-	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
+	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
 	ModificationType.CHANGE_TYPE : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c)}",
 	ModificationType.CHANGE_LENGTH : lambda t, n, c : f"ALTER TABLE {t} ALTER COLUMN {n} {generateColumn(c, False)}",
 	ModificationType.ADD_INDEX : lambda t, n : f"CREATE INDEX IF NOT EXISTS {t}_{n} ON {t}({n})",
@@ -97,17 +97,17 @@ class Modification :
 		self.column = []
 		self.generator = __GENERATOR__[vendor]
 		self.schema = None
-	
+
 	def setSchema(self, schema):
 		if schema is not None and len(schema): self.schema = schema
-	
+
 	def resetSchema(self):
 		self.schema = None
-	
+
 	def add(self, name:str, column:Column) :
 		"""
 		Add a column into the existing Model.
-		
+
 		Parameters
 		----------
 		name: str  name of the added column
@@ -116,28 +116,28 @@ class Modification :
 		column.name = name
 		column.vendor = self.vendor
 		self.column.append((ModificationType.ADD, self.table, name, column))
-	
+
 	def drop(self, name:str, column:Column=None) :
 		"""
 		Drop a column from the existing Model.
-		
+
 		Parameters
 		----------
 		name: str  name of the column to drop
 		"""
 		self.column.append((ModificationType.DROP, self.table, name, column))
-	
+
 	def rename(self, oldName:str, newName:str) :
 		"""
 		Rename a column in the existing Model.
-		
+
 		Parameters
 		----------
-		oldName: str  name of the existing column 
-		newName: str  desired new name of the existing column 
+		oldName: str  name of the existing column
+		newName: str  desired new name of the existing column
 		"""
 		self.column.append((ModificationType.RENAME, self.table, oldName, newName))
-	
+
 	def changeType(self, name:str, column:Column) :
 		"""
 		Change type of the given column in the existing Model.
@@ -148,8 +148,8 @@ class Modification :
 
 		NOTE 2) For change length of StringColumn from l<256 to l=-1,
 		it means that the type of column will be changed.
-		Instead of calling changeLength(), changeType will be called. 
-		
+		Instead of calling changeLength(), changeType will be called.
+
 		Parameters
 		----------
 		name: str  name of the column to change type
@@ -163,7 +163,7 @@ class Modification :
 		if column.__class__ != existingColumn.__class__ and column.__class__ not in existingColumn.compatible :
 			raise ValueError(f'Column {existingColumn.__class__.__name__} cannot be changed to {column.__class__.__name__}.')
 		self.column.append((ModificationType.CHANGE_TYPE, self.table, name, column))
-	
+
 	def changeLength(self, name:str, length:int) :
 		"""
 		Change length of the given StringColumn in the existing Model.
@@ -172,8 +172,8 @@ class Modification :
 
 		NOTE 2) For change length of StringColumn from l<256 to l=-1,
 		it means that the type of column will be changed.
-		Instead of calling changeLength(), changeType will be called. 
-		
+		Instead of calling changeLength(), changeType will be called.
+
 		Parameters
 		----------
 		name: str  name of the column to change type
@@ -187,7 +187,7 @@ class Modification :
 		existingColumn.length = length if length > existingColumn.length else existingColumn.length
 		existingColumn.vendor = self.vendor
 		self.column.append((ModificationType.CHANGE_LENGTH, self.table, name, existingColumn))
-	
+
 	def addIndex(self, name:str) :
 		"""
 		Add index to the given column in the existing Model.
@@ -199,7 +199,7 @@ class Modification :
 		if name not in self.meta :
 			raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
 		self.column.append((ModificationType.ADD_INDEX, self.table, name))
-	
+
 	def dropIndex(self, name:str) :
 		"""
 		Drop index from the given column in the existing Model.
@@ -211,7 +211,7 @@ class Modification :
 		if name not in self.meta :
 			raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
 		self.column.append((ModificationType.DROP_INDEX, self.table, name))
-	
+
 	def generateQuery(self) -> List[str] :
 		generated = []
 		for column in self.column :
@@ -225,20 +225,18 @@ class Modification :
 		return generated
 
 	def reverse(self, t: tuple) -> None:
-		if t[0] == ModificationType.ADD:
-			self.drop(t[2])
-		elif t[0] == ModificationType.DROP:
-			self.add(t[2], t[3])
-		elif t[0] == ModificationType.RENAME:
-			self.rename(t[3], t[2])
-		elif t[0] == ModificationType.CHANGE_TYPE:
-			# TODO: check compatibility
-			self.changeType(t[2], t[3])
-		elif t[0] == ModificationType.CHANGE_LENGTH:
-			self.changeLength(t[2], 0)  # always increase length
-		elif t[0] == ModificationType.ADD_INDEX:
-			self.dropIndex(t[2])
-		elif t[0] == ModificationType.DROP_INDEX:
-			self.addIndex(t[2])
-		else:
+		reverse_modification = {
+			ModificationType.ADD: self.drop,
+			ModificationType.DROP: self.add,
+			ModificationType.RENAME: lambda old, new: self.rename(new, old),
+			ModificationType.CHANGE_TYPE: self.changeType,
+			ModificationType.CHANGE_LENGTH: lambda name, _: self.changeLength(name, 0),
+			ModificationType.ADD_INDEX: self.dropIndex,
+			ModificationType.DROP_INDEX: self.addIndex
+		}
+
+		modification = reverse_modification.get(t[0])
+		if modification is None:
 			raise ValueError(f'Unknown modification type {t[0]}')
+
+		modification(*t[2:])
