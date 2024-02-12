@@ -171,11 +171,7 @@ class Record :
 	def analyzeModifications(self, modifications: List[Modification]) -> List[ModificationException]:
 		modification_exceptions: List[ModificationException] = []
 		for modification in modifications:
-			try:
-				modification.analyze()
-			except ModificationException as e:
-				modification_exceptions.append(e)
-
+			modification_exceptions.extend(modification.analyze())
 		return modification_exceptions
 
 	def createCheckout(self, destination: str) -> None:

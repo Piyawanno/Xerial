@@ -12,7 +12,8 @@ from xerial.Vendor import Vendor
 from typing import List
 from packaging.version import Version
 
-from xerial.exception.FloatToIntException import FloatToIntException
+from xerial.exception.DateTimeToDateException import DateTimeToDateException
+from xerial.exception.ModificationException import ModificationException
 from xerial.exception.TypeIncompatibleException import TypeIncompatibleException
 
 StringColumn.compatible = {JSONColumn}
@@ -244,17 +245,29 @@ class Modification :
 
 		modification(*t[2:])
 
+	def analyze(self) -> List[ModificationException]:
+		modification_exceptions: List[ModificationException] = []
+		for modification in self.column:
+			exception = self.analyze_tuple(modification, self.meta.get(modification[2]))
+			if exception is not None:
+				modification_exceptions.append(exception)
+
+		return modification_exceptions
+
 	@staticmethod
-	def analyze(self, modification: tuple) -> None:
+	def analyze_tuple(modification: tuple, existing_column: Column) -> ModificationException | None:
 		if modification[0] == ModificationType.CHANGE_TYPE:
 			name = modification[2]
 			new_column = modification[3].__class__
-			existing_column = self.meta.get(name, None)
 
 			if new_column not in existing_column.compatible:
-				raise TypeIncompatibleException(name, existing_column.__class__.__name__, new_column.__name__)
+				return TypeIncompatibleException(
+					name,
+					existing_column.__class__.__name__,
+					new_column.__name__
+				)
 
-			if new_column == IntegerColumn and existing_column.__class__ == FloatColumn:
-				raise FloatToIntException(name)
+			if new_column == DateColumn and existing_column.__class__ == DateTimeColumn:
+				return DateTimeToDateException(name)
 
 		return None
