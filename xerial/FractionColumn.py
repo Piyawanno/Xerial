@@ -35,6 +35,11 @@ class FractionColumn (Column) :
 		return Fraction(raw)
 	
 	def toDict(self, attribute):
+		if attribute is None :
+			return None
+		elif isinstance(attribute, str) :
+			attribute = Fraction(attribute)
+
 		return f"{attribute.numerator}/{attribute.denominator}"
 	
 	def fromDict(self, data) :
