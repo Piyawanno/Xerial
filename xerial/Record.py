@@ -155,7 +155,18 @@ class Record :
 		)
 		modelClass.__modification__.append(modification)
 		return modification
-	
+
+	def createCheckout(self, destination: str):
+		modelClass = self.__class__
+		if not hasattr(modelClass, '__modification__'):
+			return
+
+		for existing_modification in modelClass.__modification__.reverse():
+			if existing_modification.version > destination:
+				modification = self.createModification(existing_modification.version + '_reverse')
+				for column in existing_modification.column:
+					modification.reverse(column)
+
 	def modify(self) :
 		"""
 		A placeholder method for Structure Modification. By calling

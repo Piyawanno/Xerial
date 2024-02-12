@@ -117,7 +117,7 @@ class Modification :
 		column.vendor = self.vendor
 		self.column.append((ModificationType.ADD, self.table, name, column))
 	
-	def drop(self, name:str) :
+	def drop(self, name:str, column:Column=None) :
 		"""
 		Drop a column from the existing Model.
 		
@@ -125,7 +125,7 @@ class Modification :
 		----------
 		name: str  name of the column to drop
 		"""
-		self.column.append((ModificationType.DROP, self.table, name))
+		self.column.append((ModificationType.DROP, self.table, name, column))
 	
 	def rename(self, oldName:str, newName:str) :
 		"""
@@ -184,7 +184,7 @@ class Modification :
 			raise ValueError(f'Column name {name} does not exist. Length cannot be changed.')
 		if not isinstance(existingColumn, StringColumn) :
 			raise ValueError(f'Column name {name} is not StringColumn. Length cannot be changed.')
-		existingColumn.length = length
+		existingColumn.length = length if length > existingColumn.length else existingColumn.length
 		existingColumn.vendor = self.vendor
 		self.column.append((ModificationType.CHANGE_LENGTH, self.table, name, existingColumn))
 	
@@ -223,3 +223,22 @@ class Modification :
 			else :
 				generated.append(self.generator[column[0]](*column[1:]))
 		return generated
+
+	def reverse(self, t: tuple) -> None:
+		if t[0] == ModificationType.ADD:
+			self.drop(t[2])
+		elif t[0] == ModificationType.DROP:
+			self.add(t[2], t[3])
+		elif t[0] == ModificationType.RENAME:
+			self.rename(t[3], t[2])
+		elif t[0] == ModificationType.CHANGE_TYPE:
+			# TODO: check compatibility
+			self.changeType(t[2], t[3])
+		elif t[0] == ModificationType.CHANGE_LENGTH:
+			self.changeLength(t[2], 0)  # always increase length
+		elif t[0] == ModificationType.ADD_INDEX:
+			self.dropIndex(t[2])
+		elif t[0] == ModificationType.DROP_INDEX:
+			self.addIndex(t[2])
+		else:
+			raise ValueError(f'Unknown modification type {t[0]}')
