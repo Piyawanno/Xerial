@@ -156,16 +156,17 @@ class Record :
 		modelClass.__modification__.append(modification)
 		return modification
 
-	def createCheckout(self, destination: str):
-		modelClass = self.__class__
-		if not hasattr(modelClass, '__modification__'):
-			return
+	def createCheckout(self, destination: str) -> None:
+		modifications = reversed(getattr(self.__class__, '__modification__', []))
+		modifications_to_reverse: List[Modification] = [
+			modification for modification in modifications
+			if modification.version > destination
+		]
 
-		for existing_modification in modelClass.__modification__.reverse():
-			if existing_modification.version > destination:
-				modification = self.createModification(existing_modification.version + '_reverse')
-				for column in existing_modification.column:
-					modification.reverse(column)
+		for existing_modification in modifications_to_reverse:
+			reversed_modification = self.createModification(f'{existing_modification.version.__str__()}_reverse')
+			for column in existing_modification.column:
+				reversed_modification.reverse(column)
 
 	def modify(self) :
 		"""
