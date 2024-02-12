@@ -29,7 +29,7 @@ def generateColumn(column, hasDefault=True) :
 		default = ""
 	return f"{column.getDBDataType()} {default} {notNull}"
 
-__POSTGRESQL_GERNARATOR__ = {
+__POSTGRESQL_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
@@ -39,7 +39,7 @@ __POSTGRESQL_GERNARATOR__ = {
 	ModificationType.DROP_INDEX : lambda t, n : f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__ORACLE_GERNARATOR__ = {
+__ORACLE_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
@@ -49,7 +49,7 @@ __ORACLE_GERNARATOR__ = {
 	ModificationType.DROP_INDEX : lambda t, n : f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__MARIADB_GERNARATOR__ = {
+__MARIADB_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
@@ -59,7 +59,7 @@ __MARIADB_GERNARATOR__ = {
 	ModificationType.DROP_INDEX : lambda t, n : f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__SQLITE_GERNARATOR__ = {
+__SQLITE_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
@@ -69,7 +69,7 @@ __SQLITE_GERNARATOR__ = {
 	ModificationType.DROP_INDEX : lambda t, n : f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__MSSQL_GERNARATOR__ = {
+__MSSQL_GENERATOR__ = {
 	ModificationType.ADD : lambda t, n, c : f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
 	ModificationType.DROP : lambda t, n : f'',
 	ModificationType.RENAME : lambda t, o, n : f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}', 
@@ -80,12 +80,12 @@ __MSSQL_GERNARATOR__ = {
 }
 
 __GENERATOR__ = {
-	Vendor.POSTGRESQL : __POSTGRESQL_GERNARATOR__,
-	Vendor.MARIADB : __MARIADB_GERNARATOR__,
-	Vendor.MYSQL : __MARIADB_GERNARATOR__,
-	Vendor.ORACLE : __ORACLE_GERNARATOR__,
-	Vendor.SQLITE : __SQLITE_GERNARATOR__,
-	Vendor.MSSQL : __MSSQL_GERNARATOR__,
+	Vendor.POSTGRESQL : __POSTGRESQL_GENERATOR__,
+	Vendor.MARIADB : __MARIADB_GENERATOR__,
+	Vendor.MYSQL : __MARIADB_GENERATOR__,
+	Vendor.ORACLE : __ORACLE_GENERATOR__,
+	Vendor.SQLITE : __SQLITE_GENERATOR__,
+	Vendor.MSSQL : __MSSQL_GENERATOR__,
 }
 
 class Modification :
