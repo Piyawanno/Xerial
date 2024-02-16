@@ -160,15 +160,15 @@ class Record :
 		return modification
 
 	def getScopedModification(self, destination: str) -> List[Modification]:
-		modifications = reversed(getattr(self.__class__, '__modification__', []))
 		return [
 			modification
 			for modification
-			in modifications
+			in reversed(getattr(self.__class__, '__modification__', []))
 			if modification.version > destination
 		]
 
-	def analyzeModifications(self, modifications: List[Modification]) -> List[ModificationException]:
+	@staticmethod
+	def analyzeModifications(modifications: List[Modification]) -> List[ModificationException]:
 		modification_exceptions: List[ModificationException] = []
 		for modification in modifications:
 			modification_exceptions.extend(modification.analyze())
