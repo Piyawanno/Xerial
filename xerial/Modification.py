@@ -142,7 +142,7 @@ class Modification :
 		"""
 		self.column.append((ModificationType.RENAME, self.table, oldName, newName))
 
-	def changeType(self, name:str, column:Column) :
+	def changeType(self, name:str, oldColumn:Column, newColumn:Column) :
 		"""
 		Change type of the given column in the existing Model.
 
@@ -159,14 +159,20 @@ class Modification :
 		name: str  name of the column to change type
 		column: Column attribute of the column to change
 		"""
-		column.name = name
-		column.vendor = self.vendor
+		newColumn.name = name
+		newColumn.vendor = self.vendor
 		existingColumn = self.meta.get(name, None)
 		if existingColumn is None :
 			raise ValueError(f'Column name {name} does not exist. Type cannot be changed.')
-		if column.__class__ != existingColumn.__class__ and column.__class__ not in existingColumn.compatible :
-			raise ValueError(f'Column {existingColumn.__class__.__name__} cannot be changed to {column.__class__.__name__}.')
-		self.column.append((ModificationType.CHANGE_TYPE, self.table, name, column))
+		if existingColumn.__class__ == oldColumn.__class__ :
+			raise ValueError(
+				f'Current column type for {name} is {existingColumn.__class__.__name__} not {oldColumn.__class__.__name__}.'
+			)
+		if newColumn.__class__ != existingColumn.__class__ and newColumn.__class__ not in existingColumn.compatible :
+			raise ValueError(
+				f'Column {existingColumn.__class__.__name__} cannot be changed to {newColumn.__class__.__name__}.'
+			)
+		self.column.append((ModificationType.CHANGE_TYPE, self.table, name, oldColumn, newColumn))
 
 	def changeLength(self, name:str, length:int) :
 		"""
@@ -233,7 +239,7 @@ class Modification :
 			ModificationType.ADD: self.drop,
 			ModificationType.DROP: self.add,
 			ModificationType.RENAME: lambda old, new: self.rename(new, old),
-			ModificationType.CHANGE_TYPE: self.changeType,
+			ModificationType.CHANGE_TYPE: lambda name, old, new: self.changeType(name, new, old),
 			ModificationType.CHANGE_LENGTH: lambda name, _: self.changeLength(name, 0),
 			ModificationType.ADD_INDEX: self.dropIndex,
 			ModificationType.DROP_INDEX: self.addIndex
