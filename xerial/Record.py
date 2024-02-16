@@ -174,10 +174,15 @@ class Record :
 			modification_exceptions.extend(modification.analyze())
 		return modification_exceptions
 
-	def createCheckout(self, destination: str) -> None:
+	def createCheckout(self, destination: str, skip: dict = {}) -> None:
 		for existing_modification in self.getScopedModification(destination):
-			reversed_modification = self.createModification(f'{existing_modification.version.__str__()}_reverse')
+			existing_version = existing_modification.version.__str__()
+			reversed_modification = self.createModification(
+				version=f'{existing_version}_reverse'
+			)
 			for column in existing_modification.column:
+				if existing_version in skip and column in skip[existing_version]:
+					continue
 				reversed_modification.reverse(column)
 
 	def modify(self) :
