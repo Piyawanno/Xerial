@@ -15,6 +15,8 @@ from packaging.version import Version
 from xerial.exception.DateTimeToDateException import DateTimeToDateException
 from xerial.exception.ModificationException import ModificationException
 from xerial.exception.TypeIncompatibleException import TypeIncompatibleException
+from xerial.modification.ModificationTuple.ModificationTuple import ModificationTuple
+from xerial.modification.ModificationTuple.ModificationTupleFactory import ModificationTupleFactory
 
 StringColumn.compatible = {JSONColumn}
 JSONColumn.compatible = {StringColumn}
@@ -98,7 +100,7 @@ class Modification :
 		self.table = table
 		self.meta = {k:v for k, v in meta}
 		self.vendor = vendor
-		self.column = []
+		self.column = List[ModificationTuple]
 		self.generator = __GENERATOR__[vendor]
 		self.schema = None
 
@@ -119,9 +121,17 @@ class Modification :
 		"""
 		column.name = name
 		column.vendor = self.vendor
-		self.column.append((ModificationType.ADD, self.table, name, column))
+		modification_tuple = ModificationTupleFactory.create(
+			self.table,
+			self.version.__str__(),
+			ModificationType.ADD,
+			name,
+			column
+		)
+		self.column.append(modification_tuple.tuple())
+		return modification_tuple.__str__()
 
-	def drop(self, name:str, column:Column=None) :
+	def drop(self, name:str, column:Column=None) -> str | None:
 		"""
 		Drop a column from the existing Model.
 
@@ -129,9 +139,17 @@ class Modification :
 		----------
 		name: str  name of the column to drop
 		"""
-		self.column.append((ModificationType.DROP, self.table, name, column))
+		modification_tuple = ModificationTupleFactory.create(
+			self.table,
+			self.version.__str__(),
+			ModificationType.DROP,
+			name,
+			column
+		)
+		self.column.append(modification_tuple.tuple())
+		return modification_tuple.__str__()
 
-	def rename(self, oldName:str, newName:str) :
+	def rename(self, oldName:str, newName:str) -> str | None:
 		"""
 		Rename a column in the existing Model.
 
@@ -140,9 +158,17 @@ class Modification :
 		oldName: str  name of the existing column
 		newName: str  desired new name of the existing column
 		"""
-		self.column.append((ModificationType.RENAME, self.table, oldName, newName))
+		modification_tuple = ModificationTupleFactory.create(
+			self.table,
+			self.version.__str__(),
+			ModificationType.RENAME,
+			oldName,
+			newName
+		)
+		self.column.append(modification_tuple.tuple())
+		return modification_tuple.__str__()
 
-	def changeType(self, name:str, oldColumn:Column, newColumn:Column) :
+	def changeType(self, name:str, oldColumn:Column, newColumn:Column) -> str | None:
 		"""
 		Change type of the given column in the existing Model.
 
@@ -168,11 +194,20 @@ class Modification :
 			raise ValueError(
 				f'Current column type for {name} is {existingColumn.__class__.__name__} not {oldColumn.__class__.__name__}.'
 			)
-		if newColumn.__class__ != existingColumn.__class__ and newColumn.__class__ not in existingColumn.compatible :
+		if newColumn.__class__ != existingColumn.__class__ and newColumn.__class__ not in existingColumn.compatible:
 			raise ValueError(
 				f'Column {existingColumn.__class__.__name__} cannot be changed to {newColumn.__class__.__name__}.'
 			)
-		self.column.append((ModificationType.CHANGE_TYPE, self.table, name, oldColumn, newColumn))
+		modification_tuple = ModificationTupleFactory.create(
+			self.table,
+			self.version.__str__(),
+			ModificationType.CHANGE_TYPE,
+			name,
+			oldColumn,
+			newColumn
+		)
+		self.column.append(modification_tuple.tuple())
+		return modification_tuple.__str__()
 
 	def changeLength(self, name:str, length:int) :
 		"""
@@ -196,9 +231,17 @@ class Modification :
 			raise ValueError(f'Column name {name} is not StringColumn. Length cannot be changed.')
 		existingColumn.length = length if length > existingColumn.length else existingColumn.length
 		existingColumn.vendor = self.vendor
-		self.column.append((ModificationType.CHANGE_LENGTH, self.table, name, existingColumn))
+		modification_tuple = ModificationTupleFactory.create(
+			self.table,
+			self.version.__str__(),
+			ModificationType.CHANGE_LENGTH,
+			name,
+			existingColumn
+		)
+		self.column.append(modification_tuple.tuple())
+		return modification_tuple.__str__()
 
-	def addIndex(self, name:str) :
+	def addIndex(self, name:str) -> str | None:
 		"""
 		Add index to the given column in the existing Model.
 
@@ -208,9 +251,16 @@ class Modification :
 		"""
 		if name not in self.meta :
 			raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
-		self.column.append((ModificationType.ADD_INDEX, self.table, name))
+		modification_tuple = ModificationTupleFactory.create(
+			self.table,
+			self.version.__str__(),
+			ModificationType.ADD_INDEX,
+			name
+		)
+		self.column.append(modification_tuple)
+		return modification_tuple.__str__()
 
-	def dropIndex(self, name:str) :
+	def dropIndex(self, name:str) -> str | None:
 		"""
 		Drop index from the given column in the existing Model.
 
@@ -220,7 +270,14 @@ class Modification :
 		"""
 		if name not in self.meta :
 			raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
-		self.column.append((ModificationType.DROP_INDEX, self.table, name))
+		modification_tuple = ModificationTupleFactory.create(
+			self.table,
+			self.version.__str__(),
+			ModificationType.DROP_INDEX,
+			name
+		)
+		self.column.append(modification_tuple)
+		return modification_tuple.__str__()
 
 	def generateQuery(self) -> List[str] :
 		generated = []
@@ -234,7 +291,7 @@ class Modification :
 				generated.append(self.generator[column[0]](*column[1:]))
 		return generated
 
-	def reverse(self, t: tuple) -> None:
+	def reverse(self, t: ModificationTuple) -> None:
 		reverse_modification = {
 			ModificationType.ADD: self.drop,
 			ModificationType.DROP: self.add,
@@ -245,11 +302,11 @@ class Modification :
 			ModificationType.DROP_INDEX: self.addIndex
 		}
 
-		modification = reverse_modification.get(t[0])
+		modification = reverse_modification.get(t.modification_type)
 		if modification is None:
-			raise ValueError(f'Unknown modification type {t[0]}')
+			raise ValueError(f'Unknown modification type {t.modification_type}')
 
-		modification(*t[2:])
+		modification(*t.reverse_args())
 
 	def analyze(self) -> List[ModificationException]:
 		modification_exceptions: List[ModificationException] = []

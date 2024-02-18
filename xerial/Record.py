@@ -1,6 +1,7 @@
 from xerial.Column import Column
 from xerial.Input import Input
 from xerial.Modification import Modification
+from xerial.ModificationType import ModificationType
 from xerial.Vendor import Vendor
 from xerial.InputExtractor import InputExtractor
 from xerial.MetaDataExtractor import MetaDataExtractor
@@ -174,16 +175,15 @@ class Record :
 			modification_exceptions.extend(modification.analyze())
 		return modification_exceptions
 
-	def createCheckout(self, destination: str, skip=None) -> None:
-		if skip is None:
-			skip = {}
+	def createCheckout(self, destination: str, skip: List[str] = None) -> None:
 		for existing_modification in self.getScopedModification(destination):
 			existing_version = existing_modification.version.__str__()
 			reversed_modification = self.createModification(
 				version=f'{existing_version}_reverse'
 			)
 			for column in existing_modification.column:
-				if existing_version in skip and column in skip[existing_version]:
+				skip_key = column.__str__()
+				if skip is not None and skip_key in skip:
 					continue
 				reversed_modification.reverse(column)
 
