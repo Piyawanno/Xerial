@@ -100,7 +100,7 @@ class Modification :
 		self.table = table
 		self.meta = {k:v for k, v in meta}
 		self.vendor = vendor
-		self.column = List[ModificationTuple]
+		self.column: List[ModificationTuple] = []
 		self.generator = __GENERATOR__[vendor]
 		self.schema = None
 
@@ -128,7 +128,7 @@ class Modification :
 			name,
 			column
 		)
-		self.column.append(modification_tuple.tuple())
+		self.column.append(modification_tuple)
 		return modification_tuple.__str__()
 
 	def drop(self, name:str, column:Column=None) -> str | None:
@@ -146,7 +146,7 @@ class Modification :
 			name,
 			column
 		)
-		self.column.append(modification_tuple.tuple())
+		self.column.append(modification_tuple)
 		return modification_tuple.__str__()
 
 	def rename(self, oldName:str, newName:str) -> str | None:
@@ -165,7 +165,7 @@ class Modification :
 			oldName,
 			newName
 		)
-		self.column.append(modification_tuple.tuple())
+		self.column.append(modification_tuple)
 		return modification_tuple.__str__()
 
 	def changeType(self, name:str, oldColumn:Column, newColumn:Column) -> str | None:
@@ -206,7 +206,7 @@ class Modification :
 			oldColumn,
 			newColumn
 		)
-		self.column.append(modification_tuple.tuple())
+		self.column.append(modification_tuple)
 		return modification_tuple.__str__()
 
 	def changeLength(self, name:str, length:int) :
@@ -238,7 +238,7 @@ class Modification :
 			name,
 			existingColumn
 		)
-		self.column.append(modification_tuple.tuple())
+		self.column.append(modification_tuple)
 		return modification_tuple.__str__()
 
 	def addIndex(self, name:str) -> str | None:
@@ -281,7 +281,8 @@ class Modification :
 
 	def generateQuery(self) -> List[str] :
 		generated = []
-		for column in self.column :
+		for c in self.column :
+			column = c.tuple()
 			if len(column) > 3 and isinstance(column[3], Children) : continue
 			if self.schema is not None :
 				parameter = list(column)
