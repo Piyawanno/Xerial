@@ -24,5 +24,5 @@ class ModificationTuple:
     def reverse_args(self) -> tuple:
         raise NotImplementedError('This method must be overridden in a subclass.')
 
-    def analyze(self) -> ModificationException:
-        raise NotImplementedError('This method must be overridden in a subclass.')
+    def analyze(self) -> ModificationException or None:
+        return None
