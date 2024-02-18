@@ -1,4 +1,5 @@
 from xerial.ModificationType import ModificationType
+from xerial.exception.ModificationException import ModificationException
 
 
 class ModificationTuple:
@@ -21,4 +22,7 @@ class ModificationTuple:
         return self.base_tuple()
 
     def reverse_args(self) -> tuple:
+        raise NotImplementedError('This method must be overridden in a subclass.')
+
+    def analyze(self) -> ModificationException:
         raise NotImplementedError('This method must be overridden in a subclass.')

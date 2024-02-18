@@ -288,6 +288,7 @@ class Modification :
 				parameter = list(column)
 				parameter[1] = f'{self.schema}{self.table}'
 				generated.append(self.generator[parameter[0]](*parameter[1:]))
+				# TODO: Fix this parameter ^
 			else :
 				generated.append(self.generator[column[0]](*column[1:]))
 		return generated
@@ -310,28 +311,9 @@ class Modification :
 		modification(*t.reverse_args())
 
 	def analyze(self) -> List[ModificationException]:
-		modification_exceptions: List[ModificationException] = []
-		for modification in self.column:
-			exception = self.analyze_tuple(modification, self.meta.get(modification[2]))
-			if exception is not None:
-				modification_exceptions.append(exception)
-
-		return modification_exceptions
-
-	@staticmethod
-	def analyze_tuple(modification: tuple, existing_column: Column) -> ModificationException | None:
-		if modification[0] == ModificationType.CHANGE_TYPE:
-			name = modification[2]
-			new_column = modification[3].__class__
-
-			if new_column not in existing_column.compatible:
-				return TypeIncompatibleException(
-					name,
-					existing_column.__class__.__name__,
-					new_column.__name__
-				)
-
-			if new_column == DateColumn and existing_column.__class__ == DateTimeColumn:
-				return DateTimeToDateException(name)
-
-		return None
+		return [
+			exception
+			for modification_tuple
+			in self.column
+			if (exception := modification_tuple.analyze()) is not None
+		]
