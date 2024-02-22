@@ -5,10 +5,10 @@ from xerial.ModificationType import ModificationType
 from xerial.exception.DateTimeToDateException import DateTimeToDateException
 from xerial.exception.ModificationException import ModificationException
 from xerial.exception.TypeIncompatibleException import TypeIncompatibleException
-from xerial.modification.ModificationTuple.ModificationTuple import ModificationTuple
+from xerial.modification.ModificationActon.ModificationAction import ModificationAction
 
 
-class ChangeTypeModificationTuple(ModificationTuple):
+class ChangeTypeModificationAction(ModificationAction):
     def __init__(self, table: str, version: str, name: str, old_column: Column, new_column: Column) -> None:
         super().__init__(table, version, ModificationType.CHANGE_TYPE, name)
         self.old_column = old_column

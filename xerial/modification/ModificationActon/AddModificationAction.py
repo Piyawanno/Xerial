@@ -1,9 +1,9 @@
 from xerial.Column import Column
 from xerial.ModificationType import ModificationType
-from xerial.modification.ModificationTuple.ModificationTuple import ModificationTuple
+from xerial.modification.ModificationActon.ModificationAction import ModificationAction
 
 
-class AddModificationTuple(ModificationTuple):
+class AddModificationAction(ModificationAction):
     def __init__(self, table: str, version: str, name: str, column: Column) -> None:
         super().__init__(table, version, ModificationType.ADD, name)
         self.column = column

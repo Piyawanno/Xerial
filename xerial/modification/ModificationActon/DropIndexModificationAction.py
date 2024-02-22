@@ -1,8 +1,8 @@
 from xerial.ModificationType import ModificationType
-from xerial.modification.ModificationTuple.ModificationTuple import ModificationTuple
+from xerial.modification.ModificationActon.ModificationAction import ModificationAction
 
 
-class DropIndexModificationTuple(ModificationTuple):
+class DropIndexModificationAction(ModificationAction):
     def __init__(self, table: str, version: str, name: str) -> None:
         super().__init__(table, version, ModificationType.DROP_INDEX, name)
 

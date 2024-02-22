@@ -12,11 +12,9 @@ from xerial.Vendor import Vendor
 from typing import List
 from packaging.version import Version
 
-from xerial.exception.DateTimeToDateException import DateTimeToDateException
 from xerial.exception.ModificationException import ModificationException
-from xerial.exception.TypeIncompatibleException import TypeIncompatibleException
-from xerial.modification.ModificationTuple.ModificationTuple import ModificationTuple
-from xerial.modification.ModificationTuple.ModificationTupleFactory import ModificationTupleFactory
+from xerial.modification.ModificationActon.ModificationAction import ModificationAction
+from xerial.modification.ModificationActon.ModificationActionFactory import ModificationTupleFactory
 
 StringColumn.compatible = {JSONColumn}
 JSONColumn.compatible = {StringColumn}
@@ -100,7 +98,7 @@ class Modification :
 		self.table = table
 		self.meta = {k:v for k, v in meta}
 		self.vendor = vendor
-		self.column: List[ModificationTuple] = []
+		self.column: List[ModificationAction] = []
 		self.generator = __GENERATOR__[vendor]
 		self.schema = None
 
@@ -293,7 +291,7 @@ class Modification :
 				generated.append(self.generator[column[0]](*column[1:]))
 		return generated
 
-	def reverse(self, t: ModificationTuple) -> None:
+	def reverse(self, t: ModificationAction) -> None:
 		reverse_modification = {
 			ModificationType.ADD: self.drop,
 			ModificationType.DROP: self.add,

@@ -2,7 +2,7 @@ from xerial.ModificationType import ModificationType
 from xerial.exception.ModificationException import ModificationException
 
 
-class ModificationTuple:
+class ModificationAction:
     def __init__(self, table: str, version: str, modification_type: ModificationType, column_name: str) -> None:
         self.table = table
         self.version = version

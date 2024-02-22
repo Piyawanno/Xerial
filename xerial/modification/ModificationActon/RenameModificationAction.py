@@ -1,8 +1,8 @@
 from xerial.ModificationType import ModificationType
-from xerial.modification.ModificationTuple.ModificationTuple import ModificationTuple
+from xerial.modification.ModificationActon.ModificationAction import ModificationAction
 
 
-class RenameModificationTuple(ModificationTuple):
+class RenameModificationAction(ModificationAction):
     def __init__(self, table: str, version: str, old_name: str, new_name: str) -> None:
         super().__init__(table, version, ModificationType.RENAME, old_name)
         self.new_name = new_name
