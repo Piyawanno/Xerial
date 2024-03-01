@@ -6,11 +6,14 @@ from xerial.StringColumn import StringColumn
 
 
 class Student(Record):
+    # id = IntegerColumn(isPrimary=True)  # modification3-rename
     studentID = IntegerColumn(isPrimary=True)
     firstName = StringColumn(length=150)
     lastName = StringColumn(length=150)
     joined = DateColumn()
-    gpax = FloatColumn()
+    # age = IntegerColumn()  # modification2-drop
+    # gpax = IntegerColumn()  # modification2-changeType old
+    gpax = FloatColumn()  # modification2-changeType new
 
     def modify(self):
         modification = self.createModification("1")
@@ -24,6 +27,7 @@ class Student(Record):
             newColumn=FloatColumn()
         )  # changeType need OLD Column and NEW Column now
         modification.drop("age", IntegerColumn())  # drop need Column object now
+
         modification = self.createModification("3")
         modification.rename("id", "studentID")
 
@@ -31,3 +35,16 @@ class Student(Record):
             destination="1",
             skip=[example_skip_key],
         )
+
+
+# Generated code, not preferred to implement
+
+student = Student()
+
+# Rollback of modification 3
+student.id = student.studentID
+student.studentID = None
+
+# Rollback of modification 2
+student.age = IntegerColumn()
+student.gpax = IntegerColumn()
