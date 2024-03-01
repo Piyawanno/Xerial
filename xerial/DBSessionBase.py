@@ -237,15 +237,6 @@ class DBSessionBase :
 				queryList.append((i.version, i.generateQuery()))
 		return queryList
 
-	def getAllModification(self) -> List[Modification]:
-		modifications = []
-		for model in self.model.values():
-			if not hasattr(model, '__modification__'):
-				continue
-			for modification in model.__modification__:
-				modifications.append(modification)
-		return modifications
-
 	def prepareStatement(self, modelClass) :
 		pass
 
