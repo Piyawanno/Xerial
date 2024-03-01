@@ -168,6 +168,9 @@ class Record :
 			if modification.version > destination
 		]
 
+	def getLatestModification(self) -> Modification:
+		return getattr(self.__class__, '__modification__', [None])[-1]
+
 	@staticmethod
 	def analyzeModifications(modifications: List[Modification]) -> List[ModificationException]:
 		modification_exceptions: List[ModificationException] = []
@@ -177,9 +180,9 @@ class Record :
 
 	def createCheckout(self, destination: str, skip: List[str] = None) -> None:
 		for existing_modification in self.getScopedModification(destination):
-			existing_version = existing_modification.version.__str__()
+			latest_breaking_version: int = self.getLatestModification().version
 			reversed_modification = self.createModification(
-				version=f'{existing_version}_reverse'
+				version=str(latest_breaking_version + 1)
 			)
 			for column in existing_modification.column:
 				skip_key = column.__str__()
