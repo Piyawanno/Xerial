@@ -279,14 +279,13 @@ class Modification :
 
 	def generateQuery(self) -> List[str] :
 		generated = []
-		for c in self.column :
-			column = c.tuple()
+		for action in self.column :
+			column = action.tuple()
 			if len(column) > 3 and isinstance(column[3], Children) : continue
 			if self.schema is not None :
 				parameter = list(column)
 				parameter[1] = f'{self.schema}{self.table}'
-				generated.append(self.generator[parameter[0]](*parameter[1:]))
-				# TODO: Fix this parameter ^
+				generated.append(self.generator[column[0]](*parameter[1:]))
 			else :
 				generated.append(self.generator[column[0]](*column[1:]))
 		return generated
