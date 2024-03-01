@@ -1,13 +1,12 @@
 from xerial.DateColumn import DateColumn
 from xerial.FloatColumn import FloatColumn
 from xerial.IntegerColumn import IntegerColumn
-from xerial.ModificationType import ModificationType
 from xerial.Record import Record
 from xerial.StringColumn import StringColumn
 
 
 class Student(Record):
-    studentID = IntegerColumn(isPrimary=True, isAutoIncrement=True)
+    studentID = IntegerColumn(isPrimary=True)
     firstName = StringColumn(length=150)
     lastName = StringColumn(length=150)
     joined = DateColumn()
