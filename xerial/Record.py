@@ -171,24 +171,17 @@ class Record :
 	def getLatestModification(self) -> Modification:
 		return getattr(self.__class__, '__modification__', [None])[-1]
 
-	@staticmethod
-	def analyzeModifications(modifications: List[Modification]) -> List[ModificationException]:
-		modification_exceptions: List[ModificationException] = []
-		for modification in modifications:
-			modification_exceptions.extend(modification.analyze())
-		return modification_exceptions
-
 	def createCheckout(self, destination: str, skip: List[str] = None) -> None:
-		for existing_modification in self.getScopedModification(destination):
-			latest_breaking_version: int = self.getLatestModification().version
-			reversed_modification = self.createModification(
-				version=str(latest_breaking_version + 1)
+		for existingModification in self.getScopedModification(destination):
+			latestBreakingVersion: int = self.getLatestModification().version
+			reversedModification = self.createModification(
+				version=str(latestBreakingVersion + 1)
 			)
-			for column in existing_modification.column:
-				skip_key = column.__str__()
-				if skip is not None and skip_key in skip:
+			for column in existingModification.column:
+				skipKey = column.__str__()
+				if skip is not None and skipKey in skip:
 					continue
-				reversed_modification.reverse(column)
+				reversedModification.reverse(column)
 
 	def modify(self) :
 		"""
@@ -203,7 +196,7 @@ class Record :
 
 	def setAsChildrenOf(self) :
 		return None
-	
+
 	@staticmethod
 	def hasMeta(modelClass) :
 		hasMeta = hasattr(modelClass, 'meta')
@@ -296,3 +289,10 @@ class Record :
 		if column is None : return
 		if not hasattr(column, 'input') : return
 		column.input = input
+
+	@staticmethod
+	def analyzeModifications(modifications: List[Modification]) -> List[ModificationException]:
+		modificationExceptions: List[ModificationException] = []
+		for modification in modifications:
+			modificationExceptions.extend(modification.analyze())
+		return modificationExceptions
