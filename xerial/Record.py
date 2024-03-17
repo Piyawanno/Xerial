@@ -294,5 +294,5 @@ class Record :
 	def analyzeModifications(modifications: List[Modification]) -> List[ModificationException]:
 		modificationExceptions: List[ModificationException] = []
 		for modification in modifications:
-			modificationExceptions.extend(modification.analyze())
+			modificationExceptions += modification.analyze()
 		return modificationExceptions

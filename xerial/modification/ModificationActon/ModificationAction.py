@@ -1,3 +1,5 @@
+from typing import List
+
 from xerial.ModificationType import ModificationType
 from xerial.exception.ModificationException import ModificationException
 
@@ -24,5 +26,5 @@ class ModificationAction:
     def reverse_args(self) -> tuple:
         raise NotImplementedError('This method must be overridden in a subclass.')
 
-    def analyze(self) -> ModificationException or None:
-        return None
+    def analyze(self) -> List[ModificationException]:
+        return []

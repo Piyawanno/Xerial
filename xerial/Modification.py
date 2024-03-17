@@ -308,9 +308,7 @@ class Modification :
 		modification(*t.reverse_args())
 
 	def analyze(self) -> List[ModificationException]:
-		return [
-			exception
-			for modification_tuple
-			in self.column
-			if (exception := modification_tuple.analyze()) is not None
-		]
+		exceptions = []
+		for action in self.column:
+			exceptions.extend(action.analyze())
+		return exceptions
