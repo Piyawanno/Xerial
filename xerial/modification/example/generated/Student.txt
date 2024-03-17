@@ -1,19 +1,40 @@
-from xerial.DateColumn import DateColumn
-from xerial.FloatColumn import FloatColumn
-from xerial.IntegerColumn import IntegerColumn
-from xerial.Record import Record
-from xerial.StringColumn import StringColumn
-
-
 class Student(Record):
     id = IntegerColumn(isPrimary=True)
-    firstName = StringColumn(length=150)
-    lastName = StringColumn(length=150)
+    studentID = IntegerColumn(isPrimary=True)
+    firstName = StringColumn(length=100)
+    lastName = StringColumn(length=100)
     joined = DateColumn()
     age = IntegerColumn()
     gpax = IntegerColumn()
 
-    def modify(self):
-        modification = self.createModification("1")
-        modification.changeLength("firstName", 150)
-        modification.changeLength("lastName", 150)
+"""
+Please copy the entire class into the destination file and modify the class name as needed.
+
+NOTE: add/remove import statement as needed
+NOTE: run `gaimon-checkout --analyze` to get the CHANGELOG (will append the result to the end of this file)
+
+IMPORTANT 1: modify the following class to skip effective modification(s)
+IMPORTANT 2: change string length to maximum value if the length was changed from the destination class
+"""
+"""
+CHANGELOG
+GENERATED AT: 2021-08-25 14:00:00
+TABLE NAME: Student
+FREEZE VERSION (destination): 0
+
+EFFECTIVE MODIFICATION(S):
+    - modification: 3
+        - RENAME from "id" to "studentID"
+    - modification: 2
+        - ADD "age" column of type IntegerColumn
+        - CHANGE_TYPE of "gpax" from IntegerColumn to FloatColumn -> example case if not skipped
+            - [WARNING::TypeIncompatibleException] Unable to change type of column gpax from IntegerColumn to FloatColumn due to incompatible types, please consider skip this modification or else, the data precision will be lost
+
+SKIPPED MODIFICATION(S):
+    - modification: 2
+        - CHANGE_TYPE of "gpax" from IntegerColumn to FloatColumn -> example case if skipped
+    - modification: 1
+        - CHANGE_LENGTH of "firstName" from 100 to 150
+        - CHANGE_LENGTH of "lastName" from 100 to 150
+
+"""
