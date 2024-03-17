@@ -9,7 +9,7 @@ from xerial.modification.ModificationActon.ChangeTypeModificationAction import C
 from xerial.modification.ModificationActon.ChangeLengthModificationAction import ChangeLengthModificationAction
 
 
-class ModificationTupleFactory:
+class ModificationActionFactory:
     @staticmethod
     def create(
             table: str,

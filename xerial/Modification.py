@@ -14,7 +14,7 @@ from packaging.version import Version
 
 from xerial.exception.ModificationException import ModificationException
 from xerial.modification.ModificationActon.ModificationAction import ModificationAction
-from xerial.modification.ModificationActon.ModificationActionFactory import ModificationTupleFactory
+from xerial.modification.ModificationActon.ModificationActionFactory import ModificationActionFactory
 
 StringColumn.compatible = {JSONColumn}
 JSONColumn.compatible = {StringColumn}
@@ -119,7 +119,7 @@ class Modification :
 		"""
 		column.name = name
 		column.vendor = self.vendor
-		modification_tuple = ModificationTupleFactory.create(
+		modification_tuple = ModificationActionFactory.create(
 			self.table,
 			self.version.__str__(),
 			ModificationType.ADD,
@@ -137,7 +137,7 @@ class Modification :
 		----------
 		name: str  name of the column to drop
 		"""
-		modification_tuple = ModificationTupleFactory.create(
+		modification_tuple = ModificationActionFactory.create(
 			self.table,
 			self.version.__str__(),
 			ModificationType.DROP,
@@ -156,7 +156,7 @@ class Modification :
 		oldName: str  name of the existing column
 		newName: str  desired new name of the existing column
 		"""
-		modification_tuple = ModificationTupleFactory.create(
+		modification_tuple = ModificationActionFactory.create(
 			self.table,
 			self.version.__str__(),
 			ModificationType.RENAME,
@@ -196,7 +196,7 @@ class Modification :
 			raise ValueError(
 				f'Column {existingColumn.__class__.__name__} cannot be changed to {newColumn.__class__.__name__}.'
 			)
-		modification_tuple = ModificationTupleFactory.create(
+		modification_tuple = ModificationActionFactory.create(
 			self.table,
 			self.version.__str__(),
 			ModificationType.CHANGE_TYPE,
@@ -229,7 +229,7 @@ class Modification :
 			raise ValueError(f'Column name {name} is not StringColumn. Length cannot be changed.')
 		existingColumn.length = length if length > existingColumn.length else existingColumn.length
 		existingColumn.vendor = self.vendor
-		modification_tuple = ModificationTupleFactory.create(
+		modification_tuple = ModificationActionFactory.create(
 			self.table,
 			self.version.__str__(),
 			ModificationType.CHANGE_LENGTH,
@@ -249,7 +249,7 @@ class Modification :
 		"""
 		if name not in self.meta :
 			raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
-		modification_tuple = ModificationTupleFactory.create(
+		modification_tuple = ModificationActionFactory.create(
 			self.table,
 			self.version.__str__(),
 			ModificationType.ADD_INDEX,
@@ -268,7 +268,7 @@ class Modification :
 		"""
 		if name not in self.meta :
 			raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
-		modification_tuple = ModificationTupleFactory.create(
+		modification_tuple = ModificationActionFactory.create(
 			self.table,
 			self.version.__str__(),
 			ModificationType.DROP_INDEX,
