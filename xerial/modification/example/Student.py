@@ -32,6 +32,7 @@ class Student(Record):
         modification.rename("id", "studentID")
 
         self.createCheckout(
+            modificationVersion="4",
             destination="1",
             skip=[example_skip_key],
         )

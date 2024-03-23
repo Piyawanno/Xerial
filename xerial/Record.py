@@ -171,12 +171,9 @@ class Record :
 	def getLatestModification(self) -> Modification:
 		return getattr(self.__class__, '__modification__', [None])[-1]
 
-	def createCheckout(self, destination: str, skip: List[str] = None) -> None:
+	def createCheckout(self, modificationVersion: str, destination: str, skip: List[str] = None) -> None:
 		for existingModification in self.getScopedModification(destination):
-			latestBreakingVersion: int = self.getLatestModification().version
-			reversedModification = self.createModification(
-				version=str(latestBreakingVersion + 1)
-			)
+			reversedModification = self.createModification(modificationVersion)
 			for column in existingModification.column:
 				skipKey = column.__str__()
 				if skip is not None and skipKey in skip:
