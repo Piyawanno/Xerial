@@ -35,16 +35,3 @@ class Student(Record):
             destination="1",
             skip=[example_skip_key],
         )
-
-
-# Generated code, not preferred to implement
-
-student = Student()
-
-# Rollback of modification 3
-student.id = student.studentID
-student.studentID = None
-
-# Rollback of modification 2
-student.age = IntegerColumn()
-student.gpax = IntegerColumn()
