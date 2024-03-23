@@ -1,10 +1,10 @@
 from xerial.Column import Column
 from xerial.Input import Input
 from xerial.Modification import Modification
-from xerial.ModificationType import ModificationType
 from xerial.Vendor import Vendor
 from xerial.InputExtractor import InputExtractor
 from xerial.MetaDataExtractor import MetaDataExtractor
+from xerial.Exception.ModificationException import ModificationException
 
 from typing import List
 
@@ -12,9 +12,6 @@ import inspect
 
 __MAPPED_META__ = {}
 __DEFAULT_BACKUP__ = False
-
-from xerial.exception.ModificationException import ModificationException
-
 
 def __getParentTableName__(modelClass) :
 	hierarchy = list(inspect.getmro(modelClass))

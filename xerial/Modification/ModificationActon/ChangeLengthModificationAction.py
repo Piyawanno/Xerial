@@ -1,6 +1,6 @@
 from xerial.Column import Column
+from xerial.Modification.ModificationActon.ModificationAction import ModificationAction
 from xerial.ModificationType import ModificationType
-from xerial.modification.ModificationActon.ModificationAction import ModificationAction
 
 
 class ChangeLengthModificationAction(ModificationAction):
@@ -13,7 +13,7 @@ class ChangeLengthModificationAction(ModificationAction):
         return f'{self.prefix()}-{self.length}'
 
     def tuple(self) -> tuple:
-        return self.base_tuple(), self.column
+        return self.baseTuple(), self.column
 
     def reverse_args(self) -> tuple:
-        return self.column_name, self.length
+        return self.columnName, self.length

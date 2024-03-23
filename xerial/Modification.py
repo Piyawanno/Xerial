@@ -12,9 +12,9 @@ from xerial.Vendor import Vendor
 from typing import List
 from packaging.version import Version
 
-from xerial.exception.ModificationException import ModificationException
-from xerial.modification.ModificationActon.ModificationAction import ModificationAction
-from xerial.modification.ModificationActon.ModificationActionFactory import ModificationActionFactory
+from xerial.Exception.ModificationException import ModificationException
+from xerial.Modification.ModificationActon.ModificationAction import ModificationAction
+from xerial.Modification.ModificationActon.ModificationActionFactory import ModificationActionFactory
 
 StringColumn.compatible = {JSONColumn}
 JSONColumn.compatible = {StringColumn}
@@ -301,9 +301,9 @@ class Modification :
 			ModificationType.DROP_INDEX: self.addIndex
 		}
 
-		modification = reverse_modification.get(t.modification_type)
+		modification = reverse_modification.get(t.modificationType)
 		if modification is None:
-			raise ValueError(f'Unknown modification type {t.modification_type}')
+			raise ValueError(f'Unknown modification type {t.modificationType}')
 
 		modification(*t.reverse_args())
 

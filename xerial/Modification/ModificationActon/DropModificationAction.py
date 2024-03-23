@@ -1,6 +1,6 @@
 from xerial.Column import Column
+from xerial.Modification.ModificationActon.ModificationAction import ModificationAction
 from xerial.ModificationType import ModificationType
-from xerial.modification.ModificationActon.ModificationAction import ModificationAction
 
 
 class DropModificationAction(ModificationAction):
@@ -12,7 +12,7 @@ class DropModificationAction(ModificationAction):
         return f'{self.prefix()}-{self.column.__str__()}'
 
     def tuple(self) -> tuple:
-        return self.base_tuple(), self.column
+        return self.baseTuple(), self.column
 
     def reverse_args(self) -> tuple:
-        return self.column_name, self.column
+        return self.columnName, self.column

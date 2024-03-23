@@ -1,5 +1,5 @@
+from xerial.Modification.ModificationActon.ModificationAction import ModificationAction
 from xerial.ModificationType import ModificationType
-from xerial.modification.ModificationActon.ModificationAction import ModificationAction
 
 
 class AddIndexModificationAction(ModificationAction):
@@ -7,4 +7,4 @@ class AddIndexModificationAction(ModificationAction):
         super().__init__(table, version, ModificationType.ADD_INDEX, name)
 
     def reverse_args(self) -> tuple:
-        return self.column_name,
+        return self.columnName,

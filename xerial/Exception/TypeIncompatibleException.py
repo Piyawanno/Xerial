@@ -1,4 +1,4 @@
-from xerial.exception.ChangeTypeException import ChangeTypeException
+from xerial.Exception.ChangeTypeException import ChangeTypeException
 
 
 class TypeIncompatibleException(ChangeTypeException):

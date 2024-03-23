@@ -2,7 +2,6 @@ import json
 from xerial.Column import Column
 from xerial.CurrencyColumn import CurrencyColumn
 from xerial.CurrencyData import CurrencyData
-from xerial.Modification import Modification
 from xerial.Record import Record
 from xerial.IntegerColumn import IntegerColumn
 from xerial.StringColumn import StringColumn

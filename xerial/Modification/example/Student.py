@@ -21,7 +21,7 @@ class Student(Record):
         modification.changeLength("lastName", 150)
 
         modification = self.createModification("2")
-        example_skip_key = modification.changeType(
+        exampleSkipKey = modification.changeType(
             name="gpax",
             oldColumn=IntegerColumn(),
             newColumn=FloatColumn()
@@ -34,5 +34,5 @@ class Student(Record):
         self.createCheckout(
             modificationVersion="4",
             destination="1",
-            skip=[example_skip_key],
+            skip=[exampleSkipKey],
         )
