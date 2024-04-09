@@ -92,7 +92,7 @@ class Record :
 					setattr(self, child.name, child.fromDict(raw))
 				elif isinstance(raw, dict) :
 					setattr(self, child.name, child.fromDict(raw.values()))
-			
+		
 		for foreignKey in modelClass.foreignKey :
 			raw = data.get(foreignKey.name, None)
 			if raw is not None :
@@ -113,6 +113,7 @@ class Record :
 			self.id = data.get(modelClass.primary, 0)
 		return self
 	
+
 	def fromRawDict(self, data:dict) :
 		modelClass = self.__class__
 		for column, meta in modelClass.meta :

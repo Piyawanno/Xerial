@@ -5,7 +5,8 @@ from xerial.input.SelectInput import SelectInput
 from typing import Dict, List, Tuple
 
 class CheckBoxInput (SelectInput):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			option:List[Tuple[int, str]],
 			order:str=None,
@@ -17,7 +18,9 @@ class CheckBoxInput (SelectInput):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -28,6 +31,9 @@ class CheckBoxInput (SelectInput):
 			columnName:str='',
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'CheckBox',
 		) :
 		SelectInput.__init__(
 			self,
@@ -42,7 +48,9 @@ class CheckBoxInput (SelectInput):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
+			isStatusDisplay,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -53,6 +61,7 @@ class CheckBoxInput (SelectInput):
 			columnName,
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
+			isCopyable=isCopyable,
+			typeName=typeName,
 		)
-		self.typeName = 'CheckBox'
 

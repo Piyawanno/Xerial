@@ -4,7 +4,8 @@ from xerial.InputAttachment import InputAttachment
 from typing import Dict, List, Tuple
 
 class SelectInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			option:List[Tuple[int, str]],
 			order:str=None,
@@ -16,7 +17,9 @@ class SelectInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -28,6 +31,9 @@ class SelectInput (Input):
 			sideIcon:str=None,
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'Select',
 		) :
 		Input.__init__(
 			self,
@@ -41,7 +47,8 @@ class SelectInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -53,13 +60,17 @@ class SelectInput (Input):
 			sideIcon,
 			isEnabled,
 			isSpreadSheet,
+			isCopyable,
+			inputPerLine,
+			typeName,
 		)
 		self.option = [list(i) for i in option]
 		self.isLink = isLink
-		self.typeName = 'Select'
+		self.isStatusDisplay = isStatusDisplay
 	
 	def toDict(self) -> dict:
 		result = super().toDict()
 		result['option'] = self.option
 		result['isLink'] = self.isLink
+		result['isStatusDisplay'] = self.isStatusDisplay
 		return result

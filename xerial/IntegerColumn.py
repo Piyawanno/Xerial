@@ -91,8 +91,15 @@ class IntegerColumn (Column) :
 				return "BIGINT(%d)"%(self.length)
 			else :
 				return "INT(%d)"%(self.length)
-		elif self.vendor == Vendor.POSTGRESQL or self.vendor == Vendor.SQLITE or self.vendor == Vendor.MSSQL :
+		elif self.vendor == Vendor.SQLITE or self.vendor == Vendor.MSSQL :
 			if self.length > 32 :
+				return "BIGINT"
+			else :
+				return "INT"
+		elif self.vendor == Vendor.POSTGRESQL:
+			if self.isPrimary:
+				return "BIGSERIAL"
+			elif self.length > 32 :
 				return "BIGINT"
 			else :
 				return "INT"

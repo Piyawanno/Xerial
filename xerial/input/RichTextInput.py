@@ -1,9 +1,12 @@
 from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
+from xerial.input.RichTextHandler import RichTextHandler
+from typing import List
 
 class RichTextInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			order:str=None,
 			group:int=None,
@@ -14,17 +17,25 @@ class RichTextInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
 			help:str=None,
 			documentPath:str=None,
 			config:Dict=None,
+			hasImage: bool=True,
+			hasVideo: bool=True,
+			hasLink: bool=True,
+			handler: List[RichTextHandler]=[],
 			columnType:str='',
 			columnName:str='',
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'RichText',
 		) :
 		Input.__init__(
 			self,
@@ -38,7 +49,8 @@ class RichTextInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -49,10 +61,19 @@ class RichTextInput (Input):
 			columnName,
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
+			isCopyable=isCopyable,
+			typeName=typeName,
 		)
-		self.typeName = 'RichText'
+		self.hasImage: bool = hasImage
+		self.hasVideo: bool = hasVideo
+		self.hasLink: bool = hasLink
+		self.handler: List[RichTextHandler] = handler
 
 	def toDict(self) -> dict:
 		result = super().toDict()
 		result['config'] = self.config
+		result['hasImage'] = self.hasImage
+		result['hasVideo'] = self.hasVideo
+		result['hasLink'] = self.hasLink
+		result['handler'] = [i.toDict() for i in self.handler]
 		return result

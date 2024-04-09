@@ -66,6 +66,12 @@ class CurrencyData :
 		self.exchanged = self.origin*self.rate
 		self.exchangedCurrency = COMMON_CURRENCY_MAP.get(currency, None)
 		self.exchangeDate = datetime.now()
+  
+	def addition(self, other) :
+		other:CurrencyData = other
+		additionOrigin = self.origin + other.origin
+		result = CurrencyData(additionOrigin)
+		return result
 	
 	def copy(self) :
 		raw = self.toDict()

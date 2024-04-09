@@ -3,7 +3,8 @@ from xerial.InputAttachment import InputAttachment
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 
 class ReferenceCheckBoxInput (ReferenceSelectInput) :
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			url:str,
 			tableURL:str=None,
@@ -16,7 +17,9 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -27,6 +30,9 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			columnName:str='',
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'ReferenceCheckBox',
 		) :
 		ReferenceSelectInput.__init__(
 			self,
@@ -42,7 +48,9 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
+			isStatusDisplay,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -53,5 +61,6 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			columnName,
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
+			isCopyable=isCopyable,
+			typeName=typeName,
 		)
-		self.typeName = 'ReferenceCheckBox'

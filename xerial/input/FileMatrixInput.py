@@ -3,7 +3,8 @@ from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 
 class FileMatrixInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			order:str=None,
 			group:int=None,
@@ -15,7 +16,8 @@ class FileMatrixInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			isShare:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
@@ -30,6 +32,9 @@ class FileMatrixInput (Input):
 			columnName:str='',
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'FileMatrix',
 		) :
 		Input.__init__(
 			self,
@@ -43,7 +48,8 @@ class FileMatrixInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -54,8 +60,9 @@ class FileMatrixInput (Input):
 			columnName,
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
+			isCopyable=isCopyable,
+			typeName=typeName,
 		)
-		self.typeName = 'FileMatrix',
 		self.isPreview = isPreview
 		self.isShare = isShare
 		self.path = path

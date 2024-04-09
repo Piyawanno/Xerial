@@ -1,11 +1,14 @@
-from typing import Dict
-from xerial.Input import Input
+from xerial.input.EnumSelectInput import EnumSelectInput
 from xerial.InputAttachment import InputAttachment
+from xerial.OptionEnum import OptionEnum
+from enum import IntEnum
+from typing import Dict, Type
 
-class DateTimeInput (Input):
+class TagEnumSelectInput (EnumSelectInput):
 	def __init__(
 			self,
 			label:str,
+			enum:Type[IntEnum],
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
@@ -30,11 +33,12 @@ class DateTimeInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			typeName:str = 'DateTime',
+			typeName:str='TagEnumSelect',
 		) :
-		Input.__init__(
+		EnumSelectInput.__init__(
 			self,
 			label,
+			enum,
 			order,
 			group,
 			isTable,

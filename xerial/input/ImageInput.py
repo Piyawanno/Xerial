@@ -3,7 +3,8 @@ from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 
 class ImageInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			url:str,
 			order:str=None,
@@ -16,7 +17,8 @@ class ImageInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			isShare:bool=False,
@@ -32,6 +34,9 @@ class ImageInput (Input):
 			sideIcon:str=None,
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'Image',
 		) :
 		Input.__init__(
 			self,
@@ -45,7 +50,8 @@ class ImageInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -57,10 +63,12 @@ class ImageInput (Input):
 			sideIcon,
 			isEnabled,
 			isSpreadSheet,
+			isCopyable,
+			inputPerLine,
+			typeName,
 		)
 		if len(url) and url[-1] != '/': url = url+'/'
 		self.url = url
-		self.typeName = 'Image',
 		self.isPreview = isPreview
 		self.isShare = isShare
 		self.path = path

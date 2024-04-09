@@ -4,7 +4,8 @@ from xerial.InputAttachment import InputAttachment
 from enum import IntEnum
 
 class HiddenInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			order:str=None,
 			group:int=None,
@@ -15,7 +16,8 @@ class HiddenInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -26,6 +28,9 @@ class HiddenInput (Input):
 			columnName:str='',
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'Hidden',
 		) :
 		Input.__init__(
 			self,
@@ -39,7 +44,8 @@ class HiddenInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -50,5 +56,6 @@ class HiddenInput (Input):
 			columnName,
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
+			isCopyable=isCopyable,
+			typeName=typeName,
 		)
-		self.typeName = 'Hidden'

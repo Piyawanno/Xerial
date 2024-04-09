@@ -3,7 +3,8 @@ from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 
 class FractionInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			order:str=None,
 			group:int=None,
@@ -14,7 +15,8 @@ class FractionInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -30,6 +32,9 @@ class FractionInput (Input):
 			sideIcon:str=None,
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'Fraction',
 		) :
 		Input.__init__(
 			self,
@@ -43,7 +48,8 @@ class FractionInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -55,8 +61,10 @@ class FractionInput (Input):
 			sideIcon,
 			isEnabled,
 			isSpreadSheet,
+			isCopyable,
+			inputPerLine,
+			typeName,
 		)
-		self.typeName = 'Fraction'
 		self.isNegative = isNegative
 		self.isZeroIncluded = isZeroIncluded
 		self.isFloatingPoint = isFloatingPoint

@@ -3,7 +3,8 @@ from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 
 class PrerequisiteReferenceSelectInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			url:str,
 			prerequisite: str,
@@ -17,7 +18,9 @@ class PrerequisiteReferenceSelectInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -29,6 +32,9 @@ class PrerequisiteReferenceSelectInput (Input):
 			sideIcon:str=None,
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'PrerequisiteReferenceSelect',
 		) :
 		Input.__init__(
 			self,
@@ -42,7 +48,8 @@ class PrerequisiteReferenceSelectInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -54,16 +61,21 @@ class PrerequisiteReferenceSelectInput (Input):
 			sideIcon,
 			isEnabled,
 			isSpreadSheet,
+			isCopyable,
+			inputPerLine,
+			typeName,
 		)
 		self.url = url
 		self.tableURL = tableURL
 		self.prerequisite = prerequisite
 		self.isLink = isLink
 		self.typeName = 'PrerequisiteReferenceSelect'
+		self.isStatusDisplay = isStatusDisplay
 	
 	def toDict(self) -> dict:
 		result = super().toDict()
 		result['url'] = self.url
 		result['tableURL'] = self.tableURL
 		result['prerequisite'] = self.prerequisite
+		result['isStatusDisplay'] = self.isStatusDisplay
 		return result

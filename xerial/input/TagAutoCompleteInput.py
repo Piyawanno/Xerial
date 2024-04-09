@@ -1,11 +1,17 @@
 from typing import Dict
-from xerial.Input import Input
+from xerial.input.AutoCompleteInput import AutoCompleteInput
 from xerial.InputAttachment import InputAttachment
-
-class DateTimeInput (Input):
+class TagAutoCompleteInput (AutoCompleteInput) :
 	def __init__(
 			self,
 			label:str,
+			url:str,
+			prerequisite: str=None,
+			prerequisiteParameterKey: str=None,
+			tableURL:str=None,
+			childrenURL:str=None,
+			childrenColumn:str=None,
+			template:str="",
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
@@ -17,6 +23,7 @@ class DateTimeInput (Input):
 			isTableForm:bool=False,
 			isSearchTable:bool=False,
 			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -30,11 +37,16 @@ class DateTimeInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			typeName:str = 'DateTime',
+			typeName:str = 'TagAutoComplete',
 		) :
-		Input.__init__(
+		AutoCompleteInput.__init__(
 			self,
 			label,
+			url,
+			prerequisite,
+			prerequisiteParameterKey,
+			tableURL,
+			template,
 			order,
 			group,
 			isTable,
@@ -46,6 +58,7 @@ class DateTimeInput (Input):
 			isTableForm,
 			isSearchTable,
 			isAdvanceForm,
+			isStatusDisplay,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -61,3 +74,12 @@ class DateTimeInput (Input):
 			inputPerLine,
 			typeName,
 		)
+		self.childrenURL = childrenURL
+		self.childrenColumn = childrenColumn
+		self.isTag = True
+
+	def toDict(self) -> dict :
+		data = AutoCompleteInput.toDict(self)
+		data['childrenURL'] = self.childrenURL
+		data['childrenColumn'] = self.childrenColumn
+		return data

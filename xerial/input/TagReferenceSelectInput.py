@@ -1,11 +1,13 @@
 from typing import Dict
-from xerial.Input import Input
+from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 from xerial.InputAttachment import InputAttachment
 
-class DateTimeInput (Input):
+class TagReferenceSelectInput (ReferenceSelectInput):
 	def __init__(
 			self,
 			label:str,
+			url:str,
+			tableURL:str=None,
 			order:str=None,
 			group:int=None,
 			isTable:bool=False,
@@ -17,6 +19,7 @@ class DateTimeInput (Input):
 			isTableForm:bool=False,
 			isSearchTable:bool=False,
 			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -30,11 +33,13 @@ class DateTimeInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			typeName:str = 'DateTime',
+			typeName:str = 'TagReferenceSelect',
 		) :
-		Input.__init__(
+		ReferenceSelectInput.__init__(
 			self,
 			label,
+			url,
+			tableURL,
 			order,
 			group,
 			isTable,
@@ -46,6 +51,7 @@ class DateTimeInput (Input):
 			isTableForm,
 			isSearchTable,
 			isAdvanceForm,
+			isStatusDisplay,
 			attachedGroup,
 			isLink,
 			linkColumn,

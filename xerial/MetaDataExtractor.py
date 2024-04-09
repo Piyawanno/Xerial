@@ -79,9 +79,9 @@ class MetaDataExtractor :
 			attribute.foreignKey.name = attribute.name
 			modelClass.foreignKey.append(attribute.foreignKey)
 		if attribute.isPrimary :
+			primaryMeta = attribute
 			if not hasattr(modelClass, 'primary') :
 				modelClass.primary = attribute.name
-				primaryMeta = attribute
 			elif isinstance(modelClass.primary, list) :
 				if attribute.name not in modelClass.primary :
 					modelClass.primary.append(attribute.name)

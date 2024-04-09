@@ -4,7 +4,8 @@ from enum import IntEnum
 from typing import Dict, Type
 
 class EnumCheckBoxInput (EnumSelectInput) :
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			enum:Type[IntEnum],
 			order:str=None,
@@ -16,7 +17,8 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -27,6 +29,9 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			columnName:str='',
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'EnumCheckBox',
 		):
 		EnumSelectInput.__init__(
 			self,
@@ -41,7 +46,8 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -52,5 +58,6 @@ class EnumCheckBoxInput (EnumSelectInput) :
 			columnName,
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
+			isCopyable=isCopyable,
+			typeName=typeName,
 		)
-		self.typeName = 'EnumCheckBox'

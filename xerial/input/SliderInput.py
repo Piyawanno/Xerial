@@ -2,7 +2,7 @@ from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 
-class DateTimeInput (Input):
+class SliderInput (Input):
 	def __init__(
 			self,
 			label:str,
@@ -21,6 +21,11 @@ class DateTimeInput (Input):
 			isLink:bool=False,
 			linkColumn:str='',
 			help:str=None,
+			isNegative:bool=True,
+			isZeroIncluded:bool=True,
+			isFloatingPoint:bool=True,
+			minValue:float=None,
+			maxValue:float=None,
 			documentPath:str=None,
 			config:Dict=None,
 			columnType:str='',
@@ -30,7 +35,7 @@ class DateTimeInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			typeName:str = 'DateTime',
+			typeName:str = 'Slider',
 		) :
 		Input.__init__(
 			self,
@@ -61,3 +66,18 @@ class DateTimeInput (Input):
 			inputPerLine,
 			typeName,
 		)
+		self.isNegative = isNegative
+		self.isZeroIncluded = isZeroIncluded
+		self.isFloatingPoint = isFloatingPoint
+		self.minValue=minValue
+		self.maxValue=maxValue
+		self.isNumber = True
+
+	def toDict(self) -> dict :
+		data = Input.toDict(self)
+		data['isNegative'] = self.isNegative
+		data['isZeroIncluded'] = self.isZeroIncluded
+		data['isFloatingPoint'] = self.isFloatingPoint
+		data['minValue'] = self.minValue() if callable(self.minValue) else self.minValue
+		data['maxValue'] = self.maxValue() if callable(self.maxValue) else self.maxValue
+		return data

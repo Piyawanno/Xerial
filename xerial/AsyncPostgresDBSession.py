@@ -316,7 +316,7 @@ class AsyncPostgresDBSession (PostgresDBSession, AsyncDBSessionBase) :
 	
 	async def dropByCondition(self, modelClass, clause) :
 		table = modelClass.__full_table_name__
-		parentQuery = f"SELECT {modelClass.primary} FROM {self.schema}{table} {clause}"
+		parentQuery = f"SELECT {modelClass.primary} FROM {self.schema}{table} WHERE {clause}"
 		for child in modelClass.children :
 			if not hasattr(child.model, '__full_table_name__'): continue
 			childTable = child.model.__full_table_name__

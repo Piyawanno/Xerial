@@ -2,9 +2,12 @@ from typing import Dict
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 from xerial.InputAttachment import InputAttachment
 class AutoCompleteInput (ReferenceSelectInput) :
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			url:str,
+			prerequisite: str=None,
+			prerequisiteParameterKey: str=None,
 			tableURL:str=None,
 			template:str="",
 			order:str=None,
@@ -16,7 +19,9 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -28,6 +33,9 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			sideIcon:str=None,
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'AutoComplete',
 		) :
 		ReferenceSelectInput.__init__(
 			self,
@@ -43,7 +51,9 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
+			isStatusDisplay,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -55,11 +65,17 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			sideIcon,
 			isEnabled,
 			isSpreadSheet,
+			isCopyable,
+			inputPerLine,
+			typeName,
 		)
 		self.template = template
-		self.typeName = 'AutoComplete'
+		self.prerequisite = prerequisite
+		self.prerequisiteParameterKey = prerequisiteParameterKey
 
 	def toDict(self) -> dict:
 		result = super().toDict()
 		result['template'] = self.template
+		result['prerequisite'] = self.prerequisite
+		result['prerequisiteParameterKey'] = self.prerequisiteParameterKey
 		return result

@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import os, sys, site, getpass, setuptools
+import os, sys, site, getpass
 
 __help__ = """Xerial setup script :
 setup : Install dependencies of Xerial.
@@ -49,6 +49,7 @@ class XerialSetup :
 			'xerial-generate',
 			'xerial-load',
 			'xerial-model-extract',
+			'xerial-primary',
 		]
 
 		self.configList = [
@@ -73,6 +74,7 @@ class XerialSetup :
 			self.createWheel()
 	
 	def createWheel(self) :
+		import setuptools
 		with open("README.md") as fd :
 			description = fd.read()
 		
@@ -119,7 +121,7 @@ class XerialSetup :
 			print("*** Example : ./setup.py setup debian10")
 
 	def setupAPT(self, packageList) :
-		command = 'apt-get install %s'%(" ".join(packageList))
+		command = 'apt-get install -y %s'%(" ".join(packageList))
 		print(command)
 		os.system(command)
 

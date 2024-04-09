@@ -388,22 +388,24 @@ class PostgresDBSession (DBSessionBase) :
 		columnList = []
 		isIncremental = model.__is_increment__
 		isPrimaryList = hasattr(model, 'primaryMeta') and isinstance(model.primaryMeta, list)
+		hasPrimary = False
 		primaryList = []
 		for name, column in model.meta :
-			if not (isIncremental and column.isPrimary) :
-				primary = ""
-				if column.isPrimary :
-					if isPrimaryList : primaryList.append(name)
-					else : primary = "PRIMARY KEY"
-				notNull = "NOT NULL" if column.isNotNull else ""
-				isDefault = hasattr(column, 'default') and column.default is not None
-				defaultValue = column.default() if callable(column.default) else column.default
-				default = "DEFAULT %s"%(column.setValueToDB(defaultValue)) if isDefault else ""
-				columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
+			# if not (isIncremental and column.isPrimary) :
+			primary = ""
+			if column.isPrimary :
+				if isPrimaryList : primaryList.append(name)
+				else : primary = "PRIMARY KEY"
+				hasPrimary = True
+			notNull = "NOT NULL" if column.isNotNull else ""
+			isDefault = hasattr(column, 'default') and column.default is not None
+			defaultValue = column.default() if callable(column.default) else column.default
+			default = "DEFAULT %s"%(column.setValueToDB(defaultValue)) if isDefault else ""
+			columnList.append(f"{name} {column.getDBDataType()} {primary} {default} {notNull}")
 		query = [f"CREATE TABLE IF NOT EXISTS {self.schema}{model.__full_table_name__} (\n\t"]
 		if len(primaryList) :
 			columnList.append("PRIMARY KEY(%s)"%(",".join(primaryList)))
-		if isIncremental :
+		if not hasPrimary and isIncremental :
 			columnList.insert(0, "%s BIGSERIAL"%(model.primary))
 		
 		query.append(",\n\t".join(columnList))

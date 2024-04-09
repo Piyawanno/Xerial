@@ -3,7 +3,8 @@ from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 
 class EmailInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			order:str=None,
 			group:int=None,
@@ -14,7 +15,8 @@ class EmailInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -26,6 +28,9 @@ class EmailInput (Input):
 			sideIcon:str=None,
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'Email',
 		) :
 		Input.__init__(
 			self,
@@ -39,7 +44,8 @@ class EmailInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -51,5 +57,7 @@ class EmailInput (Input):
 			sideIcon,
 			isEnabled,
 			isSpreadSheet,
+			isCopyable,
+			inputPerLine,
+			typeName,
 		)
-		self.typeName = 'Email'

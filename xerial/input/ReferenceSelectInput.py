@@ -3,7 +3,8 @@ from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 
 class ReferenceSelectInput (Input):
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			url:str,
 			tableURL:str=None,
@@ -16,7 +17,9 @@ class ReferenceSelectInput (Input):
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -28,6 +31,9 @@ class ReferenceSelectInput (Input):
 			sideIcon:str=None,
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine:int=None,
+			typeName:str = 'ReferenceSelect',
 		) :
 		Input.__init__(
 			self,
@@ -41,7 +47,8 @@ class ReferenceSelectInput (Input):
 			isEditable,
 			isForm,
 			isTableForm,
-			isAdvanceFrom,
+			isSearchTable,
+			isAdvanceForm,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -53,14 +60,18 @@ class ReferenceSelectInput (Input):
 			sideIcon,
 			isEnabled,
 			isSpreadSheet,
+			isCopyable,
+			inputPerLine,
+			typeName,
 		)
 		self.url = url
 		self.tableURL = tableURL
-		self.typeName = 'ReferenceSelect'
+		self.isStatusDisplay = isStatusDisplay
 	
 	def toDict(self) -> dict:
 		result = super().toDict()
 		result['url'] = self.url
 		result['tableURL'] = self.tableURL
 		result['isLink'] = self.isLink
+		result['isStatusDisplay'] = self.isStatusDisplay
 		return result

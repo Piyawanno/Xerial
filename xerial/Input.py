@@ -1,9 +1,11 @@
-from typing import Dict
+from typing import Dict, List
 from packaging.version import Version
 from xerial.InputAttachment import InputAttachment
+from xerial.input.SideIcon import SideIcon
 
 class Input :
-	def __init__(self,
+	def __init__(
+			self,
 			label:str,
 			order:str=None,
 			group:int=None,
@@ -14,7 +16,8 @@ class Input :
 			isEditable:bool=True,
 			isForm:bool=True,
 			isTableForm:bool=False,
-			isAdvanceFrom:bool=False,
+			isSearchTable:bool=False,
+			isAdvanceForm:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -23,9 +26,12 @@ class Input :
 			config: Dict=None,
 			columnType:str='',
 			columnName:str='',
-			sideIcon:str=None,
+			sideIcon:List[SideIcon]=[],
 			isEnabled:bool=True,
 			isSpreadSheet:bool=True,
+			isCopyable:bool=False,
+			inputPerLine: int=None,
+			typeName:str=None,
 		):
 		self.label = label
 		self.order = order
@@ -37,14 +43,15 @@ class Input :
 		self.isEditable = isEditable
 		self.isForm = isForm
 		self.isTableForm = isTableForm
-		self.isAdvanceForm = isAdvanceFrom
+		self.isSearchTable = isSearchTable
+		self.isAdvanceForm = isAdvanceForm
 		self.attachedGroup = attachedGroup
 		self.attachedGroupID = None
 		self.help = help
 		self.documentPath = documentPath
 		self.config = config
 		self.parsedOrder = Version(order) if order is not None else None
-		self.typeName = ''
+		self.typeName = typeName
 		self.columnName = columnName
 		self.columnType = columnType
 		self.isLink = isLink
@@ -57,14 +64,19 @@ class Input :
 		self.attribute = None
 		self.isEnabled = isEnabled
 		self.isSpreadSheet = isSpreadSheet
+		self.isCopyable = isCopyable
+		self.inputPerLine = inputPerLine
+		self.childrenModelName = None
+		self.isTag = False
 	
 	def toDict(self) -> dict :
+		groupValue = self.group if self.group is None or isinstance(self.group, int) else self.group.value
 		return {
 			'columnName' : self.columnName,
 			'columnType' : self.columnType,
 			'label' : self.label,
 			'order' : self.order,
-			'group' : self.group,
+			'group' : groupValue,
 			'isTable' : self.isTable,
 			'isMobile' : self.isMobile,
 			'isSearch' : self.isSearch,
@@ -74,6 +86,7 @@ class Input :
 			'isFile' : self.isFile,
 			'isForm' : self.isForm,
 			'isTableForm' : self.isTableForm,
+			'isSearchTable': self.isSearchTable,
 			'isAdvanceForm' : self.isAdvanceForm,
 			'attachedGroupID': self.attachedGroupID,
 			'help' : self.help,
@@ -83,6 +96,10 @@ class Input :
 			'foreignColumn' : self.foreignColumn,
 			'isLink' : self.isLink,
 			'linkColumn' : self.linkColumn,
-			'sideIcon': self.sideIcon,
+			'sideIcon': [] if self.sideIcon is None else [i.toDict() for i in self.sideIcon],
+			'isCopyable': self.isCopyable,
+			'inputPerLine': self.inputPerLine,
+			'childrenModelName': self.childrenModelName,
+			'isTag': self.isTag
 		}
 	
