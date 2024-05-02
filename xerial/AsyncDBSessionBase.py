@@ -153,21 +153,6 @@ class AsyncDBSessionBase (DBSessionBase) :
 			for name, column in modelClass.meta :
 				result[name].append(data[name])
 		return result
-	
-	async def selectRaw(self, modelClass:type, clause:str, limit:int=None, offset:int=None, parameter:list=None) -> dict :
-		if parameter is not None :
-			clause = self.processClause(clause, parameter)
-		query = self.generateSelectQuery(modelClass, clause, limit, offset)
-		cursor = await self.executeRead(query, parameter)
-		result = []
-		for row in cursor :
-			data = {}
-			i = 0
-			for columnName, column in modelClass.meta :
-				data[columnName] = column.toDict(row[i])
-				i += 1
-			result.append(data)
-		return result
 
 	# NOTE
 	# For writing string descriptor = io.StringIO()

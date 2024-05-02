@@ -13,6 +13,9 @@ from xerial.JSONColumn import JSONColumn
 from xerial.ModificationType import ModificationType
 from xerial.StringColumn import StringColumn
 from xerial.Vendor import Vendor
+from xerial.exception.ModificationException import ModificationException
+from xerial.modification_action.ModificationAction import ModificationAction
+from xerial.modification_action.ModificationActionFactory import ModificationActionFactory
 
 StringColumn.compatible = {JSONColumn}
 JSONColumn.compatible = {StringColumn}
@@ -33,7 +36,7 @@ def generateColumn(column, hasDefault=True):
     return f"{column.getDBDataType()} {default} {notNull}"
 
 
-__POSTGRESQL_GERNARATOR__ = {
+__POSTGRESQL_GENERATOR__ = {
     ModificationType.ADD: lambda t, n, c: f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
     ModificationType.DROP: lambda t, n: f'ALTER TABLE {t} DROP COLUMN {n}',
     ModificationType.RENAME: lambda t, o, n: f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
@@ -43,7 +46,7 @@ __POSTGRESQL_GERNARATOR__ = {
     ModificationType.DROP_INDEX: lambda t, n: f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__ORACLE_GERNARATOR__ = {
+__ORACLE_GENERATOR__ = {
     ModificationType.ADD: lambda t, n, c: f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
     ModificationType.DROP: lambda t, n: f'ALTER TABLE {t} DROP COLUMN {n}',
     ModificationType.RENAME: lambda t, o, n: f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
@@ -53,7 +56,7 @@ __ORACLE_GERNARATOR__ = {
     ModificationType.DROP_INDEX: lambda t, n: f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__MARIADB_GERNARATOR__ = {
+__MARIADB_GENERATOR__ = {
     ModificationType.ADD: lambda t, n, c: f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
     ModificationType.DROP: lambda t, n: f'ALTER TABLE {t} DROP COLUMN {n}',
     ModificationType.RENAME: lambda t, o, n: f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
@@ -63,7 +66,7 @@ __MARIADB_GERNARATOR__ = {
     ModificationType.DROP_INDEX: lambda t, n: f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__SQLITE_GERNARATOR__ = {
+__SQLITE_GENERATOR__ = {
     ModificationType.ADD: lambda t, n, c: f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
     ModificationType.DROP: lambda t, n: f'ALTER TABLE {t} DROP COLUMN {n}',
     ModificationType.RENAME: lambda t, o, n: f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
@@ -73,7 +76,7 @@ __SQLITE_GERNARATOR__ = {
     ModificationType.DROP_INDEX: lambda t, n: f"DROP INDEX IF EXISTS {t}_{n}",
 }
 
-__MSSQL_GERNARATOR__ = {
+__MSSQL_GENERATOR__ = {
     ModificationType.ADD: lambda t, n, c: f"ALTER TABLE {t} ADD {n} {generateColumn(c)}",
     ModificationType.DROP: lambda t, n: f'ALTER TABLE {t} DROP COLUMN {n}',
     ModificationType.RENAME: lambda t, o, n: f'ALTER TABLE {t} RENAME COLUMN {o} TO {n}',
@@ -84,12 +87,12 @@ __MSSQL_GERNARATOR__ = {
 }
 
 __GENERATOR__ = {
-    Vendor.POSTGRESQL: __POSTGRESQL_GERNARATOR__,
-    Vendor.MARIADB: __MARIADB_GERNARATOR__,
-    Vendor.MYSQL: __MARIADB_GERNARATOR__,
-    Vendor.ORACLE: __ORACLE_GERNARATOR__,
-    Vendor.SQLITE: __SQLITE_GERNARATOR__,
-    Vendor.MSSQL: __MSSQL_GERNARATOR__,
+    Vendor.POSTGRESQL: __POSTGRESQL_GENERATOR__,
+    Vendor.MARIADB: __MARIADB_GENERATOR__,
+    Vendor.MYSQL: __MARIADB_GENERATOR__,
+    Vendor.ORACLE: __ORACLE_GENERATOR__,
+    Vendor.SQLITE: __SQLITE_GENERATOR__,
+    Vendor.MSSQL: __MSSQL_GENERATOR__,
 }
 
 
@@ -99,9 +102,19 @@ class Modification:
         self.table = table
         self.meta = {k: v for k, v in meta}
         self.vendor = vendor
-        self.column = []
+        self.column: List[ModificationAction] = []
+        self.skipped: dict[str, List[ModificationAction]] = {}
         self.generator = __GENERATOR__[vendor]
         self.schema = None
+        self.reverseModification = {
+            ModificationType.ADD: self.drop,
+            ModificationType.DROP: self.add,
+            ModificationType.RENAME: lambda old, new: self.rename(new, old),
+            ModificationType.CHANGE_TYPE: lambda name, old, new: self.changeType(name, new, old),
+            ModificationType.CHANGE_LENGTH: lambda name, _: self.changeLength(name, 0),
+            ModificationType.ADD_INDEX: self.dropIndex,
+            ModificationType.DROP_INDEX: self.addIndex
+        }
 
     def setSchema(self, schema):
         if schema is not None and len(schema): self.schema = schema
@@ -109,7 +122,7 @@ class Modification:
     def resetSchema(self):
         self.schema = None
 
-    def add(self, name: str, column: Column):
+    def add(self, name: str, column: Column) -> str:
         """
         Add a column into the existing Model.
 
@@ -120,19 +133,36 @@ class Modification:
         """
         column.name = name
         column.vendor = self.vendor
-        self.column.append((ModificationType.ADD, self.table, name, column))
+        modificationAction = ModificationActionFactory.create(
+            self.table,
+            self.version.__str__(),
+            ModificationType.ADD,
+            name,
+            column
+        )
+        self.column.append(modificationAction)
+        return modificationAction.__str__()
 
-    def drop(self, name: str):
+    def drop(self, name: str, column: Column = None) -> str:
         """
         Drop a column from the existing Model.
 
         Parameters
         ----------
         name: str  name of the column to drop
+        column: Column  attribute of the column to drop
         """
-        self.column.append((ModificationType.DROP, self.table, name))
+        modificationAction = ModificationActionFactory.create(
+            self.table,
+            self.version.__str__(),
+            ModificationType.DROP,
+            name,
+            column
+        )
+        self.column.append(modificationAction)
+        return modificationAction.__str__()
 
-    def rename(self, oldName: str, newName: str):
+    def rename(self, oldName: str, newName: str) -> str:
         """
         Rename a column in the existing Model.
 
@@ -141,9 +171,18 @@ class Modification:
         oldName: str  name of the existing column
         newName: str  desired new name of the existing column
         """
-        self.column.append((ModificationType.RENAME, self.table, oldName, newName))
+        modificationAction = ModificationActionFactory.create(
+            self.table,
+            self.version.__str__(),
+            ModificationType.RENAME,
+            oldName,
+            None,
+            newName
+        )
+        self.column.append(modificationAction)
+        return modificationAction.__str__()
 
-    def changeType(self, name: str, column: Column):
+    def changeType(self, name: str, oldColumn: Column, newColumn: Column) -> str:
         """
         Change type of the given column in the existing Model.
 
@@ -158,19 +197,24 @@ class Modification:
         Parameters
         ----------
         name: str  name of the column to change type
-        column: Column attribute of the column to change
+        oldColumn: Column  existing column to change type
+        newColumn: Column  new column to change type
         """
-        column.name = name
-        column.vendor = self.vendor
-        existingColumn = self.meta.get(name, None)
-        if existingColumn is None:
-            raise ValueError(f'Column name {name} does not exist. Type cannot be changed.')
-        if column.__class__ != existingColumn.__class__ and column.__class__ not in existingColumn.compatible:
-            raise ValueError(
-                f'Column {existingColumn.__class__.__name__} cannot be changed to {column.__class__.__name__}.')
-        self.column.append((ModificationType.CHANGE_TYPE, self.table, name, column))
+        newColumn.name = name
+        newColumn.vendor = self.vendor
 
-    def changeLength(self, name: str, length: int):
+        modificationAction = ModificationActionFactory.create(
+            self.table,
+            self.version.__str__(),
+            ModificationType.CHANGE_TYPE,
+            name,
+            oldColumn,
+            newColumn
+        )
+        self.column.append(modificationAction)
+        return modificationAction.__str__()
+
+    def changeLength(self, name: str, length: int) -> str:
         """
         Change length of the given StringColumn in the existing Model.
 
@@ -185,16 +229,26 @@ class Modification:
         name: str  name of the column to change type
         length: int new length of the StringColumn to change
         """
-        existingColumn = self.meta.get(name, None)
-        if existingColumn is None:
-            raise ValueError(f'Column name {name} does not exist. Length cannot be changed.')
+        existingColumn = self.meta.get(name, StringColumn(length=length))
+
         if not isinstance(existingColumn, StringColumn):
             raise ValueError(f'Column name {name} is not StringColumn. Length cannot be changed.')
-        existingColumn.length = length
-        existingColumn.vendor = self.vendor
-        self.column.append((ModificationType.CHANGE_LENGTH, self.table, name, existingColumn))
 
-    def addIndex(self, name: str):
+        existingColumn.vendor = self.vendor
+        if length > existingColumn.length:
+            existingColumn.length = length
+
+        modificationAction = ModificationActionFactory.create(
+            self.table,
+            self.version.__str__(),
+            ModificationType.CHANGE_LENGTH,
+            name,
+            existingColumn
+        )
+        self.column.append(modificationAction)
+        return modificationAction.__str__()
+
+    def addIndex(self, name: str) -> str:
         """
         Add index to the given column in the existing Model.
 
@@ -204,9 +258,17 @@ class Modification:
         """
         if name not in self.meta:
             raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
-        self.column.append((ModificationType.ADD_INDEX, self.table, name))
+        modificationAction = ModificationActionFactory.create(
+            self.table,
+            self.version.__str__(),
+            ModificationType.ADD_INDEX,
+            name,
+            None
+        )
+        self.column.append(modificationAction)
+        return modificationAction.__str__()
 
-    def dropIndex(self, name: str):
+    def dropIndex(self, name: str) -> str:
         """
         Drop index from the given column in the existing Model.
 
@@ -216,21 +278,47 @@ class Modification:
         """
         if name not in self.meta:
             raise ValueError(f'Column name {name} does not exist and cannot be dropped.')
-        self.column.append((ModificationType.DROP_INDEX, self.table, name))
+        modificationAction = ModificationActionFactory.create(
+            self.table,
+            self.version.__str__(),
+            ModificationType.DROP_INDEX,
+            name,
+            None
+        )
+        self.column.append(modificationAction)
+        return modificationAction.__str__()
 
     def generateQuery(self) -> List[str]:
         generated = []
-        for column in self.column:
-            if len(column) > 3 and isinstance(column[3], Children): continue
+        for action in self.column:
+            if action.modificationType == ModificationType.DROP or isinstance(action.column, Children):
+                continue
             if self.schema is not None:
-                parameter = list(column)
-                parameter[1] = f'{self.schema}{self.table}'
-                generated.append(self.generator[parameter[0]](*parameter[1:]))
-            else:
-                generated.append(self.generator[column[0]](*column[1:]))
+                action.table = f'{self.schema}{action.table}'
+            generated.append(self.generator[action.modificationType](*action.tuple()))
+
         return generated
 
     @staticmethod
     def generateAddQuery(vendor: Vendor, model: type, column: Column) -> str:
         generator = __GENERATOR__[vendor]
         return generator[ModificationType.ADD](model.__full_table_name__, column.name, column)
+
+    def reverse(self, modificationAction: ModificationAction) -> None:
+        action = self.reverseModification.get(modificationAction.modificationType)
+        if action is None:
+            raise ValueError(f'Unknown modification type {modificationAction.modificationType}')
+
+        action(*modificationAction.reverseArgs())
+
+    def analyze(self) -> List[ModificationException]:
+        exceptions = []
+        for action in self.column:
+            exceptions.extend(action.analyze())
+        return exceptions
+
+    def getSkippedActions(self) -> List[ModificationAction]:
+        actions = []
+        for version, action in self.skipped.items():
+            actions.extend(action)
+        return actions

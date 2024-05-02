@@ -6,7 +6,10 @@ from xerial.Input import Input
 from xerial.InputExtractor import InputExtractor
 from xerial.MetaDataExtractor import MetaDataExtractor
 from xerial.Modification import Modification
+from xerial.ModificationType import ModificationType
 from xerial.Vendor import Vendor
+from xerial.exception.ModificationException import ModificationException
+from xerial.modification_action.ModificationAction import ModificationAction
 
 __MAPPED_META__ = {}
 __DEFAULT_BACKUP__ = False
@@ -197,6 +200,42 @@ class Record:
         modelClass.__modification__.append(modification)
         return modification
 
+    def getScopedModification(self, destination: str) -> List[Modification]:
+        return [
+            modification
+            for modification
+            in reversed(getattr(self.__class__, '__modification__', []))
+            if modification.version.__str__() > destination
+        ]
+
+    def getLatestModification(self) -> Modification | None:
+        modifications: List[Modification] = getattr(self.__class__, "__modification__", [])
+
+        if not modifications:
+            return None
+
+        latest = sorted(
+            modifications,
+            key=lambda modification: modification.version.__str__(),
+            reverse=True
+        )[0]
+
+        return latest if modifications else None
+
+    def createCheckout(self, modificationVersion: str, destination: str, skip: List[str] = None) -> None:
+        reversedModification = self.createModification(modificationVersion)
+        for existingModification in self.getScopedModification(destination):
+            for action in existingModification.column:
+                skipKey = action.__str__()
+                if skip is not None and skipKey in skip or action.modificationType == ModificationType.CHANGE_LENGTH:
+                    # Also implicitly skip CHANGE_LENGTH
+                    if existingModification.skipped.get(modificationVersion) is None:
+                        existingModification.skipped[modificationVersion] = []
+                    existingModification.skipped[modificationVersion].append(action)
+                    continue
+
+                reversedModification.reverse(action)
+
     def modify(self):
         """
         A placeholder method for Structure Modification. By calling
@@ -238,12 +277,6 @@ class Record:
         extractor = MetaDataExtractor(modelClass)
         extractor.extract()
         __MAPPED_META__[modelClass] = modelClass.meta
-
-    @staticmethod
-    def parseTime(delta):
-        hours, remainder = divmod(delta.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        return "%02d:%02d:%02d" % (hours, minutes, seconds)
 
     @staticmethod
     def checkTableName(modelClass, prefix: str):
@@ -303,3 +336,21 @@ class Record:
         if column is None: return
         if not hasattr(column, 'input'): return
         column.input = input
+
+    @staticmethod
+    def analyzeModifications(modifications: List[Modification]) -> dict[str, List[ModificationException]]:
+        modificationExceptions: dict[str, List[ModificationException]] = {}
+        for modification in modifications:
+            exceptions = modification.analyze()
+            if len(exceptions) > 0:
+                modificationExceptions[modification.version] = exceptions
+        return modificationExceptions
+
+    @staticmethod
+    def getSkippedActions(modifications: List[Modification]) -> dict[str, List[ModificationAction]]:
+        skippedActions: dict[str, List[ModificationAction]] = {}
+        for modification in modifications:
+            actions = modification.getSkippedActions()
+            if len(actions) > 0:
+                skippedActions[modification.version] = actions
+        return skippedActions
