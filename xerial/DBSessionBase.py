@@ -1,12 +1,11 @@
-import json
 from xerial.Column import Column
 from xerial.CurrencyColumn import CurrencyColumn
 from xerial.CurrencyData import CurrencyData
 from xerial.Record import Record
-from xerial.IntegerColumn import IntegerColumn
 from xerial.StringColumn import StringColumn
 from xerial.RoundRobinConnector import RoundRobinConnector
 from xerial.ExcelWriter import ExcelWriter
+from xerial.Modification import Modification
 from enum import Enum
 from packaging.version import Version
 from typing import Dict, List, Any, Tuple
@@ -148,6 +147,11 @@ class DBSessionBase :
 		Record.setVendor(modelClass, self.vendor)
 		self.prepareStatement(modelClass)
 		self.getParent(modelClass)
+		self.inject(modelClass)
+	
+	def inject(self, modelClass):
+		record = modelClass.__new__(modelClass)
+		record.inject()
 
 	def getParent(self, modelClass) :
 		record = modelClass.__new__(modelClass)
@@ -159,6 +163,7 @@ class DBSessionBase :
 			childrenList = self.parentMap.get(parentModelName, [])
 			if len(childrenList) == 0 : self.parentMap[parentModelName] = childrenList
 			childrenList.append((columnName, f'{modelClass.__name__}.{modelClass.primary}'))
+
 	
 	def checkModelLinking(self) :
 		from xerial.Children import Children
@@ -173,7 +178,7 @@ class DBSessionBase :
 
 		for modelClass in self.model.values() :
 			self.checkLinkingMeta(modelClass)
-	
+		
 	def checkModification(self, versionPath:str) :
 		"""
 		Automatic checking of Structure Modification.
@@ -204,6 +209,18 @@ class DBSessionBase :
 			raw = json.dumps(modelVersion, indent=4)
 			fd.write(raw)
 	
+	def injectModel(self):
+		for name, model in self.model.items():
+			injected = Record.getInjectedColumn(name)
+			existingColumn = set([i.lower() for i in self.getDBColumnName(model)])
+			for columnName, column  in injected.items():
+				column.vendor = self.vendor
+				model.meta.append((columnName, column))
+				if columnName.lower() not in existingColumn:
+					query = Modification.generateAddQuery(self.vendor, model, column)
+					self.executeWrite(query)
+			self.prepareStatement(model)
+
 	def getLastVersion(self, modelClass) :
 		if not hasattr(modelClass, '__modification__') :
 			record = modelClass.__new__(modelClass)
@@ -656,3 +673,6 @@ class DBSessionBase :
 			if name not in model.__generated_index__:
 				return False
 		return True
+	
+	def getDBColumnName(self, model: type) -> List[str]:
+		raise NotADirectoryError

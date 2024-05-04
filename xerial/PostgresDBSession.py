@@ -1,7 +1,7 @@
 from xerial.DBSessionBase import DBSessionBase, PrimaryDataError
 from xerial.IntegerColumn import IntegerColumn
 from packaging.version import Version
-from typing import Set
+from typing import Set, List
 
 import logging, time
 
@@ -509,3 +509,11 @@ class PostgresDBSession (DBSessionBase) :
 			indexSet = set()
 			tableMap[model.__name__] = indexSet
 		return indexSet
+	
+	def getDBColumnName(self, model: type) -> List[str]:
+		if len(self.schema) == 0:
+			query = f"SELECT column_name FROM information_schema.columns WHERE table_name='{model.__full_table_name__}'"
+		else:
+			query = f"SELECT column_name FROM information_schema.columns WHERE table_schema='{self.schema[:-1]}' AND table_name='{model.__full_table_name__}'"
+		result = self.executeRead(query)
+		return [i[0] for i in result]

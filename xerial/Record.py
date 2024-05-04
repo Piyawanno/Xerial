@@ -5,12 +5,13 @@ from xerial.Vendor import Vendor
 from xerial.InputExtractor import InputExtractor
 from xerial.MetaDataExtractor import MetaDataExtractor
 
-from typing import List
+from typing import List, Dict
 
 import inspect
 
 __MAPPED_META__ = {}
 __DEFAULT_BACKUP__ = False
+__INJECTED_COLUMN__ = {}
 
 def __getParentTableName__(modelClass) :
 	hierarchy = list(inspect.getmro(modelClass))
@@ -42,9 +43,16 @@ class Record :
 
 	
 	def toOption(self):
+		modelClass = self.__class__
+		avatar = {}
+		modelClassAvatar = getattr(modelClass, '__avatar__', None)
+		if not modelClassAvatar is None: avatar.update(modelClassAvatar)
+		if not modelClassAvatar is None and not getattr(self, modelClassAvatar['column'], None) is None:
+			avatar['url'] = modelClassAvatar['url'] + getattr(self, modelClassAvatar['column'])
 		return {
 			'value': getattr(self, self.primaryMeta.name),
-			'label': getattr(self, self.representativeMeta.name)
+			'label': getattr(self, self.representativeMeta.name),
+			'avatar': avatar
 		}
 	
 	def toDict(self) -> dict :
@@ -170,6 +178,27 @@ class Record :
 
 	def setAsChildrenOf(self) :
 		return None
+	
+	def inject(self):
+		"""
+		A placeholder method for Column Injection into other model.
+		By calling DBSession.appendModel(), this method will be called.
+		The targeted model must be appended to DBSession before the injecting model.
+		By injected column into the targeted model, column will be
+		added to the model, and table structure in DB will be altered.
+		Each column can be injected by calling self.injectInto method.
+		"""
+		pass
+
+	def injectInto(self, targetClassName: str, columnName: str, column: Column):
+		column.name = columnName
+		columnMap = __INJECTED_COLUMN__.get(targetClassName, {})
+		if len(columnMap) == 0: __INJECTED_COLUMN__[targetClassName] = columnMap
+		columnMap[columnName] = column
+
+	@staticmethod
+	def getInjectedColumn(modelName: str) -> Dict[str, Column]:
+		return __INJECTED_COLUMN__.get(modelName, {})
 	
 	@staticmethod
 	def hasMeta(modelClass) :

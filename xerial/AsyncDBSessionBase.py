@@ -1,14 +1,18 @@
+import typing
 from xerial.DBSessionBase import DBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.ForeignKey import ForeignKey
 from xerial.StringColumn import StringColumn
 from xerial.ExcelWriter import ExcelWriter
 from xerial.Record import Record
+from xerial.Modification import Modification
 from typing import Dict, List, Any
 from datetime import datetime, date, timedelta
 from decimal import Decimal
 
 import logging, csv, xlsxwriter, time, os, json
+
+T = typing.TypeVar("T")
 
 class AsyncDBSessionBase (DBSessionBase) :
 	async def checkModification(self, versionPath:str) :
@@ -30,6 +34,18 @@ class AsyncDBSessionBase (DBSessionBase) :
 
 		with open(versionPath, 'wt') as fd:
 			raw = json.dump(modelVersion, fd, indent=4)
+	
+	async def injectModel(self):
+		for name, model in self.model.items():
+			injected = Record.getInjectedColumn(name)
+			existingColumn = set([i.lower() for i in await self.getDBColumnName(model)])
+			for columnName, column  in injected.items():
+				column.vendor = self.vendor
+				model.meta.append((columnName, column))
+				if columnName.lower() not in existingColumn:
+					query = Modification.generateAddQuery(self.vendor, model, column)
+					await self.executeWrite(query)
+			self.prepareStatement(model)
 
 	async def checkModelModification(self, modelClass, currentVersion) :
 		modificationList = self.generateModification(modelClass, currentVersion)
@@ -95,7 +111,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 		return fetched
 	
 	# NOTE : Return None if not found.
-	async def selectByID(self, modelClass:type, ID:int, isRelated:bool=False, hasChildren:bool=False) -> Record :
+	async def selectByID(self, modelClass:T, ID:int, isRelated:bool=False, hasChildren:bool=False) -> T :
 		fetched = await self.select(
 			modelClass,
 			f"WHERE {modelClass.primary}=?",
@@ -107,7 +123,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 		if len(fetched) : return fetched[0]
 		else : None
 
-	async def select(self, modelClass:type, clause:str, isRelated:bool=False, hasChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> list:
+	async def select(self, modelClass:T, clause:str, isRelated:bool=False, hasChildren:bool=False, limit:int=None, offset:int=None, parameter:list=None) -> List[T]:
 		if parameter is not None :
 			clause = self.processClause(clause, parameter)
 		query = self.generateSelectQuery(modelClass, clause, limit, offset)
@@ -353,3 +369,6 @@ class AsyncDBSessionBase (DBSessionBase) :
 	
 	async def getExistingTable(self) :
 		pass
+
+	async def getDBColumnName(self, model: type) -> List[str]:
+		raise NotADirectoryError

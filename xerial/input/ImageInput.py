@@ -28,6 +28,7 @@ class ImageInput (Input):
 			uploadURL:str=None,
 			documentPath:str=None,
 			hasCrop:bool=False,
+			aspectRatio:float=1.0,
 			config:Dict=None,
 			columnType:str='',
 			columnName:str='',
@@ -74,6 +75,7 @@ class ImageInput (Input):
 		self.path = path
 		self.uploadURL = uploadURL
 		self.hasCrop = hasCrop
+		self.aspectRatio = aspectRatio
 		self.isFile = True
 	
 	def toDict(self) -> dict :
@@ -83,6 +85,7 @@ class ImageInput (Input):
 		data['uploadURL'] = self.uploadURL
 		data['url'] = self.url
 		data['hasCrop'] = self.hasCrop
+		data['aspectRatio'] = self.aspectRatio
 		data['isShare'] = self.isShare
 		data['isFile'] = True
 		return data

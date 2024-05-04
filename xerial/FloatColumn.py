@@ -29,6 +29,7 @@ class FloatColumn (Column) :
 	
 	def fromDict(self, data) :
 		raw = data.get(self.name, self.default)
+		if raw == "": raw = self.default
 		if raw is None :
 			return None
 		else :

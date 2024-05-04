@@ -31,7 +31,7 @@ class EnumRadioInput (EnumSelectInput) :
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			typeName:str = '',
+			typeName:str = 'EnumRadio',
 		) :
 		EnumSelectInput.__init__(
 			self,

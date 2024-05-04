@@ -223,3 +223,8 @@ class Modification :
 			else :
 				generated.append(self.generator[column[0]](*column[1:]))
 		return generated
+
+	@staticmethod
+	def generateAddQuery(vendor: Vendor, model: type, column: Column) -> str:
+		generator = __GENERATOR__[vendor]
+		return generator[ModificationType.ADD](model.__full_table_name__, column.name, column)
