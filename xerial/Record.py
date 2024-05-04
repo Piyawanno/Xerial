@@ -27,36 +27,6 @@ def __getParentFullTableName__(modelClass):
 		if hasattr(parent, '__full_table_name__'):
 			return parent.__full_table_name__
 	return None
-
-	
-	def toOption(self):
-		modelClass = self.__class__
-		avatar = {}
-		modelClassAvatar = getattr(modelClass, '__avatar__', None)
-		if not modelClassAvatar is None: avatar.update(modelClassAvatar)
-		if not modelClassAvatar is None and not getattr(self, modelClassAvatar['column'], None) is None:
-			avatar['url'] = modelClassAvatar['url'] + getattr(self, modelClassAvatar['column'])
-		return {
-			'value': getattr(self, self.primaryMeta.name),
-			'label': getattr(self, self.representativeMeta.name),
-			'avatar': avatar
-		}
-	
-	def toDict(self) -> dict :
-		result = {}
-		modelClass = self.__class__
-		for child in modelClass.children :
-			children = getattr(self, child.name)
-			if isinstance(children, list) :
-				result[child.name] = [i.toDict() for i in children]
-		
-		for foreignKey in modelClass.foreignKey :
-			linked = getattr(self, foreignKey.name)
-			if isinstance(linked, Record) and linked != self:
-				if not hasattr(linked, '__raw__') :
-					linked.__raw__ = linked.toDict()
-				result[foreignKey.name] = linked.__raw__
-
 class Record:
 	def __init__(self, **kw):
 		modelClass = self.__class__
@@ -72,11 +42,19 @@ class Record:
 			setattr(self, column, kw.get(column, meta.default() if callable(meta.default) else meta.default))
 
 	def toOption(self):
+		modelClass = self.__class__
+		avatar = {}
+		modelClassAvatar = getattr(modelClass, '__avatar__', None)
+		if modelClassAvatar is None:
+			avatar.update(modelClassAvatar)
+			if hasattr(self, modelClassAvatar['column'], None):
+				avatar['url'] = modelClassAvatar['url'] + getattr(self, modelClassAvatar['column'])
 		return {
 			'value': getattr(self, self.primaryMeta.name),
-			'label': getattr(self, self.representativeMeta.name)
+			'label': getattr(self, self.representativeMeta.name),
+			'avatar': avatar
 		}
-
+	
 	def toDict(self) -> dict:
 		result = {}
 		modelClass = self.__class__
