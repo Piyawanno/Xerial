@@ -20,13 +20,13 @@ def __getParentTableName__(modelClass):
 			return parent.__table_name__
 	return None
 
-
 def __getParentFullTableName__(modelClass):
 	hierarchy = list(inspect.getmro(modelClass))
 	for parent in hierarchy[1:]:
 		if hasattr(parent, '__full_table_name__'):
 			return parent.__full_table_name__
 	return None
+
 class Record:
 	def __init__(self, **kw):
 		modelClass = self.__class__
@@ -45,7 +45,7 @@ class Record:
 		modelClass = self.__class__
 		avatar = {}
 		modelClassAvatar = getattr(modelClass, '__avatar__', None)
-		if modelClassAvatar is None:
+		if modelClassAvatar is not None:
 			avatar.update(modelClassAvatar)
 			if hasattr(self, modelClassAvatar['column'], None):
 				avatar['url'] = modelClassAvatar['url'] + getattr(self, modelClassAvatar['column'])
