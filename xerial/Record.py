@@ -1,12 +1,12 @@
+import inspect
+from typing import List, Dict
+
 from xerial.Column import Column
 from xerial.Input import Input
-from xerial.Modification import Modification
-from xerial.Vendor import Vendor
 from xerial.InputExtractor import InputExtractor
 from xerial.MetaDataExtractor import MetaDataExtractor
-
-from typing import List, Dict
-import inspect
+from xerial.Modification import Modification
+from xerial.Vendor import Vendor
 
 __MAPPED_META__ = {}
 __DEFAULT_BACKUP__ = False
@@ -54,7 +54,7 @@ class Record:
 			'label': getattr(self, self.representativeMeta.name),
 			'avatar': avatar
 		}
-	
+
 	def toDict(self) -> dict:
 		result = {}
 		modelClass = self.__class__
@@ -81,9 +81,9 @@ class Record:
 		result['__avatar__'] = getattr(modelClass, '__avatar__', None)
 		return result
 
-	def setAsChildrenOf(self) :
+	def setAsChildrenOf(self):
 		return None
-	
+
 	def inject(self):
 		"""
 		A placeholder method for Column Injection into other model.
@@ -104,13 +104,14 @@ class Record:
 	@staticmethod
 	def getInjectedColumn(modelName: str) -> Dict[str, Column]:
 		return __INJECTED_COLUMN__.get(modelName, {})
-	
+
 	@staticmethod
-	def hasMeta(modelClass) :
+	def hasMeta(modelClass):
 		hasMeta = hasattr(modelClass, 'meta')
 		mapped = modelClass in __MAPPED_META__
-		if hasMeta and not mapped : hasMeta = False
+		if hasMeta and not mapped: hasMeta = False
 		return hasMeta
+
 	def toRawDict(self) -> dict:
 		result = {}
 		for column, meta in self.meta:
