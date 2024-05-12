@@ -557,7 +557,7 @@ class DBSessionBase :
 			if child.model is None :
 				childModelClass = self.model.get(child.modelName, None)
 				if childModelClass is None :
-					logging.warning(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
+					print(f"Child model {child.reference} for {modelClass.__name__} cannot be found.")
 				child.model = childModelClass
 				if childModelClass is None: continue
 				for foreignKey in childModelClass.foreignKey :
@@ -571,7 +571,7 @@ class DBSessionBase :
 			if foreignKey.model is None :
 				model = self.model.get(foreignKey.modelName, None)
 				if model is None :
-					logging.warning(f"ForeignKey model {foreignKey.reference} for {modelClass.__name__} cannot be found.")
+					print(f"ForeignKey model {foreignKey.reference} for {modelClass.__name__} cannot be found.")
 				else :
 					foreignKey.model = model
 					foreignKey.columnMeta = model.metaMap.get(foreignKey.column, None)
@@ -580,7 +580,7 @@ class DBSessionBase :
 	def getPrimaryClause(self, record) :
 		modelClass = record.__class__
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be referenced.")
+			print(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be referenced.")
 			return
 		meta = modelClass.primaryMeta
 		if isinstance(meta, list) :
@@ -595,7 +595,7 @@ class DBSessionBase :
 	
 	def getRawPrimaryClause(self, modelClass, raw) :
 		if not hasattr(modelClass, 'primaryMeta') :
-			logging.warning(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be referenced.")
+			print(f"*** Warning {modelClass.__full_table_name__} has not primary key and cannot be referenced.")
 			return
 		meta = modelClass.primaryMeta
 		if isinstance(meta, list) :
