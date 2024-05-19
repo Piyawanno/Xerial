@@ -1,4 +1,3 @@
-import typing
 from xerial.DBSessionBase import DBSessionBase
 from xerial.AsyncRoundRobinConnector import AsyncRoundRobinConnector
 from xerial.ForeignKey import ForeignKey
@@ -9,10 +8,13 @@ from xerial.Modification import Modification
 from typing import Dict, List, Any
 from datetime import datetime, date, timedelta
 from decimal import Decimal
+from typing import TypeVar, Self
 
 import logging, csv, xlsxwriter, time, os, json
 
-T = typing.TypeVar("T")
+
+
+T = TypeVar("T")
 
 class AsyncDBSessionBase (DBSessionBase) :
 	async def checkModification(self, versionPath:str) :
@@ -34,6 +36,19 @@ class AsyncDBSessionBase (DBSessionBase) :
 
 		with open(versionPath, 'wt') as fd:
 			raw = json.dump(modelVersion, fd, indent=4)
+	
+	async def init(self, modificationPath: str=None) -> Self:
+		modelList = DBSessionBase.REGISTERED_MODEL[:]
+		DBSessionBase.REGISTERED_MODEL = []
+		for modelClass in modelList:
+			self.appendModel(modelClass)
+		if modificationPath is None:
+			modificationPath = os.path.abspath('./ModelVersion.json')
+		await self.connect()
+		await self.checkModification(modificationPath)
+		await self.createTable()
+		self.checkModelLinking()
+		return self
 	
 	async def injectModel(self):
 		for name, model in self.model.items():

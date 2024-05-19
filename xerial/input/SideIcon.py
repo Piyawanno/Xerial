@@ -7,12 +7,14 @@ class SideIcon :
 		order: str='1.0',
 		label: str='',
 		renderClass: str='SideIcon',
+		isAdd: bool = True, 
 	):
 		self.name = name
 		self.icon = icon
 		self.order = order
 		self.label = label
 		self.renderClass = renderClass
+		self.isAdd = isAdd
 	
 	def toDict(self) -> Dict[str, str]:
 		return {
@@ -21,4 +23,5 @@ class SideIcon :
 			'order': self.order,
 			'label': self.label,
 			'renderClass': self.renderClass,
+			'isAdd': self.isAdd,
 		}

@@ -28,6 +28,7 @@ class MetaDataExtractor :
 		MetaDataExtractor.checkBackup(self.modelClass)
 		self.extractAttribute(primaryMeta)
 		self.extractChildren()
+		modelClass.metaMap = {k:v for k, v in modelClass.meta}
 	
 	def getPrimary(self) :
 		modelClass = self.modelClass

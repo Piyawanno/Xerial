@@ -1,4 +1,5 @@
 from xerial.Column import Column
+from xerial.JSONColumn import JSONColumn
 from xerial.Input import Input
 from xerial.InputGroupEnum import InputGroupEnum
 
@@ -98,7 +99,8 @@ class InputExtractor :
 			if not attribute.foreignKey is None:
 				attribute.input.foreignModelName = attribute.foreignKey.modelName
 				attribute.input.foreignColumn = attribute.foreignKey.column
-			
+			if isinstance(attribute, JSONColumn) and hasattr(attribute.input, 'setOrderAttribute'):
+				attribute.input.setOrderAttribute(attribute)
 			inputList.append(attribute.input)
 			if getattr(attribute.input, 'isFile', False) :
 				self.modelClass.__file_input__.append(attribute.input)

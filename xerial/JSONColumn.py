@@ -1,16 +1,27 @@
 from xerial.Column import Column
 from xerial.Vendor import Vendor
+from xerial.Input import Input
 
+from typing import Any
 import json
 
 class JSONColumn (Column) :
-	def __init__(self, isNotNull=False, default=None, input=None) :
+	def __init__(
+		self,
+		isNotNull: bool=False,
+		default: Any=None,
+		input: Input=None,
+		orderAttribute: str=None,
+		orderType: str=None,
+	) :
 		Column.__init__(self,
 			isPrimary=False,
 			isNotNull=isNotNull,
 			default=default,
 			input=input
 		)
+		self.orderAttribute = orderAttribute
+		self.orderType = orderType
 
 	def toDict(self, attribute):
 		return attribute

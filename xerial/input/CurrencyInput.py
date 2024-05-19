@@ -14,9 +14,10 @@ class CurrencyInput (Input):
 			isRequired:bool=False,
 			isEditable:bool=True,
 			isForm:bool=True,
-			isTableForm:bool=False,
-			isSearchTable:bool=False,
 			isAdvanceForm:bool=False,
+			isTableForm:bool=False,
+			isView:bool=False,
+			isSearchTable:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -47,9 +48,10 @@ class CurrencyInput (Input):
 			isRequired,
 			isEditable,
 			isForm,
-			isTableForm,
-			isSearchTable,
 			isAdvanceForm,
+			isTableForm,
+			isView,
+			isSearchTable,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -70,6 +72,9 @@ class CurrencyInput (Input):
 		self.isFloatingPoint = isFloatingPoint
 		self.maxValue=maxValue
 		self.isNumber = True
+	
+	def setOrderAttribute(self, column):
+		column.orderAttribute = 'originValue'
 
 	def toDict(self) -> dict :
 		data = Input.toDict(self)

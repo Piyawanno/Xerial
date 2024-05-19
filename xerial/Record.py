@@ -47,7 +47,8 @@ class Record:
 		modelClassAvatar = getattr(modelClass, '__avatar__', None)
 		if modelClassAvatar is not None:
 			avatar.update(modelClassAvatar)
-			if hasattr(self, modelClassAvatar['column'], None):
+			# if hasattr(self, modelClassAvatar['column'], None):
+			if hasattr(self, modelClassAvatar['column']) and not getattr(self, modelClassAvatar['column']) is None:
 				avatar['url'] = modelClassAvatar['url'] + getattr(self, modelClassAvatar['column'])
 		return {
 			'value': getattr(self, self.primaryMeta.name),

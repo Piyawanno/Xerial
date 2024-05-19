@@ -1,5 +1,6 @@
 from xerial.AsyncSQLiteDBSession import AsyncSQLiteDBSession
 from xerial.AsyncPostgresDBSession import AsyncPostgresDBSession
+from xerial.DBSessionBase import REGISTER
 from xerial.Vendor import Vendor
 from xerial.Record import Record
 from xerial.StringColumn import StringColumn
@@ -11,7 +12,7 @@ from datetime import datetime
 from typing import List
 
 import asyncio, copy, time
-
+@REGISTER
 class Poll (Record) :
 	topic = StringColumn(length=64)
 	description = StringColumn(length=-1)
@@ -22,7 +23,7 @@ class Poll (Record) :
 
 	def __repr__(self) -> str:
 		return f"{self.topic} {self.description} {self.startDate} {self.endDate} {self.choices}"
-
+@REGISTER
 class Choice (Record) :
 	# Reference to Poll.id
 	poll = IntegerColumn(foreignKey="Poll.id", isIndex=True)
@@ -33,28 +34,25 @@ class Choice (Record) :
 		return f"{self.id} {self.choice} {self.count}"
 
 async def runTest() :
-	# config = {
-	# 	"vendor" : Vendor.SQLITE,
-	# 	"database" : "./example.sqlite.bin"
-	# }
+	vendor = Vendor.SQLITE
+	if vendor == Vendor.SQLITE:
+		config = {
+			"vendor" : Vendor.SQLITE,
+			"database" : "./example.sqlite.bin"
+		}
 
-	# session = AsyncSQLiteDBSession(config)
-
-	config = {
-		"vendor" : Vendor.POSTGRESQL,
-		"host" : "localhost",
-		"database" : "Gaimon",
-		"port": 5432,
-		"user": "admin",
-		"password": "SECRET_PASSWORD",
-	}
-	session = AsyncPostgresDBSession(config)
-	await session.connect()
-
-	session.appendModel(Poll)
-	session.appendModel(Choice)
-	await session.createTable()
-
+		session = await AsyncSQLiteDBSession(config).init()
+	elif vendor == Vendor.POSTGRESQL:
+		config = {
+			"vendor" : Vendor.POSTGRESQL,
+			"host" : "localhost",
+			"database" : "Gaimon",
+			"port": 5432,
+			"user": "admin",
+			"password": "SECRET_PASSWORD",
+		}
+		session = await AsyncPostgresDBSession(config).init()
+	
 	poll = Poll()
 	poll.topic = "On which planet do you want to live?"
 	poll.description = "In the case of russian invasion on the whole planet earth, "
@@ -68,8 +66,8 @@ async def runTest() :
 		Choice().fromDict({"choice" : "Sun"}),
 	]
 
-	pollList1 = [copy.copy(poll) for i in range(100)]
-	pollList2 = [copy.copy(poll) for i in range(100)]
+	pollList1 = [copy.copy(poll) for i in range(1_000)]
+	pollList2 = [copy.copy(poll) for i in range(1_000)]
 
 	await session.insert(poll)
 

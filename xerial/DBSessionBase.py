@@ -8,14 +8,18 @@ from xerial.ExcelWriter import ExcelWriter
 from xerial.Modification import Modification
 from enum import Enum
 from packaging.version import Version
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Tuple, Self
 
 import logging, csv, xlsxwriter, os, json
 
+def REGISTER(modelClass):
+	return DBSessionBase.register(modelClass)
+
 class PrimaryDataError (Exception) :
 	pass
-
 class DBSessionBase :
+	REGISTERED_MODEL = []
+
 	def __init__(self, config) :
 		self.config = config
 		self.prefix = config.get("prefix", "")
@@ -27,6 +31,24 @@ class DBSessionBase :
 		self.lastConnectionTime = -1.0
 		self.parentMap = {}
 		self.isOpened = False
+	
+	@staticmethod
+	def register(modelClass):
+		DBSessionBase.REGISTERED_MODEL.append(modelClass)
+		return modelClass
+
+	def init(self, modificationPath: str=None) -> Self:
+		modelList = DBSessionBase.REGISTERED_MODEL[:]
+		DBSessionBase.REGISTERED_MODEL = []
+		for modelClass in modelList:
+			self.appendModel(modelClass)
+		if modificationPath is None:
+			modificationPath = os.path.abspath('./ModelVersion.json')
+		self.connect()
+		self.checkModification(modificationPath)
+		self.createTable()
+		self.checkModelLinking()
+		return self
 	
 	def resetCount(self) :
 		self.queryCount = 0

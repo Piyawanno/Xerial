@@ -15,9 +15,10 @@ class Input :
 			isRequired:bool=False,
 			isEditable:bool=True,
 			isForm:bool=True,
-			isTableForm:bool=False,
-			isSearchTable:bool=False,
 			isAdvanceForm:bool=False,
+			isTableForm:bool=False,
+			isView:bool=False,
+			isSearchTable:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -42,6 +43,7 @@ class Input :
 		self.isRequired = isRequired
 		self.isEditable = isEditable
 		self.isForm = isForm
+		self.isView = isView 
 		self.isTableForm = isTableForm
 		self.isSearchTable = isSearchTable
 		self.isAdvanceForm = isAdvanceForm
@@ -69,6 +71,9 @@ class Input :
 		self.childrenModelName = None
 		self.isTag = False
 	
+	def setOrderAttribute(self, column):
+		pass
+	
 	def toDict(self) -> dict :
 		groupValue = self.group if self.group is None or isinstance(self.group, int) else self.group.value
 		return {
@@ -85,6 +90,7 @@ class Input :
 			'isNumber' : self.isNumber,
 			'isFile' : self.isFile,
 			'isForm' : self.isForm,
+			'isView' : self.isView,
 			'isTableForm' : self.isTableForm,
 			'isSearchTable': self.isSearchTable,
 			'isAdvanceForm' : self.isAdvanceForm,

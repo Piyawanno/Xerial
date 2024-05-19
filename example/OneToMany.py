@@ -1,4 +1,5 @@
 from xerial.SQLiteDBSession import SQLiteDBSession
+from xerial.DBSessionBase import REGISTER
 from xerial.Vendor import Vendor
 from xerial.Record import Record
 from xerial.StringColumn import StringColumn
@@ -8,7 +9,7 @@ from xerial.Children import Children
 
 from datetime import datetime
 from typing import List
-
+@REGISTER
 class Poll (Record) :
 	topic = StringColumn(length=64)
 	description = StringColumn(length=-1)
@@ -20,6 +21,7 @@ class Poll (Record) :
 	def __repr__(self) -> str:
 		return f"{self.topic} {self.description} {self.startDate} {self.endDate} {self.choices}"
 
+@REGISTER
 class Choice (Record) :
 	# Reference to Poll.id
 	poll = IntegerColumn(foreignKey="Poll.id", isIndex=True)
@@ -34,11 +36,7 @@ config = {
 	"database" : "./example.sqlite.bin"
 }
 
-session = SQLiteDBSession(config)
-session.connect()
-session.appendModel(Poll)
-session.appendModel(Choice)
-session.createTable()
+session = SQLiteDBSession(config).init()
 
 poll = Poll()
 poll.topic = "On which planet do you want to live?"
