@@ -112,7 +112,9 @@ class TableModificationTestFixture:
             for mock in self.mocks:
                 self.log(f"\tModifying {mock.name}")
                 model: type = self.models.get(mock.name)
-                await self.session.checkModelModification(model, str(self.currentDeploymentVersion - 1))
+                self.log(f"\tMeta: {[t[0] for t in getattr(model, 'meta', [])]}")
+                oldVersion = self.deployments[self.currentDeploymentVersion - 1].to.get(mock.name)
+                await self.session.checkModelModification(model, str(oldVersion))
             await self.upsert()
             self.currentDeploymentVersion += 1
 
@@ -223,7 +225,8 @@ class TableModificationTestFixture:
             for mock in self.mocks:
                 self.log(f"\tArranging {mock.name}")
                 model: type = self.models.get(mock.name)
-                await self.session.checkModelModification(model, str(self.currentDeploymentVersion - 1))
+                oldVersion = self.deployments[self.currentDeploymentVersion - 1].to.get(mock.name)
+                await self.session.checkModelModification(model, str(oldVersion))
 
             if deployment.to == self.freeze:
                 self.log(f"Freeze version reached: {deployment.to}")
