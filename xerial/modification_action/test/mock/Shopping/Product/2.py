@@ -6,7 +6,7 @@ from xerial.StringColumn import StringColumn
 class Product(Record):
     id = IntegerColumn(isPrimary=True)
     name = StringColumn()
-    price = price = IntegerColumn()
+    price = IntegerColumn()
     description = StringColumn(length=30)
     quantity = IntegerColumn()
 
