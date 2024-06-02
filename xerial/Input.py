@@ -2,6 +2,7 @@ from typing import Dict, List
 from packaging.version import Version
 from xerial.InputAttachment import InputAttachment
 from xerial.input.SideIcon import SideIcon
+from xerial.Filter import Filter
 
 class Input :
 	def __init__(
@@ -32,6 +33,7 @@ class Input :
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine: int=None,
+			filter: Filter=None,
 			typeName:str=None,
 		):
 		self.label = label
@@ -68,6 +70,7 @@ class Input :
 		self.isSpreadSheet = isSpreadSheet
 		self.isCopyable = isCopyable
 		self.inputPerLine = inputPerLine
+		self.filter = filter
 		self.childrenModelName = None
 		self.isTag = False
 	
@@ -105,6 +108,7 @@ class Input :
 			'sideIcon': [] if self.sideIcon is None else [i.toDict() for i in self.sideIcon],
 			'isCopyable': self.isCopyable,
 			'inputPerLine': self.inputPerLine,
+			'filter': None if self.filter is None else self.filter.toDict(),
 			'childrenModelName': self.childrenModelName,
 			'isTag': self.isTag
 		}

@@ -2,6 +2,7 @@ from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 from xerial.input.RichTextHandler import RichTextHandler
+from xerial.Filter import Filter
 from typing import List
 
 class RichTextInput (Input):
@@ -36,6 +37,7 @@ class RichTextInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'RichText',
 		) :
 		Input.__init__(
@@ -64,6 +66,8 @@ class RichTextInput (Input):
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
 			isCopyable=isCopyable,
+			inputPerLine=inputPerLine,
+			filter=filter,
 			typeName=typeName,
 		)
 		self.hasImage: bool = hasImage

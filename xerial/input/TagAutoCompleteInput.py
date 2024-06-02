@@ -1,6 +1,7 @@
 from typing import Dict
 from xerial.input.AutoCompleteInput import AutoCompleteInput
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 class TagAutoCompleteInput (AutoCompleteInput) :
 	def __init__(
 			self,
@@ -38,6 +39,7 @@ class TagAutoCompleteInput (AutoCompleteInput) :
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'TagAutoComplete',
 		) :
 		AutoCompleteInput.__init__(
@@ -74,6 +76,7 @@ class TagAutoCompleteInput (AutoCompleteInput) :
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)
 		self.childrenURL = childrenURL

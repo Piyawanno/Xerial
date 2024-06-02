@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import os, sys, site, getpass
+from re import I
 
 __help__ = """Xerial setup script :
 setup : Install dependencies of Xerial.
@@ -17,6 +18,7 @@ def __conform__(path) :
 	rootPrefix = ('etc', 'var', 'usr')
 	if splited[1] in rootPrefix: isRootPath = True
 	if sys.platform == 'win32':
+		from pathlib import Path
 		result = os.sep.join([i for i in splited if len(i)])
 		if isRootPath: result = str(Path.home()) + os.sep + result
 		if path[-1] == "/": result = result + os.sep
@@ -130,6 +132,14 @@ class XerialSetup :
 		with open('requirements.txt') as fd :
 			content = fd.read()
 		command = "pip3 install %s"%(content.replace("\n", " "))
+
+		import platform
+		subversion = int(platform.python_version().split('.')[1])
+		if subversion >= 11:
+			command = "pip3 install --break-system-packages %s"%(content.replace("\n", " "))
+		else:
+			command = "pip3 install %s"%(content.replace("\n", " "))
+
 		print(command)
 		os.system(command)
 	
@@ -150,13 +160,15 @@ class XerialSetup :
 		for source, destination in self.installPathList  :
 			destination = __conform__(destination)
 			source = __conform__(source)
-			# if not os.path.isdir(destination) :
+			if not os.path.isdir(destination) :
+				os.makedirs(destination)
 			command = f"{self.copyCommand} -fR {source} {destination}"
 			print(command)
 			os.system(command)
 	
 	def installConfig(self) :
 		path = __conform__("/etc/xerial")
+		if not os.path.exists(path): os.makedirs(path)
 		for source, destination in self.configList :
 			destinationPath = __conform__(f"{path}/{destination}")
 			if not os.path.isfile(destinationPath) :

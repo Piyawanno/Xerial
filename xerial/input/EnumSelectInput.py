@@ -3,6 +3,7 @@ from xerial.InputAttachment import InputAttachment
 from xerial.OptionEnum import OptionEnum
 from enum import IntEnum
 from typing import Dict, Type
+from xerial.Filter import Filter
 
 class EnumSelectInput (Input):
 	def __init__(
@@ -34,6 +35,7 @@ class EnumSelectInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'EnumSelect',
 		) :
 		Input.__init__(
@@ -64,6 +66,7 @@ class EnumSelectInput (Input):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)
 		self.enum = enum

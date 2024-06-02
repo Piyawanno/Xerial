@@ -1,6 +1,7 @@
 from typing import Dict
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 class TagReferenceSelectInput (ReferenceSelectInput):
 	def __init__(
@@ -34,6 +35,7 @@ class TagReferenceSelectInput (ReferenceSelectInput):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'TagReferenceSelect',
 		) :
 		ReferenceSelectInput.__init__(
@@ -67,5 +69,6 @@ class TagReferenceSelectInput (ReferenceSelectInput):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)

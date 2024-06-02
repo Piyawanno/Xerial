@@ -8,7 +8,7 @@ from xerial.ExcelWriter import ExcelWriter
 from xerial.Modification import Modification
 from enum import Enum
 from packaging.version import Version
-from typing import Dict, List, Any, Tuple, Self
+from typing import Dict, List, Any, Tuple
 
 import logging, csv, xlsxwriter, os, json
 
@@ -37,7 +37,7 @@ class DBSessionBase :
 		DBSessionBase.REGISTERED_MODEL.append(modelClass)
 		return modelClass
 
-	def init(self, modificationPath: str=None) -> Self:
+	def init(self, modificationPath: str=None):
 		modelList = DBSessionBase.REGISTERED_MODEL[:]
 		DBSessionBase.REGISTERED_MODEL = []
 		for modelClass in modelList:

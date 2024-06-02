@@ -1,6 +1,7 @@
 from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 class EmailInput (Input):
 	def __init__(
@@ -31,6 +32,7 @@ class EmailInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'Email',
 		) :
 		Input.__init__(
@@ -61,5 +63,6 @@ class EmailInput (Input):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)

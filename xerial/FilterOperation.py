@@ -8,7 +8,11 @@ class FilterOperation (IntEnum) :
 	LESS = 30
 	LESS_EQUAL = 31
 	LIKE = 40
-	IN = 41
+	IN = 50
+	NOT_IN = 51
+	BETWEEN = 60
+	CONTAIN = 70
+	NOT_CONTAIN = 71
 
 FilterOperation.sign = {
 	FilterOperation.EQUAL : '=',
@@ -19,4 +23,8 @@ FilterOperation.sign = {
 	FilterOperation.LESS_EQUAL : '<=',
 	FilterOperation.LIKE : 'LIKE',
 	FilterOperation.IN : 'IN',
+	FilterOperation.NOT_IN : 'NOT IN',
+	FilterOperation.BETWEEN : 'BETWEEN',
+	FilterOperation.CONTAIN : 'CONTAIN',
+	FilterOperation.NOT_CONTAIN : 'NOT CONTAIN'
 }

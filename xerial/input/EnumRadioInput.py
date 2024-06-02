@@ -2,6 +2,7 @@ from xerial.input.EnumSelectInput import EnumSelectInput
 from xerial.InputAttachment import InputAttachment
 from enum import IntEnum
 from typing import Dict, Type
+from xerial.Filter import Filter
 
 class EnumRadioInput (EnumSelectInput) :
 	def __init__(
@@ -32,6 +33,7 @@ class EnumRadioInput (EnumSelectInput) :
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'EnumRadio',
 		) :
 		EnumSelectInput.__init__(
@@ -61,5 +63,7 @@ class EnumRadioInput (EnumSelectInput) :
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
 			isCopyable=isCopyable,
+			inputPerLine=inputPerLine,
+			filter=filter,
 			typeName=typeName,
 		)

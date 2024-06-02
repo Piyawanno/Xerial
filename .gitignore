@@ -9,3 +9,5 @@ dist
 xerial.egg-info
 git.ximple
 example/*.bin
+
+.vscode

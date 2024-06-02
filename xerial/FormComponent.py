@@ -1,4 +1,4 @@
 
 class FormComponent:
-    def extract(self, modelName: str):
-        return []
+	def extract(self, modelName: str):
+		return []

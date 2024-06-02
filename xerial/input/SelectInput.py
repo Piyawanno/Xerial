@@ -1,5 +1,6 @@
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 from typing import Dict, List, Tuple
 
@@ -34,6 +35,7 @@ class SelectInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'Select',
 		) :
 		Input.__init__(
@@ -64,6 +66,7 @@ class SelectInput (Input):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)
 		self.option = [list(i) for i in option]

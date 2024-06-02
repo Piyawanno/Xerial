@@ -1,6 +1,8 @@
 from typing import Dict
+
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 class ReferenceSelectInput (Input):
 	def __init__(
@@ -34,6 +36,7 @@ class ReferenceSelectInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'ReferenceSelect',
 		) :
 		Input.__init__(
@@ -64,6 +67,7 @@ class ReferenceSelectInput (Input):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)
 		self.url = url

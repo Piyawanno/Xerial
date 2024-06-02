@@ -1,5 +1,6 @@
 from xerial.input.SelectInput import SelectInput
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 from typing import Dict, List, Tuple
 
@@ -34,6 +35,7 @@ class TagSelectInput (SelectInput):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'TagSelect',
 		) :
 		SelectInput.__init__(
@@ -66,5 +68,6 @@ class TagSelectInput (SelectInput):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)

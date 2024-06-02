@@ -1,6 +1,8 @@
 from typing import Dict
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
+
 class AutoCompleteInput (ReferenceSelectInput) :
 	def __init__(
 			self,
@@ -36,6 +38,7 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str='AutoComplete',
 		) :
 		ReferenceSelectInput.__init__(
@@ -69,6 +72,7 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)
 		self.template = template

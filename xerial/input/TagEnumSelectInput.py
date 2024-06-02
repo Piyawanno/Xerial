@@ -1,6 +1,7 @@
 from xerial.input.EnumSelectInput import EnumSelectInput
 from xerial.InputAttachment import InputAttachment
 from xerial.OptionEnum import OptionEnum
+from xerial.Filter import Filter
 from enum import IntEnum
 from typing import Dict, Type
 
@@ -34,6 +35,7 @@ class TagEnumSelectInput (EnumSelectInput):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str='TagEnumSelect',
 		) :
 		EnumSelectInput.__init__(
@@ -65,5 +67,6 @@ class TagEnumSelectInput (EnumSelectInput):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)

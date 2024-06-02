@@ -9,7 +9,7 @@ from xerial.Modification import Modification
 from xerial.ModificationType import ModificationType
 from xerial.Vendor import Vendor
 from xerial.exception.ModificationException import ModificationException
-from xerial.modification_action.ModificationAction import ModificationAction
+from xerial.modact.ModificationAction import ModificationAction
 
 __MAPPED_META__ = {}
 __DEFAULT_BACKUP__ = False
@@ -201,10 +201,10 @@ class Record:
 
 	def getScopedModification(self, destination: str) -> List[Modification]:
 		return [
-            modification
-            for modification
-            in reversed(getattr(self.__class__, '__modification__', []))
-            if modification.version.__str__() > destination
+			modification
+			for modification
+			in reversed(getattr(self.__class__, '__modification__', []))
+			if modification.version.__str__() > destination
 		]
 
 	def getLatestModification(self) -> Modification | None:

@@ -1,6 +1,7 @@
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 from xerial.input.SelectInput import SelectInput
+from xerial.Filter import Filter
 
 from typing import Dict, List, Tuple
 
@@ -34,6 +35,7 @@ class RadioInput (SelectInput):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'Radio',
 		) :
 		SelectInput.__init__(
@@ -64,6 +66,8 @@ class RadioInput (SelectInput):
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
 			isCopyable=isCopyable,
+			inputPerLine=inputPerLine,
+			filter=filter,
 			typeName=typeName,
 		)
 

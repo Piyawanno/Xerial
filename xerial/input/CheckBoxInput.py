@@ -1,6 +1,7 @@
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 from xerial.input.SelectInput import SelectInput
+from xerial.Filter import Filter
 
 from typing import Dict, List, Tuple
 
@@ -34,6 +35,7 @@ class CheckBoxInput (SelectInput):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'CheckBox',
 		) :
 		SelectInput.__init__(
@@ -64,6 +66,8 @@ class CheckBoxInput (SelectInput):
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
 			isCopyable=isCopyable,
+			inputPerLine=inputPerLine,
+			filter=filter,
 			typeName=typeName,
 		)
 

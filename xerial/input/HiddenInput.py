@@ -1,7 +1,7 @@
 from typing import Dict, Type
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
-from enum import IntEnum
+from xerial.Filter import Filter
 
 class HiddenInput (Input):
 	def __init__(
@@ -31,6 +31,7 @@ class HiddenInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'Hidden',
 		) :
 		Input.__init__(
@@ -59,5 +60,7 @@ class HiddenInput (Input):
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
 			isCopyable=isCopyable,
+			inputPerLine=inputPerLine,
+			filter=filter,
 			typeName=typeName,
 		)

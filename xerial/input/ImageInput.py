@@ -1,6 +1,7 @@
 from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 class ImageInput (Input):
 	def __init__(
@@ -38,6 +39,7 @@ class ImageInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'Image',
 		) :
 		Input.__init__(
@@ -68,6 +70,7 @@ class ImageInput (Input):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)
 		if len(url) and url[-1] != '/': url = url+'/'

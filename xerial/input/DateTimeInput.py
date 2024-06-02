@@ -1,6 +1,8 @@
 from typing import Dict
+
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 class DateTimeInput (Input):
 	def __init__(
@@ -31,6 +33,7 @@ class DateTimeInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'DateTime',
 		) :
 		Input.__init__(
@@ -61,5 +64,6 @@ class DateTimeInput (Input):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)

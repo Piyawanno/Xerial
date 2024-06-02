@@ -1,6 +1,7 @@
 from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
+from xerial.Filter import Filter
 
 class CurrencyInput (Input):
 	def __init__(
@@ -35,6 +36,7 @@ class CurrencyInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'Currency',
 		) :
 		Input.__init__(
@@ -65,6 +67,7 @@ class CurrencyInput (Input):
 			isSpreadSheet,
 			isCopyable,
 			inputPerLine,
+			filter,
 			typeName,
 		)
 		self.isNegative = isNegative

@@ -1,6 +1,7 @@
 from typing import Dict
 from xerial.InputAttachment import InputAttachment
 from xerial.input.ReferenceSelectInput import ReferenceSelectInput
+from xerial.Filter import Filter
 
 class ReferenceCheckBoxInput (ReferenceSelectInput) :
 	def __init__(
@@ -33,6 +34,7 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
+			filter: Filter=None,
 			typeName:str = 'ReferenceCheckBox',
 		) :
 		ReferenceSelectInput.__init__(
@@ -64,5 +66,7 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isEnabled=isEnabled,
 			isSpreadSheet=isSpreadSheet,
 			isCopyable=isCopyable,
+			inputPerLine=inputPerLine,
+			filter=filter,
 			typeName=typeName,
 		)

@@ -37,7 +37,7 @@ class Currency :
 	def loadData() :
 		path = os.path.dirname(os.path.abspath(__file__))
 		dataPath = f'{path}/data/Common-Currency.json'
-		with open(dataPath) as fd:
+		with open(dataPath, encoding='utf-8') as fd:
 			raw = json.load(fd)
 			loaded = {k:Currency().fromDict(v) for k,v in raw.items()}
 		return loaded
