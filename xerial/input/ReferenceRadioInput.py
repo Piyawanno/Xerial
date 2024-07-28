@@ -35,6 +35,7 @@ class ReferenceRadioInput (ReferenceSelectInput) :
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'ReferenceRadio',
 		) :
 		ReferenceSelectInput.__init__(
@@ -67,5 +68,6 @@ class ReferenceRadioInput (ReferenceSelectInput) :
 			isCopyable=isCopyable,
 			inputPerLine=inputPerLine,
 			filter=filter,
+			placeHolder=placeHolder,
 			typeName=typeName,
 		)

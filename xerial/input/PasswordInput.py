@@ -33,6 +33,7 @@ class PasswordInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Password',
 		) :
 		Input.__init__(
@@ -64,5 +65,6 @@ class PasswordInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

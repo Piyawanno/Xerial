@@ -698,3 +698,10 @@ class DBSessionBase :
 	
 	def getDBColumnName(self, model: type) -> List[str]:
 		raise NotADirectoryError
+	
+	def getModelWithDocumentExport(self) -> List[type]:
+		exportable = []
+		for model in self.model.values():
+			if not model.hasDocumentExport(): continue
+			exportable.append(model)
+		return exportable

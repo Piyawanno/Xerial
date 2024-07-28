@@ -1,11 +1,12 @@
-from xerial.Input import Input
+from xerial.input.SelectInput import SelectInput
 from xerial.InputAttachment import InputAttachment
 from xerial.OptionEnum import OptionEnum
+from xerial.input.TableDisplayType import TableDisplayType
 from enum import IntEnum
 from typing import Dict, Type
 from xerial.Filter import Filter
 
-class EnumSelectInput (Input):
+class EnumSelectInput (SelectInput):
 	def __init__(
 			self,
 			label:str,
@@ -22,6 +23,7 @@ class EnumSelectInput (Input):
 			isTableForm:bool=False,
 			isView:bool=False,
 			isSearchTable:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -36,11 +38,14 @@ class EnumSelectInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
+			tableDisplayType: TableDisplayType=TableDisplayType.LABEL,
 			typeName:str = 'EnumSelect',
 		) :
-		Input.__init__(
+		SelectInput.__init__(
 			self,
 			label,
+			[],
 			order,
 			group,
 			isTable,
@@ -53,6 +58,7 @@ class EnumSelectInput (Input):
 			isTableForm,
 			isView,
 			isSearchTable,
+			isStatusDisplay,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -61,14 +67,16 @@ class EnumSelectInput (Input):
 			config,
 			columnType,
 			columnName,
-			sideIcon,
-			isEnabled,
-			isSpreadSheet,
-			isCopyable,
-			inputPerLine,
-			filter,
-			typeName,
+			isEnabled=isEnabled,
+			isSpreadSheet=isSpreadSheet,
+			isCopyable=isCopyable,
+			inputPerLine=inputPerLine,
+			filter=filter,
+			placeHolder=placeHolder,
+			tableDisplayType=tableDisplayType,
+			typeName=typeName,
 		)
+		self.sideIcon = sideIcon
 		self.enum = enum
 	
 	def toDict(self) -> dict:

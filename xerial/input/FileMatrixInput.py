@@ -37,6 +37,7 @@ class FileMatrixInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'FileMatrix',
 		) :
 		Input.__init__(

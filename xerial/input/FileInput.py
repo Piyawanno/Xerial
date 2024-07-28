@@ -38,6 +38,7 @@ class FileInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'File',
 		) :
 		Input.__init__(
@@ -69,6 +70,7 @@ class FileInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.isPreview = isPreview

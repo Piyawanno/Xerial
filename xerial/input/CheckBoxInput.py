@@ -1,6 +1,7 @@
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 from xerial.input.SelectInput import SelectInput
+from xerial.input.TableDisplayType import TableDisplayType
 from xerial.Filter import Filter
 
 from typing import Dict, List, Tuple
@@ -36,6 +37,8 @@ class CheckBoxInput (SelectInput):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
+			tableDisplayType: TableDisplayType=TableDisplayType.LABEL,
 			typeName:str = 'CheckBox',
 		) :
 		SelectInput.__init__(
@@ -68,6 +71,8 @@ class CheckBoxInput (SelectInput):
 			isCopyable=isCopyable,
 			inputPerLine=inputPerLine,
 			filter=filter,
+			placeHolder=placeHolder,
+			tableDisplayType=tableDisplayType,
 			typeName=typeName,
 		)
 

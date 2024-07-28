@@ -36,6 +36,7 @@ class TagEnumSelectInput (EnumSelectInput):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str='TagEnumSelect',
 		) :
 		EnumSelectInput.__init__(
@@ -68,5 +69,6 @@ class TagEnumSelectInput (EnumSelectInput):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

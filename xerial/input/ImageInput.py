@@ -40,6 +40,7 @@ class ImageInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Image',
 		) :
 		Input.__init__(
@@ -71,6 +72,7 @@ class ImageInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		if len(url) and url[-1] != '/': url = url+'/'

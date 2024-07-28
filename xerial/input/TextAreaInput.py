@@ -2,6 +2,7 @@ from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 from xerial.Filter import Filter
+from xerial.filter.TextFilter import TextFilter
 
 class TextAreaInput (Input):
 	def __init__(
@@ -32,8 +33,9 @@ class TextAreaInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			filter: Filter=None,
-			typeName:str = 'TextArea',
+			filter:Filter=TextFilter(),
+			placeHolder:str=None,
+			typeName:str='TextArea',
 		) :
 		Input.__init__(
 			self,
@@ -64,5 +66,6 @@ class TextAreaInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

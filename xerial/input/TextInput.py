@@ -34,6 +34,7 @@ class TextInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=TextFilter(),
+			placeHolder:str=None,
 			typeName:str = 'Text',
 		) :
 		Input.__init__(
@@ -65,5 +66,6 @@ class TextInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

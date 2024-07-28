@@ -40,6 +40,7 @@ class TagAutoCompleteInput (AutoCompleteInput) :
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'TagAutoComplete',
 		) :
 		AutoCompleteInput.__init__(
@@ -77,6 +78,7 @@ class TagAutoCompleteInput (AutoCompleteInput) :
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.childrenURL = childrenURL

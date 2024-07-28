@@ -37,6 +37,7 @@ class PrerequisiteReferenceSelectInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'PrerequisiteReferenceSelect',
 		) :
 		Input.__init__(
@@ -68,6 +69,7 @@ class PrerequisiteReferenceSelectInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.url = url

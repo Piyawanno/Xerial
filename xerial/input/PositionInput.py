@@ -33,6 +33,7 @@ class PositionInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Position',
 		) :
 		Input.__init__(
@@ -64,6 +65,7 @@ class PositionInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.typeName = 'Position'

@@ -72,6 +72,12 @@ class CurrencyData :
 		additionOrigin = self.origin + other.origin
 		result = CurrencyData(additionOrigin)
 		return result
+  
+	def subtract(self, other) :
+		other:CurrencyData = other
+		subtractOrigin = self.origin - other.origin
+		result = CurrencyData(subtractOrigin)
+		return result
 	
 	def copy(self) :
 		raw = self.toDict()

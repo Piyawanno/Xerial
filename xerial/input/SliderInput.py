@@ -38,6 +38,7 @@ class SliderInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Slider',
 		) :
 		Input.__init__(
@@ -69,6 +70,7 @@ class SliderInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.isNegative = isNegative

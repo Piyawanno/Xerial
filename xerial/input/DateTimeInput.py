@@ -34,6 +34,7 @@ class DateTimeInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'DateTime',
 		) :
 		Input.__init__(
@@ -65,5 +66,6 @@ class DateTimeInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

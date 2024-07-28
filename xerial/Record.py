@@ -115,6 +115,14 @@ class Record:
 		mapped = modelClass in __MAPPED_META__
 		if hasMeta and not mapped: hasMeta = False
 		return hasMeta
+	
+	@staticmethod
+	def hasDocumentExport():
+		return False
+	
+	# NOTE Proceed document export to a file and return document URL without rootURL.
+	def exportDocument(self) -> str:
+		raise NotImplementedError
 
 	def toRawDict(self) -> dict:
 		result = {}
@@ -207,7 +215,7 @@ class Record:
 			if modification.version.__str__() > destination
 		]
 
-	def getLatestModification(self) -> Modification | None:
+	def getLatestModification(self) -> Modification:# | None:
 		modifications: List[Modification] = getattr(self.__class__, "__modification__", [])
 
 		if not modifications:
@@ -337,8 +345,8 @@ class Record:
 		column.input = input
 
 	@staticmethod
-	def analyzeModifications(modifications: List[Modification]) -> dict[str, List[ModificationException]]:
-		modificationExceptions: dict[str, List[ModificationException]] = {}
+	def analyzeModifications(modifications: List[Modification]) -> Dict[str, List[ModificationException]]:
+		modificationExceptions: Dict[str, List[ModificationException]] = {}
 		for modification in modifications:
 			exceptions = modification.analyze()
 			if len(exceptions) > 0:
@@ -346,8 +354,8 @@ class Record:
 		return modificationExceptions
 
 	@staticmethod
-	def getSkippedActions(modifications: List[Modification]) -> dict[str, List[ModificationAction]]:
-		skippedActions: dict[str, List[ModificationAction]] = {}
+	def getSkippedActions(modifications: List[Modification]) -> Dict[str, List[ModificationAction]]:
+		skippedActions: Dict[str, List[ModificationAction]] = {}
 		for modification in modifications:
 			actions = modification.getSkippedActions()
 			if len(actions) > 0:

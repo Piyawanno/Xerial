@@ -1,6 +1,6 @@
 import importlib.util
 import sys
-from typing import List
+from typing import Dict, List
 
 from xerial.modact.test.model.MockData import MockData
 
@@ -13,12 +13,12 @@ class MockDataCollection:
 	def __init__(self, name: str, basePath: str, data: List[MockData]) -> None:
 		self.name = name
 		self.basePath = basePath
-		self.data: dict[int, MockData] = {
+		self.data: Dict[int, MockData] = {
 			mockData.version: mockData
 			for mockData in data
 		}
 
-	def get(self, version: int) -> MockData | None:
+	def get(self, version: int) -> MockData: # | None:
 		return self.data.get(version)
 
 	def freezeVersion(self) -> MockData:

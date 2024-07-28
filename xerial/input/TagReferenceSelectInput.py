@@ -36,6 +36,7 @@ class TagReferenceSelectInput (ReferenceSelectInput):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'TagReferenceSelect',
 		) :
 		ReferenceSelectInput.__init__(
@@ -70,5 +71,6 @@ class TagReferenceSelectInput (ReferenceSelectInput):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

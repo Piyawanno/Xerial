@@ -34,6 +34,7 @@ class Input :
 			isCopyable:bool=False,
 			inputPerLine: int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str=None,
 		):
 		self.label = label
@@ -73,6 +74,7 @@ class Input :
 		self.filter = filter
 		self.childrenModelName = None
 		self.isTag = False
+		self.placeHolder = placeHolder
 	
 	def setOrderAttribute(self, column):
 		pass
@@ -110,6 +112,7 @@ class Input :
 			'inputPerLine': self.inputPerLine,
 			'filter': None if self.filter is None else self.filter.toDict(),
 			'childrenModelName': self.childrenModelName,
-			'isTag': self.isTag
+			'isTag': self.isTag,
+			'placeHolder': self.placeHolder,
 		}
 	

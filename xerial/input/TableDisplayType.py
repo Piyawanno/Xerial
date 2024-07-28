@@ -1,0 +1,10 @@
+from enum import IntEnum
+
+class TableDisplayType (IntEnum):
+	LABEL = 10
+	LINK_TO_DETAIL = 20
+	LINK_TO_EDIT = 30
+	CIRCLE_STATUS_COLOR = 40
+	RECTANGLE_STATUS_COLOR = 50
+	ICON = 60
+	ICON_COLOR = 70

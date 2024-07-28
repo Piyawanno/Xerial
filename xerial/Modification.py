@@ -103,7 +103,7 @@ class Modification:
 		self.meta = {k: v for k, v in meta}
 		self.vendor = vendor
 		self.column: List[ModificationAction] = []
-		self.skipped: dict[str, List[ModificationAction]] = {}
+		self.skipped: Dict[str, List[ModificationAction]] = {}
 		self.generator = __GENERATOR__[vendor]
 		self.schema = None
 		self.reverseModification = {

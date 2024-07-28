@@ -8,7 +8,7 @@ from xerial.Modification import Modification
 from typing import Dict, List, Any
 from datetime import datetime, date, timedelta
 from decimal import Decimal
-from typing import TypeVar, Self
+from typing import TypeVar
 
 import logging, csv, xlsxwriter, time, os, json
 
@@ -37,7 +37,7 @@ class AsyncDBSessionBase (DBSessionBase) :
 		with open(versionPath, 'wt') as fd:
 			raw = json.dump(modelVersion, fd, indent=4)
 
-	async def init(self, modificationPath: str=None) -> Self:
+	async def init(self, modificationPath: str=None):# -> Self:
 		modelList = DBSessionBase.REGISTERED_MODEL[:]
 		DBSessionBase.REGISTERED_MODEL = []
 		for modelClass in modelList:

@@ -37,6 +37,7 @@ class CurrencyInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Currency',
 		) :
 		Input.__init__(
@@ -68,6 +69,7 @@ class CurrencyInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.isNegative = isNegative

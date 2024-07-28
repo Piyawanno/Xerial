@@ -33,6 +33,7 @@ class LabelInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Label',
 		) :
 		Input.__init__(
@@ -64,5 +65,6 @@ class LabelInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

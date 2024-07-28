@@ -1,5 +1,6 @@
 from xerial.input.EnumSelectInput import EnumSelectInput
 from xerial.InputAttachment import InputAttachment
+from xerial.input.TableDisplayType import TableDisplayType
 from enum import IntEnum
 from typing import Dict, Type
 from xerial.Filter import Filter
@@ -21,6 +22,7 @@ class EnumRadioInput (EnumSelectInput) :
 			isTableForm:bool=False,
 			isView:bool=False,
 			isSearchTable:bool=False,
+			isStatusDisplay:bool=False,
 			attachedGroup:InputAttachment=None,
 			isLink:bool=False,
 			linkColumn:str='',
@@ -34,6 +36,8 @@ class EnumRadioInput (EnumSelectInput) :
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
+			tableDisplayType: TableDisplayType=TableDisplayType.LABEL,
 			typeName:str = 'EnumRadio',
 		) :
 		EnumSelectInput.__init__(
@@ -52,6 +56,7 @@ class EnumRadioInput (EnumSelectInput) :
 			isTableForm,
 			isView,
 			isSearchTable,
+			isStatusDisplay,
 			attachedGroup,
 			isLink,
 			linkColumn,
@@ -65,5 +70,7 @@ class EnumRadioInput (EnumSelectInput) :
 			isCopyable=isCopyable,
 			inputPerLine=inputPerLine,
 			filter=filter,
+			placeHolder=placeHolder,
+			tableDisplayType=tableDisplayType,
 			typeName=typeName,
 		)

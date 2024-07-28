@@ -1,4 +1,5 @@
 from xerial.input.SelectInput import SelectInput
+from xerial.input.TableDisplayType import TableDisplayType
 from xerial.InputAttachment import InputAttachment
 from xerial.Filter import Filter
 
@@ -36,6 +37,8 @@ class TagSelectInput (SelectInput):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
+			tableDisplayType: TableDisplayType=TableDisplayType.LABEL,
 			typeName:str = 'TagSelect',
 		) :
 		SelectInput.__init__(
@@ -69,5 +72,7 @@ class TagSelectInput (SelectInput):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
+			tableDisplayType,
 			typeName,
 		)

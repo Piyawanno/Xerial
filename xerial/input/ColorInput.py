@@ -33,6 +33,7 @@ class ColorInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Color',
 		) :
 		Input.__init__(
@@ -64,5 +65,6 @@ class ColorInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

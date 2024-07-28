@@ -38,6 +38,7 @@ class RichTextInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'RichText',
 		) :
 		Input.__init__(
@@ -68,6 +69,7 @@ class RichTextInput (Input):
 			isCopyable=isCopyable,
 			inputPerLine=inputPerLine,
 			filter=filter,
+			placeHolder=placeHolder,
 			typeName=typeName,
 		)
 		self.hasImage: bool = hasImage

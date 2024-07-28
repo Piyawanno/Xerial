@@ -1,4 +1,5 @@
 from xerial.Input import Input
+from xerial.input.TableDisplayType import TableDisplayType
 from xerial.InputAttachment import InputAttachment
 from xerial.Filter import Filter
 
@@ -36,6 +37,8 @@ class SelectInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
+			tableDisplayType: TableDisplayType=TableDisplayType.LABEL,
 			typeName:str = 'Select',
 		) :
 		Input.__init__(
@@ -67,9 +70,11 @@ class SelectInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.option = [list(i) for i in option]
+		self.tableDisplayType: TableDisplayType = tableDisplayType
 		self.isLink = isLink
 		self.isStatusDisplay = isStatusDisplay
 	
@@ -78,4 +83,5 @@ class SelectInput (Input):
 		result['option'] = self.option
 		result['isLink'] = self.isLink
 		result['isStatusDisplay'] = self.isStatusDisplay
+		result['tableDisplayType'] = self.tableDisplayType.value
 		return result

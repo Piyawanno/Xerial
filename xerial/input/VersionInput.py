@@ -1,9 +1,10 @@
 from typing import Dict
-from xerial.Input import Input
+from xerial.input.TextAreaInput import TextAreaInput
 from xerial.InputAttachment import InputAttachment
 from xerial.Filter import Filter
+from xerial.filter.TextFilter import TextFilter
 
-class EmailInput (Input):
+class VersionInput (TextAreaInput):
 	def __init__(
 			self,
 			label:str,
@@ -32,11 +33,11 @@ class EmailInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			filter: Filter=None,
+			filter: Filter=TextFilter(),
 			placeHolder:str=None,
-			typeName:str = 'Email',
+			typeName:str = 'Version',
 		) :
-		Input.__init__(
+		TextAreaInput.__init__(
 			self,
 			label,
 			order,

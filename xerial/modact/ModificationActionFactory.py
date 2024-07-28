@@ -17,7 +17,7 @@ class ModificationActionFactory:
 			version: str,
 			modificationType: ModificationType,
 			columnName: str,
-			column: Column | None,
+			column: Column,# | None,
 			*args
 	) -> ModificationAction:
 		if modificationType == ModificationType.ADD:

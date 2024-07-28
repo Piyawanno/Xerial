@@ -33,6 +33,7 @@ class TimeSpanInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'TimeSpan',
 		) :
 		Input.__init__(
@@ -64,5 +65,6 @@ class TimeSpanInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)

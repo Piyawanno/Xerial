@@ -2,6 +2,7 @@ from typing import Dict
 from xerial.Input import Input
 from xerial.InputAttachment import InputAttachment
 from xerial.Filter import Filter
+from xerial.filter.NumberFilter import NumberFilter
 
 class NumberInput (Input):
 	def __init__(
@@ -37,7 +38,8 @@ class NumberInput (Input):
 			isSpreadSheet:bool=True,
 			isCopyable:bool=False,
 			inputPerLine:int=None,
-			filter: Filter=None,
+			filter: Filter=NumberFilter(),
+			placeHolder:str=None,
 			typeName:str = 'Number',
 		) :
 		Input.__init__(
@@ -69,6 +71,7 @@ class NumberInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.isNegative = isNegative

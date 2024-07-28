@@ -35,6 +35,7 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'ReferenceCheckBox',
 		) :
 		ReferenceSelectInput.__init__(
@@ -68,5 +69,6 @@ class ReferenceCheckBoxInput (ReferenceSelectInput) :
 			isCopyable=isCopyable,
 			inputPerLine=inputPerLine,
 			filter=filter,
+			placeHolder=placeHolder,
 			typeName=typeName,
 		)

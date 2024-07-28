@@ -1,5 +1,8 @@
+from typing import Dict
+
+
 class MockDeployment:
-	def __init__(self, version: int, to: dict[str, int], describe: str, isFreeze: bool = False) -> None:
+	def __init__(self, version: int, to: Dict[str, int], describe: str, isFreeze: bool = False) -> None:
 		self.version = version
 		self.to = to
 		self.describe = describe

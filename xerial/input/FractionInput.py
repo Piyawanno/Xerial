@@ -37,6 +37,7 @@ class FractionInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Fraction',
 		) :
 		Input.__init__(
@@ -68,6 +69,7 @@ class FractionInput (Input):
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.isNegative = isNegative

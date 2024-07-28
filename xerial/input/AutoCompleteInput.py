@@ -39,6 +39,7 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str='AutoComplete',
 		) :
 		ReferenceSelectInput.__init__(
@@ -73,6 +74,7 @@ class AutoCompleteInput (ReferenceSelectInput) :
 			isCopyable,
 			inputPerLine,
 			filter,
+			placeHolder,
 			typeName,
 		)
 		self.template = template

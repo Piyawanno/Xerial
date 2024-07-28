@@ -1,7 +1,7 @@
 import json
 import os
 import traceback
-from typing import List
+from typing import Dict, List
 
 from xerial.AsyncDBSessionBase import AsyncDBSessionBase
 from xerial.AsyncDBSessionPool import AsyncDBSessionPool
@@ -31,13 +31,13 @@ class TableModificationTestFixture:
 		self.environment = environment
 
 		# Session
-		self.pool: AsyncDBSessionPool | None = None
-		self.session: AsyncDBSessionBase | None = None
+		self.pool: AsyncDBSessionPool= None# | None = None
+		self.session: AsyncDBSessionBase= None# | None = None
 		self.setFreezeFromMock()
 
 		# Transient
-		self.models: dict[str, type] = {}
-		self.possibleToNone: dict[str, set] = {}
+		self.models: Dict[str, type] = {}
+		self.possibleToNone: Dict[str, set] = {}
 		self.currentDeploymentVersion: int = 0
 
 	async def prepareSession(self) -> None:
@@ -58,7 +58,7 @@ class TableModificationTestFixture:
 		await self.session.closeConnection()
 		await self.pool.close()
 
-	async def onModelChange(self, to: dict[str, int]) -> None:
+	async def onModelChange(self, to: Dict[str, int]) -> None:
 		self.log(f'Destination version change to {to}')
 		self.destinationVersion = to
 		self.log('On model change')
@@ -165,7 +165,7 @@ class TableModificationTestFixture:
 
 		return not failed
 
-	async def validateVersions(self, to: dict[str, int]) -> None:
+	async def validateVersions(self, to: Dict[str, int]) -> None:
 		valid: bool = True
 		for mock in self.mocks:
 			self.log(f'Validating {mock.name} version {to.get(mock.name)}')
@@ -263,7 +263,7 @@ class TableModificationTestFixture:
 					update += f"{set_clause} WHERE id = '{row['id']}'"
 					await self.session.executeWrite(update)
 
-	async def setDeployment(self) -> MockDeployment | None:
+	async def setDeployment(self) -> MockDeployment:# | None:
 		target = None
 		for deployment in self.deployments:
 			if deployment.version == self.deploymentVersion:
@@ -318,7 +318,7 @@ class TableModificationTestFixture:
 			logFile.write(f"{message}\n")
 
 	@staticmethod
-	def describe(to: dict[str, int], describe: str = '') -> None:
+	def describe(to: Dict[str, int], describe: str = '') -> None:
 		print(f"Fixture: {describe}")
 
 		print("Models: destination")

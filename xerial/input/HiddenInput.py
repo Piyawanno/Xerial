@@ -32,6 +32,7 @@ class HiddenInput (Input):
 			isCopyable:bool=False,
 			inputPerLine:int=None,
 			filter: Filter=None,
+			placeHolder:str=None,
 			typeName:str = 'Hidden',
 		) :
 		Input.__init__(
@@ -62,5 +63,6 @@ class HiddenInput (Input):
 			isCopyable=isCopyable,
 			inputPerLine=inputPerLine,
 			filter=filter,
+			placeHolder=placeHolder,
 			typeName=typeName,
 		)
