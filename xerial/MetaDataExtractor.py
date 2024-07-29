@@ -75,7 +75,7 @@ class MetaDataExtractor :
 			if modelClass.representativeMeta is None :
 				modelClass.representativeMeta = attribute
 			else :
-				logging.warning("Multiple representative columns are defined.")
+				logging.warning(f"Multiple representative columns are defined@{modelClass.__name__}.")
 		if attribute.foreignKey is not None :
 			attribute.foreignKey.name = attribute.name
 			modelClass.foreignKey.append(attribute.foreignKey)

@@ -1,28 +1,4 @@
 #!/usr/bin/python3
 
-from xerial.Vendor import Vendor
-
-import json
-
-with open('/etc/xerial/Xerial.json', 'rt') as fd :
-	config = json.load(fd)
-
-vendor = config['vendor']
-generator = None
-
-if vendor == Vendor.ORACLE :
-	from xerial.OracleModelGenerator import OracleModelGenerator
-	generator = OracleModelGenerator(config)
-
-if generator is not None :
-	generator.connect()
-	language = config['generator']['outputLanguage']
-	if language == 'JavaScript' :
-		generator.generateJS()
-	elif language == 'Python' :
-		generator.generatePython()
-	else :
-		print("*** Error : Language %s is not supported."%(language))
-else :
-	print("*** Error : Vendor %d is not supported."%(vendor))
-	
+from xerial.cli.XerialGeneratorCLI import run
+if __name__ == '__main__': run()

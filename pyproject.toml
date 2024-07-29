@@ -1,0 +1,65 @@
+[project]
+name = "xerial"
+version = "0.9.1"
+dependencies = [
+	"psycopg2",
+	"asyncpg",
+	"aiosqlite",
+	"pyodbc",
+	"aioodbc",
+	"shapely",
+	"packaging",
+	"tabulate",
+	"xlsxwriter",
+]
+authors = [
+	{name="Kittipong Piyawanno", email="k.piyawanno@gmailc.com"},
+	{name="Suppakorn Rakna"},
+]
+readme="README.md"
+
+classifiers = [
+	# How mature is this project? Common values are
+	#   3 - Alpha
+	#   4 - Beta
+	#   5 - Production/Stable
+	"Development Status :: 4 - Beta",
+
+	# Indicate who your project is intended for
+	"Intended Audience :: Developers",
+	"Topic :: Database",
+
+	# Pick your license as you wish (see also "license" above)
+	"License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",
+
+	# Specify the Python versions you support here.
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.6",
+	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Homepage = "https://github.com/Piyawanno/Xerial"
+Documentation = "https://github.com/Piyawanno/Xerial/tree/main/document"
+Repository = "https://github.com/Piyawanno/Xerial"
+Issues = "https://github.com/Piyawanno/Xerial/issues"
+Changelog = "https://github.com/Piyawanno/Xerial/blob/main/CHANGELOG.md"
+
+[project.scripts]
+xerial-dump = "xerial.cli.XerialMigrationCLI:runDump"
+xerial-generate = "xerial.cli.XerialGeneratorCLI:run"
+xerial-load = "xerial.cli.XerialMigrationCLICLI:runLoad"
+xerial-model-extract = "xerial.cli.XerialModelExtractorCLI:run"
+xerial-primary = "xerial.cli.XerialPrimaryCreatorCLI:run"
+xerial-raw-dump = "xerial.cli.XerialMigrationCLI:runRawDump"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["xerial"]
+exclude = []
+namespaces = true

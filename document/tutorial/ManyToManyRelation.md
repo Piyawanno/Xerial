@@ -5,6 +5,7 @@ Xerial uses the **mapper** pattern for the implementation. The mapper
 is an extra Model/table, which links between 2 Models/tables.
 
 ```python
+from xerial.DBSessionBase import REGISTER
 from xerial.SQLiteDBSession import SQLiteDBSession
 from xerial.Record import Record
 from xerial.StringColumn import StringColumn
@@ -12,12 +13,13 @@ from xerial.IntegerColumn import IntegerColumn
 from xerial.Children import Children
 from enum import IntEnum
 
-
+@REGISTER
 class WarehouseType (IntEnum) :
 	SUPPLIER = 1
 	PRODUCTION = 2
 	CUSTOMER = 3
 
+@REGISTER
 class ProductType (Record) :
 	name = StringColumn(length=32, isRepresentative=True)
 	description = StringColumn(length=-1)
@@ -26,6 +28,7 @@ class ProductType (Record) :
 	def __repr__(self) -> str:
 		return f"<ProductType {self.id}, {self.name}, {self.description}, {self.warehouse}>"
 
+@REGISTER
 class WareHouse (Record) :
 	name = StringColumn(length=32, isRepresentative=True)
 	location = StringColumn(length=255)
@@ -35,6 +38,7 @@ class WareHouse (Record) :
 	def __repr__(self) -> str:
 		return f"<WareHouse {self.id}, {self.name} {self.location}, {self.productType}>"
 
+@REGISTER
 class ProductWareHouseMapper (Record) :
 	__is_mapper__ = True
 	productTypeID = IntegerColumn(foreignKey="ProductType.id")
@@ -43,13 +47,7 @@ class ProductWareHouseMapper (Record) :
 	def __repr__(self) -> str:
 		return f"<ProductWareHouseMapper {self.id} P={self.productTypeID} W={self.warehouseID}>"
 
-session = SQLiteDBSession(config)
-session.connect()
-session.appendModel(ProductType)
-session.appendModel(WareHouse)
-session.appendModel(ProductWareHouseMapper)
-session.checkModelLinking()
-session.createTable()
+session = SQLiteDBSession(config).init()
 ```
 
 From the example, `ProductWareHouseMapper` is the mapper Model, which links

@@ -1,3 +1,4 @@
+from xerial.DBSessionBase import REGISTER
 from xerial.SQLiteDBSession import SQLiteDBSession
 from xerial.Vendor import Vendor
 from xerial.Record import Record
@@ -13,10 +14,12 @@ from datetime import datetime
 
 import io, time
 
+@REGISTER
 class Gender (IntEnum) :
 	MALE = 1
 	FEMALE = 2
 
+@REGISTER
 class Person (Record) :
 	# For StringColumn recommended length < 255
 	name = StringColumn(length=64)
@@ -121,10 +124,7 @@ config = {
 	"database" : "./example.sqlite.bin"
 }
 
-session = SQLiteDBSession(config)
-session.connect()
-session.appendModel(Person)
-session.createTable()
+session = SQLiteDBSession(config).init()
 
 person = Person().fromDict({
 	"name" : "Kittipong",

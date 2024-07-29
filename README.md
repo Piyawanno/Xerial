@@ -1,6 +1,13 @@
 # Xerial ORM
 
-A Simple Object Rational Mapping (ORM) library.
+A Simple bur Powerful Object Rational Mapping (ORM) library.
+Xerial is a session-based ORM, which emphasizes the concept
+[*Code Centric Data Structure*](document/Concept.md) to support developer
+working in team.
+
+For tutorial and documentation see [Document](document/README.md).
+
+For code example see [Example](example).
 
 ## Supported DB
 - PostgreSQL
@@ -11,23 +18,15 @@ A Simple Object Rational Mapping (ORM) library.
 
 ## Installation
 
-With wheel :
-
-```bash
-./setup.py bdist_wheel
-sudo pip3 install dist/xerial-0.9-py3-none-any.whl
-```
-
-For development :
-
-```bash
-sudo ./setup.py setup
-sudo ./setup.py link
-```
-
 For production :
 
 ```bash
-sudo ./setup.py setup
-sudo ./setup.py install
+pip3 install xerial
+```
+
+For development from source code:
+
+```bash
+sudo ./XerialSetup.py setup
+sudo ./XerialSetup.py link
 ```
