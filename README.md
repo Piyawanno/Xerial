@@ -18,8 +18,7 @@ For code example see [Example](example).
 
 ## Main Features
 - Code Centric Data Structure
-- Automatic table creation based on Model Code
-- Automatic table structure modification based on Model Code
+- Automatic table creation and structure modification based on Model Code
 - Table structure and data rollback
 - SQL based query clause
 - Relation between models (1-to-1, 1-to-N, N-to-N)
