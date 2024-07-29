@@ -1,5 +1,6 @@
 [project]
-name = "xerial"
+name = "xerial-orm"
+description = "A Simple bur Powerful Object Rational Mapping (ORM) library."
 version = "0.9.1"
 dependencies = [
 	"psycopg2",
@@ -17,6 +18,7 @@ authors = [
 	{name="Suppakorn Rakna"},
 ]
 readme="README.md"
+keywords = ["database", "orm"]
 
 classifiers = [
 	# How mature is this project? Common values are
