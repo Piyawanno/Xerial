@@ -1,6 +1,6 @@
 # Xerial ORM
 
-A Simple bur Powerful Object Rational Mapping (ORM) library.
+A Simple but Powerful Object Rational Mapping (ORM) library.
 Xerial is a session-based ORM, which emphasizes the concept
 [*Code Centric Data Structure*](document/Concept.md) to support developer
 working in team.

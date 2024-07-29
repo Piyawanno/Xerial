@@ -1,6 +1,6 @@
 [project]
 name = "xerial-orm"
-description = "A Simple bur Powerful Object Rational Mapping (ORM) library."
+description = "A Simple but Powerful Object Rational Mapping (ORM) library."
 version = "0.9.1"
 dependencies = [
 	"psycopg2",
