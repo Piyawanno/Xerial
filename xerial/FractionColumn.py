@@ -51,7 +51,14 @@ class FractionColumn (Column) :
 		
 	def setValueToDB(self, attribute:Fraction) :
 		if attribute is None: return "0"
-		return f'{attribute.numerator}/{attribute.denominator}'
+		if isinstance(attribute, Fraction):
+			return f'{attribute.numerator}/{attribute.denominator}'
+		elif isinstance(attribute, str):
+			return attribute
+		elif isinstance(attribute, int) or isinstance(attribute, float):
+			return f'{attribute}'
+		else:
+			raise ValueError
 	
 	def parseValue(self, value) :
 		return Fraction(value)

@@ -1,7 +1,7 @@
 [project]
 name = "xerial-orm"
 description = "A Simple but Powerful Object Rational Mapping (ORM) library."
-version = "0.9.2"
+version = "0.9.3"
 dependencies = [
 	"psycopg2",
 	"asyncpg",
@@ -30,6 +30,7 @@ classifiers = [
 	# Indicate who your project is intended for
 	"Intended Audience :: Developers",
 	"Topic :: Database",
+	"Topic :: Software Development :: Libraries :: Python Modules",
 
 	# Pick your license as you wish (see also "license" above)
 	"License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)",

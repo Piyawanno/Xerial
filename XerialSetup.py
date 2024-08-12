@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 
 import os, sys, site, getpass
 from re import I
@@ -7,9 +7,11 @@ __help__ = """Xerial setup script :
 setup : Install dependencies of Xerial.
 install : Install Xerial into machine.
 link : Link package and script into machine, suitable for setting up developing environment.
-bdist_wheel : Build wheel file into ./dist
+uninstall : Uninstall Gaimon from machine (config & data will not be removed).
 """
 
+IS_WINDOWS = sys.platform in ['win32', 'win64']
+IS_VENV = sys.prefix != sys.base_prefix
 
 def __conform__(path) :
 	isRootPath = False
@@ -38,6 +40,7 @@ def __link__(source, destination):
 
 class XerialSetup :
 	def __init__(self) :
+		self.checkBasePath()
 		self.rootPath = os.path.dirname(os.path.abspath(__file__))
 		self.sitePackagesPath = ''
 		for path in site.getsitepackages()[::-1]:
@@ -52,6 +55,7 @@ class XerialSetup :
 			'xerial-load',
 			'xerial-model-extract',
 			'xerial-primary',
+			'xerial-backup-enable',
 		]
 
 		self.configList = [
@@ -64,6 +68,18 @@ class XerialSetup :
 
 		self.copyCommand = 'cp'
 		if sys.platform == 'win32': self.copyCommand = "copy"
+	
+	def checkBasePath(self):
+		if IS_VENV :
+			self.configPath = __conform__(f'{sys.prefix}/etc')
+			self.resourcePath = __conform__(f'{sys.prefix}/var')
+			self.scriptPath = __conform__(f'{sys.prefix}/bin')
+			if not os.path.isdir(self.configPath): os.makedirs(self.configPath)
+			if not os.path.isdir(self.resourcePath): os.makedirs(self.resourcePath)
+		else:
+			self.configPath = '/etc'
+			self.resourcePath = '/var'
+			self.scriptPath = '/usr/bin'
 
 	def operate(self, operation, platform) :
 		if operation == 'setup' :
@@ -72,9 +88,24 @@ class XerialSetup :
 			self.link()
 		elif operation == 'install' :
 			self.install()
+		elif operation == 'uninstall' :
+			self.uninstall()
 		elif operation == 'bdist_wheel' :
 			self.createWheel()
 	
+	def uninstall(self):
+		self.uninstallLibrary()
+		self.uninstallScript()
+	
+	def uninstallScript(self):
+		for i in self.script :
+			if IS_WINDOWS: continue
+			os.unlink(f"{self.scriptPath}/{i}")
+		
+	def uninstallLibrary(self):
+		packagePath = f"{self.sitePackagesPath}/xerial"
+		if os.path.isdir(packagePath): os.unlink(packagePath)
+
 	def createWheel(self) :
 		import setuptools
 		with open("README.md") as fd :
@@ -113,8 +144,8 @@ class XerialSetup :
 			with open('requirements-centos.txt') as fd :
 				content = fd.read()
 			self.setupYum(content.replace("\n", " "))
-		elif 'debian10' in platform or 'ubuntu20.04' in platform:
-			with open('requirements-ubuntu-20.04.txt') as fd :
+		elif 'debian' in platform or 'ubuntu' in platform:
+			with open('requirements-ubuntu.txt') as fd :
 				content = fd.read()
 			self.setupAPT(content.split("\n"))
 		else :
@@ -167,7 +198,7 @@ class XerialSetup :
 			os.system(command)
 	
 	def installConfig(self) :
-		path = __conform__("/etc/xerial")
+		path = __conform__(f"{self.configPath}/xerial")
 		if not os.path.exists(path): os.makedirs(path)
 		for source, destination in self.configList :
 			destinationPath = __conform__(f"{path}/{destination}")
@@ -179,11 +210,11 @@ class XerialSetup :
 		self.installConnectionConfig()
 	
 	def installConnectionConfig(self) :
-		if os.path.isfile("/etc/xerial/Xerial.json") :
-			if not os.path.isfile("/etc/gaimon/Database.json"):
-				__link__("/etc/xerial/Xerial.json", "/etc/gaimon/Database.json")
+		if os.path.isfile(f"{self.configPath}/xerial/Xerial.json") :
+			if not os.path.isfile(f"{self.configPath}/gaimon/Database.json"):
+				__link__(f"{self.configPath}/xerial/Xerial.json", f"{self.configPath}/gaimon/Database.json")
 			return
-		path = "/etc/xerial"
+		path = f"{self.configPath}/xerial"
 		if not os.path.isdir(path) :
 			os.makedirs(path)
 		parameter = self.getParameter()
@@ -193,13 +224,13 @@ class XerialSetup :
 			raw = raw.replace('"DB_VENDOR"', "DB_VENDOR")
 			for k, v in parameter.items() :
 				raw = raw.replace(k, v)
-			with open("/etc/xerial/Xerial.json", "wt") as target :
+			with open(f"{self.configPath}/xerial/Xerial.json", "wt") as target :
 				target.write(raw)
 	
 	def installScript(self) :
 		for i in self.script :
-			if not os.path.isfile(f"/usr/bin/{i}") :
-				__link__(f"{self.rootPath}/script/{i}", f"/usr/bin/{i}")
+			if not os.path.isfile(f"{self.scriptPath}/{i}") :
+				__link__(f"{self.rootPath}/script/{i}", f"{self.scriptPath}/{i}")
 
 	def getParameter(self) :
 		parameter = {}
@@ -229,10 +260,10 @@ if __name__ == '__main__' :
 	from argparse import RawTextHelpFormatter
 	import argparse
 	parser = argparse.ArgumentParser(description=__help__, formatter_class=RawTextHelpFormatter)
-	parser.add_argument("operation", help="Operation of setup", choices=['setup', 'install', 'link', 'bdist_wheel'])
-	parser.add_argument("-p", "--platform", help="Platform for installation of base environment.", choices=['oracle', 'centos', 'debian10', 'ubuntu20.04'])
+	parser.add_argument("operation", help="Operation of setup", choices=['setup', 'install', 'link', 'uninstall'])
+	parser.add_argument("-p", "--platform", help="Platform for installation of base environment.", choices=['oracle', 'centos', 'debian', 'ubuntu'])
 	option = parser.parse_args(sys.argv[1:])
-	if option.platform is None : option.platform = 'ubuntu20.04'
+	if option.platform is None : option.platform = 'ubuntu'
 	setup = XerialSetup()
 	setup.operate(option.operation, option.platform)
 
